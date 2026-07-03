@@ -1,3 +1,5 @@
+import { Link } from "@tanstack/react-router";
+
 export function SiteFooter() {
   return (
     <footer className="mt-16 border-t border-line bg-surface-dim/60">
@@ -13,21 +15,26 @@ export function SiteFooter() {
 
         <nav
           aria-label="Links institucionais"
-          className="mt-6 flex flex-wrap gap-x-6 gap-y-3"
+          className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3"
         >
-          {[
-            { href: "#", label: "Como se candidatar" },
-            { href: "#", label: "Divulgue uma oportunidade" },
-            { href: "#", label: "Política de privacidade" },
-          ].map((link) => (
-            <a
-              key={link.label}
-              href={link.href}
-              className="mono-caps text-[11px] text-ink hover:text-mata"
-            >
-              {link.label}
-            </a>
-          ))}
+          <Link
+            to="/como-se-candidatar"
+            className="mono-caps text-[11px] text-ink hover:text-mata"
+          >
+            Como se candidatar
+          </Link>
+          <span
+            className="mono-caps cursor-default text-[11px] text-ink-faint"
+            title="Disponível em breve"
+          >
+            Divulgue uma oportunidade
+          </span>
+          <Link
+            to="/politica-de-privacidade"
+            className="mono-caps text-[11px] text-ink hover:text-mata"
+          >
+            Política de privacidade
+          </Link>
         </nav>
 
         <p className="mono-caps mt-8 text-[10.5px] text-ink-faint">
