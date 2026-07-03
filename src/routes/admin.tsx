@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { useAuth } from "@/lib/auth";
+import { Dashboard } from "@/components/admin/Dashboard";
 import { CadastroVaga } from "@/components/admin/CadastroVaga";
 import { FilaVagas } from "@/components/admin/FilaVagas";
 
@@ -139,7 +140,7 @@ function Login({
 }
 
 function Painel({ email, signOut }: { email: string; signOut: () => void }) {
-  const [aba, setAba] = useState<"cadastrar" | "fila">("fila");
+  const [aba, setAba] = useState<"painel" | "fila" | "cadastrar">("painel");
 
   return (
     <div className="min-h-screen bg-paper">
@@ -166,9 +167,10 @@ function Painel({ email, signOut }: { email: string; signOut: () => void }) {
       </header>
 
       <main className="mx-auto max-w-[1100px] px-4 py-8">
-        <div className="mb-6 flex gap-2">
+        <div className="mb-6 flex flex-wrap gap-2">
           {(
             [
+              ["painel", "Painel"],
               ["fila", "Fila de curadoria"],
               ["cadastrar", "Cadastrar vaga"],
             ] as const
@@ -187,7 +189,9 @@ function Painel({ email, signOut }: { email: string; signOut: () => void }) {
           ))}
         </div>
 
-        {aba === "cadastrar" ? <CadastroVaga /> : <FilaVagas />}
+        {aba === "painel" && <Dashboard onIrParaFila={() => setAba("fila")} />}
+        {aba === "fila" && <FilaVagas />}
+        {aba === "cadastrar" && <CadastroVaga />}
       </main>
     </div>
   );

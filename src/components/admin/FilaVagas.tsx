@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -20,6 +20,13 @@ const MOTIVOS = [
   ["outros", "Outros"],
 ] as const;
 
+const FLAG_LABEL: Record<string, string> = {
+  superior_completo: "Exige superior completo",
+  conselho_profissional: "Exige conselho profissional",
+  cnh_incompativel: "CNH incompatível",
+  experiencia_excessiva: "Experiência excessiva",
+};
+
 interface VagaAdmin {
   id: string;
   titulo: string;
@@ -29,11 +36,9 @@ interface VagaAdmin {
   municipio: string | null;
   regiao: string;
   score_aderencia: number;
+  score_urgencia: number;
+  flags_incompatibilidade: Record<string, boolean> | null;
   status: string;
-  link_candidatura: string | null;
-  forma_candidatura: string | null;
-  prazo_inscricao: string | null;
-  sem_prazo_definido: boolean;
 }
 
 function mensagemBloqueio(msg: string): string {
@@ -48,9 +53,45 @@ function mensagemBloqueio(msg: string): string {
   return `Erro: ${msg}`;
 }
 
+function flagsAtivas(v: VagaAdmin): string[] {
+  const f = v.flags_incompatibilidade ?? {};
+  return Object.keys(f).filter((k) => f[k]);
+}
+const municipioIndefinido = (v: VagaAdmin) =>
+  !v.municipio || v.regiao === "indefinido";
+const estaPronta = (v: VagaAdmin) =>
+  v.score_aderencia >= 70 && flagsAtivas(v).length === 0 && !municipioIndefinido(v);
+const precisaAtencao = (v: VagaAdmin) =>
+  flagsAtivas(v).length > 0 || municipioIndefinido(v) || v.score_aderencia < 40;
+
+function seloAderencia(score: number) {
+  if (score >= 70)
+    return { label: "Alta aderência", cls: "bg-mata-tint text-mata-deep border-mata-line" };
+  if (score >= 40)
+    return { label: "Relevante", cls: "bg-surface-dim text-ink-soft border-line-strong" };
+  return { label: "Baixa aderência", cls: "bg-ceu-tint text-ceu border-[#C4D4E2]" };
+}
+function badgeUrgencia(u: number) {
+  if (u >= 90) return { label: "Urgente", cls: "bg-barro text-white border-barro" };
+  if (u >= 60) return { label: "Vence em breve", cls: "bg-sol-tint text-sol border-[#EBD5A8]" };
+  if (u === 40) return { label: "Sem prazo", cls: "bg-ceu-tint text-ceu border-[#C4D4E2]" };
+  return null;
+}
+
+function Pill({ children, cls }: { children: React.ReactNode; cls: string }) {
+  return (
+    <span
+      className={`mono-caps inline-flex items-center rounded-full border px-2 py-0.5 text-[10.5px] ${cls}`}
+    >
+      {children}
+    </span>
+  );
+}
+
 export function FilaVagas() {
   const qc = useQueryClient();
   const [status, setStatus] = useState<string>("pendente");
+  const [balde, setBalde] = useState<"todas" | "prontas" | "atencao">("todas");
   const [erro, setErro] = useState<string | null>(null);
   const [rejeitando, setRejeitando] = useState<string | null>(null);
   const [motivo, setMotivo] = useState("fora_do_perfil");
@@ -62,7 +103,7 @@ export function FilaVagas() {
       const { data, error } = await supabase
         .from("vagas")
         .select(
-          "id, titulo, empresa_orgao, tipo, nivel, municipio, regiao, score_aderencia, status, link_candidatura, forma_candidatura, prazo_inscricao, sem_prazo_definido",
+          "id, titulo, empresa_orgao, tipo, nivel, municipio, regiao, score_aderencia, score_urgencia, flags_incompatibilidade, status",
         )
         .eq("status", status)
         .order("score_aderencia", { ascending: false });
@@ -71,17 +112,21 @@ export function FilaVagas() {
     },
   });
 
+  const visiveis = useMemo(() => {
+    const lista = vagas ?? [];
+    if (status !== "pendente" || balde === "todas") return lista;
+    return lista.filter((v) => (balde === "prontas" ? estaPronta(v) : precisaAtencao(v)));
+  }, [vagas, status, balde]);
+
   async function aprovar(id: string) {
     setErro(null);
     const { error } = await supabase
       .from("vagas")
       .update({ status: "aprovada" })
       .eq("id", id);
-    if (error) {
-      setErro(mensagemBloqueio(error.message));
-      return;
-    }
+    if (error) return setErro(mensagemBloqueio(error.message));
     qc.invalidateQueries({ queryKey: ["admin_vagas"] });
+    qc.invalidateQueries({ queryKey: ["admin_dashboard"] });
     qc.invalidateQueries({ queryKey: ["vagas_publicas"] });
   }
 
@@ -95,14 +140,12 @@ export function FilaVagas() {
         motivo_rejeicao_detalhe: detalhe.trim() || null,
       })
       .eq("id", id);
-    if (error) {
-      setErro(`Erro ao rejeitar: ${error.message}`);
-      return;
-    }
+    if (error) return setErro(`Erro ao rejeitar: ${error.message}`);
     setRejeitando(null);
     setDetalhe("");
     setMotivo("fora_do_perfil");
     qc.invalidateQueries({ queryKey: ["admin_vagas"] });
+    qc.invalidateQueries({ queryKey: ["admin_dashboard"] });
   }
 
   return (
@@ -114,6 +157,7 @@ export function FilaVagas() {
             key={v}
             onClick={() => {
               setStatus(v);
+              setBalde("todas");
               setRejeitando(null);
               setErro(null);
             }}
@@ -128,6 +172,31 @@ export function FilaVagas() {
         ))}
       </div>
 
+      {/* baldes de triagem (só em pendentes) */}
+      {status === "pendente" && vagas && vagas.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {(
+            [
+              ["todas", `Todas (${vagas.length})`],
+              ["prontas", `Prontas p/ aprovar (${vagas.filter(estaPronta).length})`],
+              ["atencao", `Precisam de atenção (${vagas.filter(precisaAtencao).length})`],
+            ] as const
+          ).map(([v, l]) => (
+            <button
+              key={v}
+              onClick={() => setBalde(v)}
+              className={`rounded-full px-3 py-1.5 text-[12.5px] font-bold transition-colors ${
+                balde === v
+                  ? "bg-mata-tint text-mata-deep"
+                  : "text-ink-soft hover:text-mata-deep"
+              }`}
+            >
+              {l}
+            </button>
+          ))}
+        </div>
+      )}
+
       {erro && (
         <p className="mt-4 rounded-[9px] border border-[#EBC7BE] bg-barro-tint px-3 py-2.5 text-[14px] text-barro">
           {erro}
@@ -135,83 +204,94 @@ export function FilaVagas() {
       )}
 
       <div className="mt-5 grid gap-3">
-        {isLoading && (
-          <p className="text-[14px] text-ink-soft">Carregando…</p>
-        )}
-        {!isLoading && vagas && vagas.length === 0 && (
+        {isLoading && <p className="text-[14px] text-ink-soft">Carregando…</p>}
+        {!isLoading && visiveis.length === 0 && (
           <p className="rounded-[12px] border border-line bg-surface p-6 text-center text-[14px] text-ink-soft">
-            Nenhuma vaga com este status.
+            Nenhuma vaga aqui.
           </p>
         )}
-        {vagas?.map((v) => (
-          <div
-            key={v.id}
-            className="rounded-[12px] border border-line bg-surface p-4"
-          >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="font-display text-[16px] font-bold leading-tight text-ink">
-                  {v.titulo}
-                </p>
-                <p className="mono-caps mt-1 text-[11.5px] text-ink-soft">
-                  {v.empresa_orgao ?? "—"} · {v.municipio ?? "sem município"} ·{" "}
-                  {v.nivel} · aderência {v.score_aderencia}
-                </p>
+        {visiveis.map((v) => {
+          const selo = seloAderencia(v.score_aderencia);
+          const urg = badgeUrgencia(v.score_urgencia);
+          const flags = flagsAtivas(v);
+          return (
+            <div key={v.id} className="rounded-[12px] border border-line bg-surface p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+                    <Pill cls={selo.cls}>{selo.label} · {v.score_aderencia}</Pill>
+                    {urg && <Pill cls={urg.cls}>{urg.label}</Pill>}
+                    {municipioIndefinido(v) && (
+                      <Pill cls="bg-sol-tint text-sol border-[#EBD5A8]">
+                        Município indefinido
+                      </Pill>
+                    )}
+                    {flags.map((f) => (
+                      <Pill key={f} cls="bg-barro-tint text-barro border-[#EBC7BE]">
+                        {FLAG_LABEL[f] ?? f}
+                      </Pill>
+                    ))}
+                  </div>
+                  <p className="font-display text-[16px] font-bold leading-tight text-ink">
+                    {v.titulo}
+                  </p>
+                  <p className="mono-caps mt-1 text-[11.5px] text-ink-soft">
+                    {v.empresa_orgao ?? "—"} · {v.municipio ?? "sem município"} · {v.nivel}
+                  </p>
+                </div>
+                {status === "pendente" && (
+                  <div className="flex shrink-0 gap-2">
+                    <button
+                      onClick={() => aprovar(v.id)}
+                      className="rounded-[8px] bg-mata px-3.5 py-2 text-[13px] font-bold text-white hover:bg-mata-deep"
+                    >
+                      Aprovar
+                    </button>
+                    <button
+                      onClick={() => setRejeitando(rejeitando === v.id ? null : v.id)}
+                      className="rounded-[8px] border border-line-strong px-3.5 py-2 text-[13px] font-bold text-ink-soft hover:border-barro hover:text-barro"
+                    >
+                      Rejeitar
+                    </button>
+                  </div>
+                )}
               </div>
-              {status === "pendente" && (
-                <div className="flex shrink-0 gap-2">
-                  <button
-                    onClick={() => aprovar(v.id)}
-                    className="rounded-[8px] bg-mata px-3.5 py-2 text-[13px] font-bold text-white hover:bg-mata-deep"
-                  >
-                    Aprovar
-                  </button>
-                  <button
-                    onClick={() =>
-                      setRejeitando(rejeitando === v.id ? null : v.id)
-                    }
-                    className="rounded-[8px] border border-line-strong px-3.5 py-2 text-[13px] font-bold text-ink-soft hover:border-barro hover:text-barro"
-                  >
-                    Rejeitar
-                  </button>
+
+              {rejeitando === v.id && (
+                <div className="mt-3 rounded-[9px] border border-line bg-paper p-3">
+                  <span className="mono-caps block text-[11px] text-ink">
+                    Motivo da rejeição
+                  </span>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <select
+                      value={motivo}
+                      onChange={(e) => setMotivo(e.target.value)}
+                      className="rounded-[8px] border border-line-strong bg-surface px-2.5 py-2 text-[14px] text-ink"
+                    >
+                      {MOTIVOS.map(([mv, ml]) => (
+                        <option key={mv} value={mv}>
+                          {ml}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      value={detalhe}
+                      onChange={(e) => setDetalhe(e.target.value)}
+                      placeholder="Detalhe (opcional)"
+                      className="min-w-[180px] flex-1 rounded-[8px] border border-line-strong bg-surface px-2.5 py-2 text-[14px] text-ink"
+                    />
+                    <button
+                      onClick={() => confirmarRejeicao(v.id)}
+                      className="rounded-[8px] bg-barro px-3.5 py-2 text-[13px] font-bold text-white hover:opacity-90"
+                    >
+                      Confirmar
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
-
-            {rejeitando === v.id && (
-              <div className="mt-3 rounded-[9px] border border-line bg-paper p-3">
-                <span className="mono-caps block text-[11px] text-ink">
-                  Motivo da rejeição
-                </span>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <select
-                    value={motivo}
-                    onChange={(e) => setMotivo(e.target.value)}
-                    className="rounded-[8px] border border-line-strong bg-surface px-2.5 py-2 text-[14px] text-ink"
-                  >
-                    {MOTIVOS.map(([mv, ml]) => (
-                      <option key={mv} value={mv}>
-                        {ml}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    value={detalhe}
-                    onChange={(e) => setDetalhe(e.target.value)}
-                    placeholder="Detalhe (opcional)"
-                    className="min-w-[180px] flex-1 rounded-[8px] border border-line-strong bg-surface px-2.5 py-2 text-[14px] text-ink"
-                  />
-                  <button
-                    onClick={() => confirmarRejeicao(v.id)}
-                    className="rounded-[8px] bg-barro px-3.5 py-2 text-[13px] font-bold text-white hover:opacity-90"
-                  >
-                    Confirmar
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
