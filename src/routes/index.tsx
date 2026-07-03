@@ -1,24 +1,50 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { SiteLayout } from "../components/layout/SiteLayout";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      {
+        title:
+          "BIO — Oportunidades ambientais no Ceará, selecionadas para você",
+      },
+      {
+        name: "description",
+        content:
+          "Curadoria de vagas de estágio e emprego em meio ambiente no Ceará, para estudantes e egressos do Curso Técnico em Meio Ambiente do IFCE Campus Fortaleza.",
+      },
+    ],
+  }),
+  component: Home,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+function Home() {
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <SiteLayout>
+      <section aria-labelledby="hero-title" className="pt-4 sm:pt-8">
+        <p className="mono-caps text-[11px] text-mata">
+          Edição atual · Ceará
+        </p>
+        <h1
+          id="hero-title"
+          className="mt-3 font-display text-ink"
+          style={{
+            fontSize: "clamp(26px, 6vw, 34px)",
+            fontWeight: 700,
+            lineHeight: 1.15,
+            letterSpacing: "-0.01em",
+          }}
+        >
+          Oportunidades ambientais no Ceará, selecionadas para você
+        </h1>
+        <p className="mt-4 max-w-[58ch] text-[16px] leading-relaxed text-ink-soft">
+          O BIO é um observatório de território mantido pela Coordenação do
+          Curso Técnico em Meio Ambiente do IFCE Campus Fortaleza. Reunimos, com
+          curadoria, vagas de estágio e emprego na área ambiental — para que
+          você acompanhe o mercado sem depender de grupos de WhatsApp ou buscas
+          soltas.
+        </p>
+      </section>
+    </SiteLayout>
   );
 }

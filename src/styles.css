@@ -5,27 +5,102 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * Design system definition.
- *
- * The @theme inline block maps CSS custom properties to Tailwind utility
- * classes (e.g. --color-primary -> bg-primary, text-primary).
- *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
- *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
+ * BIO — Observatório de Oportunidades Ambientais
+ * Padrão visual: "Guia de Campo Contemporâneo"
+ * Tokens exatos do brief F0-05 v2.0. Fundo = papel quente, nunca branco.
  */
 
+:root {
+  /* Superfícies */
+  --paper: #F6F3EB;
+  --surface: #FFFFFF;
+  --surface-dim: #EFEBDF;
+  --line: #E0DBCB;
+  --line-strong: #C9C2AC;
+
+  /* Tinta */
+  --ink: #1B2A21;
+  --ink-soft: #55645B;
+  --ink-faint: #8A968D;
+
+  /* Verde-mata (cor de leitura e ação) */
+  --mata: #0D6B44;
+  --mata-deep: #0A4F33;
+  --mata-tint: #E4F0E7;
+  --mata-line: #BBD8C5;
+
+  /* Sinais quentes */
+  --sol: #B97A1B;
+  --sol-tint: #FAEFD9;
+  --barro: #B8432A;
+  --barro-tint: #F8E5DF;
+
+  /* Neutros úteis */
+  --ceu: #39678F;
+  --ceu-tint: #E7EEF4;
+  --whatsapp: #1D9E52;
+
+  /* Raios */
+  --radius: 16px;
+  --radius-sm: 9px;
+  --radius-pill: 99px;
+
+  /* shadcn compat (mapeados para o BIO) */
+  --background: var(--paper);
+  --foreground: var(--ink);
+  --card: var(--surface);
+  --card-foreground: var(--ink);
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --primary: var(--mata);
+  --primary-foreground: #FFFFFF;
+  --secondary: var(--surface-dim);
+  --secondary-foreground: var(--ink);
+  --muted: var(--surface-dim);
+  --muted-foreground: var(--ink-soft);
+  --accent: var(--mata-tint);
+  --accent-foreground: var(--mata-deep);
+  --destructive: var(--barro);
+  --destructive-foreground: #FFFFFF;
+  --border: var(--line);
+  --input: var(--line);
+  --ring: var(--mata);
+}
+
 @theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
+
+  --font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Spline Sans Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-sans: var(--font-body);
+
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-surface-dim: var(--surface-dim);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+
+  --color-ink: var(--ink);
+  --color-ink-soft: var(--ink-soft);
+  --color-ink-faint: var(--ink-faint);
+
+  --color-mata: var(--mata);
+  --color-mata-deep: var(--mata-deep);
+  --color-mata-tint: var(--mata-tint);
+  --color-mata-line: var(--mata-line);
+
+  --color-sol: var(--sol);
+  --color-sol-tint: var(--sol-tint);
+  --color-barro: var(--barro);
+  --color-barro-tint: var(--barro-tint);
+  --color-ceu: var(--ceu);
+  --color-ceu-tint: var(--ceu-tint);
+  --color-whatsapp: var(--whatsapp);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -46,90 +121,6 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-ring-offset-background: var(--background);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
-}
-
-:root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
-}
-
-.dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
 }
 
 @layer base {
@@ -137,8 +128,50 @@
     border-color: var(--color-border);
   }
 
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
-    background-color: var(--color-background);
-    color: var(--color-foreground);
+    background-color: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.55;
+    /* Padrão topográfico sutil — linhas de nível a ~4,5% de opacidade */
+    background-image: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420' viewBox='0 0 420 420'%3E%3Cg fill='none' stroke='%231B2A21' stroke-opacity='0.045' stroke-width='1'%3E%3Cpath d='M-40 120 C 60 60, 160 180, 260 120 S 460 60, 520 140'/%3E%3Cpath d='M-40 170 C 60 110, 160 230, 260 170 S 460 110, 520 190'/%3E%3Cpath d='M-40 220 C 60 160, 160 280, 260 220 S 460 160, 520 240'/%3E%3Cpath d='M-40 270 C 60 210, 160 330, 260 270 S 460 210, 520 290'/%3E%3Cpath d='M-40 320 C 60 260, 160 380, 260 320 S 460 260, 520 340'/%3E%3Cpath d='M-40 70 C 60 10, 160 130, 260 70 S 460 10, 520 90'/%3E%3C/g%3E%3C/svg%3E");
+    background-repeat: repeat;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    color: var(--ink);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--mata);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  ::selection {
+    background: var(--mata-tint);
+    color: var(--mata-deep);
+  }
+}
+
+@utility mono-caps {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }
