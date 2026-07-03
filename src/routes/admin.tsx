@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { Dashboard } from "@/components/admin/Dashboard";
 import { CadastroVaga } from "@/components/admin/CadastroVaga";
 import { FilaVagas } from "@/components/admin/FilaVagas";
+import { Relatorios } from "@/components/admin/Relatorios";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -140,7 +141,9 @@ function Login({
 }
 
 function Painel({ email, signOut }: { email: string; signOut: () => void }) {
-  const [aba, setAba] = useState<"painel" | "fila" | "cadastrar">("painel");
+  const [aba, setAba] = useState<"painel" | "fila" | "cadastrar" | "relatorios">(
+    "painel",
+  );
 
   return (
     <div className="min-h-screen bg-paper">
@@ -173,6 +176,7 @@ function Painel({ email, signOut }: { email: string; signOut: () => void }) {
               ["painel", "Painel"],
               ["fila", "Fila de curadoria"],
               ["cadastrar", "Cadastrar vaga"],
+              ["relatorios", "Relatórios"],
             ] as const
           ).map(([v, l]) => (
             <button
@@ -192,6 +196,7 @@ function Painel({ email, signOut }: { email: string; signOut: () => void }) {
         {aba === "painel" && <Dashboard onIrParaFila={() => setAba("fila")} />}
         {aba === "fila" && <FilaVagas />}
         {aba === "cadastrar" && <CadastroVaga />}
+        {aba === "relatorios" && <Relatorios />}
       </main>
     </div>
   );
