@@ -8,9 +8,12 @@ const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_onG8SVFtjNd025d_gW8oLQ_-QxvE6iQ
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: {
-    // Portal público: leitura anônima, sem sessão persistida (SSR-safe).
-    // O painel autenticado (Fase 1A/P5) configurará auth próprio.
-    persistSession: false,
-    autoRefreshToken: false,
+    // Sessão persistida (localStorage) para o login da coordenação (/admin).
+    // supabase-js só acessa o storage no browser, então é SSR-safe: durante o
+    // render no servidor não há acesso a localStorage. O portal público segue
+    // funcionando como leitura anônima (o anon simplesmente não tem sessão).
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
   },
 });
