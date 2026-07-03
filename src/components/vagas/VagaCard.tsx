@@ -4,12 +4,6 @@ import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { registrarFeedback } from "@/lib/feedback";
 import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-import {
   tipoLabel,
   modalidadeLabel,
   seloAderenciaConfig,
@@ -59,6 +53,7 @@ function Pill({
 export function VagaCard({ vaga }: { vaga: VagaPublica }) {
   const [copiado, setCopiado] = useState(false);
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
+  const [menuAberto, setMenuAberto] = useState(false);
   const selo = seloAderenciaConfig[vaga.selo_aderencia];
   const badge = urgenciaBadge(vaga.score_urgencia);
   const link = vaga.link_candidatura ?? undefined;
@@ -111,6 +106,7 @@ export function VagaCard({ vaga }: { vaga: VagaPublica }) {
   async function enviarFeedback(opcao: (typeof feedbackOpcoes)[number]) {
     // Confirmação otimista: mostramos a mensagem mesmo se for feedback repetido
     // (o banco deduplica silenciosamente). Erros de rede não expõem detalhe técnico.
+    setMenuAberto(false);
     setFeedbackMsg(opcao.confirmacao);
     await registrarFeedback(vaga.id, opcao.tipo);
   }
@@ -213,22 +209,44 @@ export function VagaCard({ vaga }: { vaga: VagaPublica }) {
             ✓ {feedbackMsg}
           </span>
         ) : (
-          <DropdownMenu>
-            <DropdownMenuTrigger className="text-[13px] font-bold text-ink-soft underline decoration-dotted underline-offset-[3px] hover:text-barro focus:outline-none">
+          <div className="relative">
+            <button
+              type="button"
+              aria-haspopup="menu"
+              aria-expanded={menuAberto}
+              onClick={() => setMenuAberto((v) => !v)}
+              className="text-[13px] font-bold text-ink-soft underline decoration-dotted underline-offset-[3px] hover:text-barro"
+            >
               Informar problema
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              {feedbackOpcoes.map((opcao) => (
-                <DropdownMenuItem
-                  key={opcao.tipo}
-                  onSelect={() => enviarFeedback(opcao)}
-                  className="cursor-pointer text-[14px]"
+            </button>
+            {menuAberto && (
+              <>
+                {/* fecha ao clicar fora */}
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setMenuAberto(false)}
+                  aria-hidden
+                />
+                {/* abre para cima, dentro do card (evita clip do overflow-hidden) */}
+                <div
+                  role="menu"
+                  className="absolute bottom-full right-0 z-50 mb-2 w-60 overflow-hidden rounded-[9px] border border-line bg-surface p-1 shadow-[0_10px_30px_-10px_rgba(27,42,33,0.35)]"
                 >
-                  {opcao.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  {feedbackOpcoes.map((opcao) => (
+                    <button
+                      key={opcao.tipo}
+                      type="button"
+                      role="menuitem"
+                      onClick={() => enviarFeedback(opcao)}
+                      className="block w-full rounded-[6px] px-3 py-2.5 text-left text-[14px] text-ink hover:bg-surface-dim"
+                    >
+                      {opcao.label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
         )}
       </div>
     </article>
