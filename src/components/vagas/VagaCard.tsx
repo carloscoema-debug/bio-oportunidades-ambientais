@@ -15,6 +15,7 @@ export interface VagaPublica {
   titulo: string;
   empresa_orgao: string | null;
   tipo: string;
+  regiao: string;
   modalidade: string | null;
   municipio: string | null;
   carga_horaria: string | null;
