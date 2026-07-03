@@ -2,11 +2,19 @@ import { useState, type ReactNode } from "react";
 import { parseISO, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
+import { registrarFeedback } from "@/lib/feedback";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import {
   tipoLabel,
   modalidadeLabel,
   seloAderenciaConfig,
   urgenciaBadge,
+  feedbackOpcoes,
   type SeloAderencia,
 } from "@/lib/glossario";
 
@@ -50,6 +58,7 @@ function Pill({
 
 export function VagaCard({ vaga }: { vaga: VagaPublica }) {
   const [copiado, setCopiado] = useState(false);
+  const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
   const selo = seloAderenciaConfig[vaga.selo_aderencia];
   const badge = urgenciaBadge(vaga.score_urgencia);
   const link = vaga.link_candidatura ?? undefined;
@@ -97,6 +106,13 @@ export function VagaCard({ vaga }: { vaga: VagaPublica }) {
     } catch {
       /* ignore */
     }
+  }
+
+  async function enviarFeedback(opcao: (typeof feedbackOpcoes)[number]) {
+    // Confirmação otimista: mostramos a mensagem mesmo se for feedback repetido
+    // (o banco deduplica silenciosamente). Erros de rede não expõem detalhe técnico.
+    setFeedbackMsg(opcao.confirmacao);
+    await registrarFeedback(vaga.id, opcao.tipo);
   }
 
   return (
@@ -192,12 +208,28 @@ export function VagaCard({ vaga }: { vaga: VagaPublica }) {
         <span className="max-w-[38ch] text-[12.5px] text-ink-faint">
           {DISCLAIMER}
         </span>
-        <button
-          className="text-[13px] font-bold text-ink-soft underline decoration-dotted underline-offset-[3px] hover:text-barro"
-          type="button"
-        >
-          Informar problema
-        </button>
+        {feedbackMsg ? (
+          <span className="text-[13px] font-bold text-mata-deep">
+            ✓ {feedbackMsg}
+          </span>
+        ) : (
+          <DropdownMenu>
+            <DropdownMenuTrigger className="text-[13px] font-bold text-ink-soft underline decoration-dotted underline-offset-[3px] hover:text-barro focus:outline-none">
+              Informar problema
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              {feedbackOpcoes.map((opcao) => (
+                <DropdownMenuItem
+                  key={opcao.tipo}
+                  onSelect={() => enviarFeedback(opcao)}
+                  className="cursor-pointer text-[14px]"
+                >
+                  {opcao.label}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
     </article>
   );

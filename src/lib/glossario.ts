@@ -44,6 +44,26 @@ export const seloAderenciaConfig: Record<
   },
 };
 
+// Opções do menu "Informar problema" (feedback do estudante).
+// Rótulos e mensagens de confirmação conforme glossário institucional (F0-06).
+export const feedbackOpcoes = [
+  {
+    tipo: "link_invalido",
+    label: "O link não funciona",
+    confirmacao: "Obrigado! Vamos verificar o link.",
+  },
+  {
+    tipo: "vaga_encerrada",
+    label: "A vaga já encerrou",
+    confirmacao: "Obrigado! Vamos confirmar e atualizar.",
+  },
+  {
+    tipo: "vaga_suspeita",
+    label: "Esta vaga parece suspeita",
+    confirmacao: "Obrigado pelo alerta. A vaga será verificada.",
+  },
+] as const;
+
 // Badge de urgência derivado de score_urgencia (separado do selo de aderência).
 export function urgenciaBadge(
   score: number,
