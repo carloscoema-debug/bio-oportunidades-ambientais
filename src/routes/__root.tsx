@@ -77,21 +77,42 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "BIO — Observatório de Oportunidades Ambientais" },
+      {
+        name: "description",
+        content:
+          "Curadoria de vagas de estágio e emprego em meio ambiente no Ceará, para estudantes e egressos do Curso Técnico em Meio Ambiente do IFCE Campus Fortaleza.",
+      },
+      {
+        name: "author",
+        content: "IFCE Campus Fortaleza — Curso Técnico em Meio Ambiente",
+      },
+      {
+        property: "og:title",
+        content: "BIO — Observatório de Oportunidades Ambientais",
+      },
+      {
+        property: "og:description",
+        content:
+          "Vagas de estágio e emprego em meio ambiente no Ceará, selecionadas para estudantes e egressos do IFCE.",
+      },
       { property: "og:type", content: "website" },
+      { property: "og:locale", content: "pt_BR" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      {
+        rel: "preconnect",
+        href: "https://fonts.gstatic.com",
+        crossOrigin: "anonymous",
+      },
       {
         rel: "stylesheet",
-        href: appCss,
+        href: "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&family=Atkinson+Hyperlegible:wght@400;700&family=Spline+Sans+Mono:wght@500;600&display=swap",
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
   }),
   shellComponent: RootShell,
