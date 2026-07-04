@@ -32,6 +32,47 @@ function extrairTag(item: string, tag: string): string | null {
   return m ? limparTexto(m[1]) : null;
 }
 
+// Link de uma <entry> Atom. O Google Alerts usa redirect — o URL real vem no
+// parâmetro ?url=. Se não houver, usa o href direto.
+function linkAtom(entry: string): string | null {
+  const m = entry.match(/<link[^>]*href="([^"]+)"/i);
+  if (!m) return null;
+  const href = m[1].replace(/&amp;/g, "&");
+  try {
+    const real = new URL(href).searchParams.get("url");
+    if (real) return real;
+  } catch { /* ignore */ }
+  return href;
+}
+
+// Extrai itens de feed RSS (<item>) OU Atom (<entry>) — o Google Alerts é Atom.
+function extrairItens(
+  xml: string,
+): { titulo: string; link: string; descricao: string }[] {
+  const out: { titulo: string; link: string; descricao: string }[] = [];
+  for (const m of xml.matchAll(/<item>([\s\S]*?)<\/item>/gi)) {
+    const it = m[1];
+    const titulo = extrairTag(it, "title");
+    const link = extrairTag(it, "link");
+    if (titulo && link) {
+      out.push({ titulo, link, descricao: extrairTag(it, "description") ?? "" });
+    }
+  }
+  for (const m of xml.matchAll(/<entry>([\s\S]*?)<\/entry>/gi)) {
+    const en = m[1];
+    const titulo = extrairTag(en, "title");
+    const link = linkAtom(en);
+    if (titulo && link) {
+      out.push({
+        titulo,
+        link,
+        descricao: extrairTag(en, "content") ?? extrairTag(en, "summary") ?? "",
+      });
+    }
+  }
+  return out;
+}
+
 function urlCanonica(url: string): string {
   try {
     const u = new URL(url.trim());
@@ -89,15 +130,10 @@ Deno.serve(async () => {
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       const xml = await resp.text();
 
-      const itens = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/gi)].map((m) => m[1]);
+      const itens = extrairItens(xml);
       encontrados = itens.length;
 
-      for (const item of itens) {
-        const titulo = extrairTag(item, "title");
-        const link = extrairTag(item, "link");
-        const descricao = extrairTag(item, "description") ?? "";
-        if (!titulo || !link) continue;
-
+      for (const { titulo, link, descricao } of itens) {
         // filtro por palavras-chave (título + descrição)
         const alvo = norm(`${titulo} ${descricao}`);
         if (!PALAVRAS_CHAVE.some((p) => alvo.includes(norm(p)))) continue;
