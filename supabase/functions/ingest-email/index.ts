@@ -139,8 +139,19 @@ Deno.serve(async (req) => {
     return json({ ok: false, erro: "não autorizado" }, 401);
   }
 
+  // Aceita JSON ou form-urlencoded/multipart (o Make escapa cada campo com segurança).
   let payload: Record<string, unknown> = {};
-  try { payload = await req.json(); } catch { return json({ ok: false, erro: "JSON inválido" }, 400); }
+  const ct = (req.headers.get("content-type") ?? "").toLowerCase();
+  try {
+    if (ct.includes("application/json")) {
+      payload = await req.json();
+    } else {
+      const fd = await req.formData();
+      payload = Object.fromEntries([...fd.entries()].map(([k, v]) => [k, String(v)]));
+    }
+  } catch {
+    return json({ ok: false, erro: "corpo ilegível (use JSON ou form-urlencoded)" }, 400);
+  }
 
   const from = String(payload.from ?? payload.sender ?? payload.From ?? "");
   const subject = String(payload.subject ?? payload.Subject ?? "");
