@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth";
 import { Dashboard } from "@/components/admin/Dashboard";
 import { CadastroVaga } from "@/components/admin/CadastroVaga";
 import { FilaVagas } from "@/components/admin/FilaVagas";
+import { Coleta } from "@/components/admin/Coleta";
 import { Relatorios } from "@/components/admin/Relatorios";
 
 export const Route = createFileRoute("/admin")({
@@ -141,9 +142,9 @@ function Login({
 }
 
 function Painel({ email, signOut }: { email: string; signOut: () => void }) {
-  const [aba, setAba] = useState<"painel" | "fila" | "cadastrar" | "relatorios">(
-    "painel",
-  );
+  const [aba, setAba] = useState<
+    "painel" | "fila" | "cadastrar" | "coleta" | "relatorios"
+  >("painel");
 
   return (
     <div className="min-h-screen bg-paper">
@@ -176,6 +177,7 @@ function Painel({ email, signOut }: { email: string; signOut: () => void }) {
               ["painel", "Painel"],
               ["fila", "Fila de curadoria"],
               ["cadastrar", "Cadastrar vaga"],
+              ["coleta", "Coleta"],
               ["relatorios", "Relatórios"],
             ] as const
           ).map(([v, l]) => (
@@ -196,6 +198,7 @@ function Painel({ email, signOut }: { email: string; signOut: () => void }) {
         {aba === "painel" && <Dashboard onIrParaFila={() => setAba("fila")} />}
         {aba === "fila" && <FilaVagas />}
         {aba === "cadastrar" && <CadastroVaga />}
+        {aba === "coleta" && <Coleta />}
         {aba === "relatorios" && <Relatorios />}
       </main>
     </div>
