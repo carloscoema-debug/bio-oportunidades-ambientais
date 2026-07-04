@@ -73,10 +73,19 @@ function extrairItens(
   return out;
 }
 
+// Parâmetros de rastreio (não identificam a vaga) — removidos para deduplicar bem.
+const TRACKING = /^(utm_|mc_|_hs|fbclid$|gclid$|ref$|refid$|source$|src$|campaign$|trk$|trackingid$|from$|spm$|igshid$)/i;
 function urlCanonica(url: string): string {
   try {
     const u = new URL(url.trim());
-    return `https://${u.host.replace(/^www\./, "")}${u.pathname.replace(/\/$/, "")}`.toLowerCase();
+    const host = u.host.replace(/^www\./, "").toLowerCase();
+    const path = u.pathname.replace(/\/$/, "").toLowerCase();
+    // preserva o query que IDENTIFICA a vaga (jk, currentJobId, id…), tira só rastreio.
+    const params = [...u.searchParams.entries()]
+      .filter(([k]) => !TRACKING.test(k))
+      .sort(([a], [b]) => a.localeCompare(b));
+    const qs = params.length ? "?" + params.map(([k, v]) => `${k}=${v}`).join("&") : "";
+    return `https://${host}${path}${qs}`;
   } catch {
     return url.trim().toLowerCase();
   }
