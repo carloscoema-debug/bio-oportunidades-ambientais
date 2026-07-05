@@ -546,6 +546,7 @@ export type Database = {
           carga_horaria: string | null
           checklist_publicacao: Json
           contagem_cliques: number
+          contato_submissao: string | null
           count_link_invalido: number
           count_me_candidatei: number
           count_vaga_encerrada: number
@@ -562,6 +563,7 @@ export type Database = {
           fonte_id: string | null
           forma_candidatura: string | null
           id: string
+          ip_hash_submissao: string | null
           link_candidatura: string | null
           localizacao_original: string | null
           mensagem_verificacao_link: string | null
@@ -601,6 +603,7 @@ export type Database = {
           carga_horaria?: string | null
           checklist_publicacao?: Json
           contagem_cliques?: number
+          contato_submissao?: string | null
           count_link_invalido?: number
           count_me_candidatei?: number
           count_vaga_encerrada?: number
@@ -617,6 +620,7 @@ export type Database = {
           fonte_id?: string | null
           forma_candidatura?: string | null
           id?: string
+          ip_hash_submissao?: string | null
           link_candidatura?: string | null
           localizacao_original?: string | null
           mensagem_verificacao_link?: string | null
@@ -656,6 +660,7 @@ export type Database = {
           carga_horaria?: string | null
           checklist_publicacao?: Json
           contagem_cliques?: number
+          contato_submissao?: string | null
           count_link_invalido?: number
           count_me_candidatei?: number
           count_vaga_encerrada?: number
@@ -672,6 +677,7 @@ export type Database = {
           fonte_id?: string | null
           forma_candidatura?: string | null
           id?: string
+          ip_hash_submissao?: string | null
           link_candidatura?: string | null
           localizacao_original?: string | null
           mensagem_verificacao_link?: string | null
