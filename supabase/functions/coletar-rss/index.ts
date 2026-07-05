@@ -124,6 +124,28 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
+  // Autenticação na própria função (não depende do gateway verify_jwt):
+  // cron via x-bio-secret OU admin autenticado (botão "Coletar agora" do painel).
+  let autorizado = false;
+  const segredo = req.headers.get("x-bio-secret");
+  if (segredo) {
+    const { data: cfg } = await supabase
+      .from("app_config").select("valor").eq("chave", "ingest_email_secret").maybeSingle();
+    if (cfg?.valor && segredo === cfg.valor) autorizado = true;
+  }
+  if (!autorizado) {
+    const asUser = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: req.headers.get("Authorization") ?? "" } } },
+    );
+    const { data: isAdmin } = await asUser.rpc("bio_is_admin");
+    if (isAdmin) autorizado = true;
+  }
+  if (!autorizado) {
+    return Response.json({ ok: false, erro: "não autorizado" }, { status: 401, headers: CORS });
+  }
+
   const { data: fontes, error: erroFontes } = await supabase
     .from("fontes_coleta")
     .select("id, nome, url, score_confiabilidade")
