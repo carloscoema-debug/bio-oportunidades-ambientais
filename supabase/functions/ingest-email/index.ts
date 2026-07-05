@@ -191,6 +191,14 @@ Deno.serve(async (req) => {
     (f) => f.padrao_remetente && fromNorm.includes(String(f.padrao_remetente).toLowerCase()),
   );
   if (!fonte) {
+    // registra para não perder o e-mail (fila de "não reconhecidos" no painel)
+    await supabase.from("emails_recebidos").insert({
+      remetente: from || null,
+      assunto: subject || null,
+      corpo_raw: corpo.slice(0, 200000),
+      status_parsing: "nao_reconhecido",
+      vagas_geradas: 0,
+    });
     return json({ ok: true, ignorado: true, motivo: `remetente não reconhecido: ${from || "(vazio)"}` });
   }
 
@@ -273,6 +281,16 @@ Deno.serve(async (req) => {
       .update({ ultima_execucao: new Date().toISOString(), falhas_consecutivas: 0 })
       .eq("id", fonte.id);
   }
+
+  // registra o e-mail processado (auditoria + limpeza LGPD 90d + fila técnica)
+  await supabase.from("emails_recebidos").insert({
+    remetente: from || null,
+    assunto: subject || null,
+    corpo_raw: corpo.slice(0, 200000),
+    fonte_id: fonte.id,
+    status_parsing: statusExec === "falha_total" ? "erro" : "processado",
+    vagas_geradas: novos,
+  });
 
   return json({
     ok: true, fonte: fonte.nome, encontrados, novos, duplicados, erros, status: statusExec,
