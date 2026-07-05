@@ -851,6 +851,10 @@ export type Database = {
       }
     }
     Functions: {
+      assinar_newsletter: {
+        Args: { p_email: string; p_finalidade?: string; p_termo_versao: string }
+        Returns: Json
+      }
       bio_calcular_expiracao: {
         Args: { p_prazo: string; p_publicacao: string; p_sem_prazo: boolean }
         Returns: string
@@ -876,6 +880,7 @@ export type Database = {
         }
         Returns: number
       }
+      descadastrar_newsletter: { Args: { p_token: string }; Returns: Json }
       registrar_clique: { Args: { p_vaga_id: string }; Returns: Json }
       registrar_feedback: {
         Args: {
