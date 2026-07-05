@@ -96,9 +96,16 @@ function Home() {
         <p className="mt-5 max-w-[56ch] text-[16.5px] leading-relaxed text-ink-soft">
           O BIO reúne e verifica vagas de estágio, emprego e seleções públicas em meio
           ambiente que já estão abertas no mercado. A curadoria é feita pela coordenação do{" "}
-          <span className="text-ink">Curso Técnico em Meio Ambiente do IFCE Campus
-          Fortaleza</span>: nós selecionamos e organizamos as oportunidades — a
-          candidatura acontece sempre no site oficial de cada uma.
+          <a
+            href="https://portal.ifce.edu.br/cursos/fortaleza-tecnico-subsequente-meio-ambiente/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-bold text-ink underline decoration-mata/40 decoration-2 underline-offset-2 transition-colors hover:text-mata-deep hover:decoration-mata"
+          >
+            Curso Técnico em Meio Ambiente do IFCE Campus Fortaleza
+          </a>
+          : nós selecionamos e organizamos as oportunidades — a candidatura acontece
+          sempre no site oficial de cada uma.
         </p>
       </section>
 

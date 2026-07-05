@@ -94,9 +94,23 @@ function Divulgar() {
               Toda vaga passa pela <strong className="text-ink">curadoria</strong> antes de ir ao ar.
               Se faltar algum detalhe, falamos com você pelo e-mail informado.
             </p>
-            <a href="/" className="mono-caps mt-6 inline-flex items-center gap-1.5 rounded-full bg-mata px-5 py-2.5 text-[12px] text-white transition-colors hover:bg-mata-deep">
-              Ver as vagas do portal ↗
-            </a>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-2.5">
+              <a href="/" className="mono-caps inline-flex items-center gap-1.5 rounded-full bg-mata px-5 py-2.5 text-[12px] text-white transition-colors hover:bg-mata-deep">
+                Ver as vagas do portal ↗
+              </a>
+              <a
+                href="https://portal.ifce.edu.br/cursos/fortaleza-tecnico-subsequente-meio-ambiente/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mono-caps inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-mata-line bg-surface px-5 py-2.5 text-[12px] text-mata-deep transition-colors hover:border-mata hover:bg-mata-tint"
+              >
+                Conheça o curso técnico ↗
+              </a>
+            </div>
+            <p className="mt-4 text-[12.5px] leading-relaxed text-ink-faint">
+              O BIO é mantido pelo Curso Técnico em Meio Ambiente do IFCE — formando
+              profissionais para a área que você contrata.
+            </p>
           </div>
         </section>
       </SiteLayout>
