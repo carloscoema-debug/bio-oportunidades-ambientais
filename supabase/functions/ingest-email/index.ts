@@ -41,10 +41,11 @@ const norm = (s: string) =>
 function limparTexto(s: string): string {
   return s
     .replace(/<!\[CDATA\[|\]\]>/g, "")
-    .replace(/<[^>]+>/g, " ")
+    // decodifica entidades PRIMEIRO (tags podem vir como &lt;b&gt;), depois remove tags.
     .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
     .replace(/&#8211;/g, "–").replace(/&#8217;/g, "'").replace(/&nbsp;/g, " ")
     .replace(/&#39;/g, "'").replace(/&quot;/g, '"')
+    .replace(/<[^>]+>/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }

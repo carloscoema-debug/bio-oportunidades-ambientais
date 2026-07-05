@@ -14,15 +14,27 @@ const PALAVRAS_CHAVE = [
   "contratação", "recrutamento", "trabalhe conosco",
 ];
 
+// Sinais de que o item é NOTÍCIA/processo encerrado, não uma oportunidade aberta.
+// Conservador: só termos que quase nunca são uma vaga a que um estudante se candidata.
+const EXCLUIR = [
+  "recepcionad", "toma posse", "tomam posse", "gabarito", "resultado final",
+  "resultado do", "resultado da", "homologa", "convocacao", "convocados",
+  "convocada", "reuniao", "assembleia", "recepciona", "sao recepcion",
+];
+
 const norm = (s: string) =>
   s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
 function limparTexto(s: string): string {
   return s
     .replace(/<!\[CDATA\[|\]\]>/g, "")
-    .replace(/<[^>]+>/g, " ")
+    // decodifica entidades PRIMEIRO — o Google Alerts manda <b> como &lt;b&gt;;
+    // se tirássemos as tags antes, o <b> revelado sobreviveria no título.
     .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
     .replace(/&#8211;/g, "–").replace(/&#8217;/g, "'").replace(/&nbsp;/g, " ")
+    .replace(/&#39;/g, "'").replace(/&quot;/g, '"')
+    // agora remove quaisquer tags (inclusive as que estavam entidade-codificadas)
+    .replace(/<[^>]+>/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -156,6 +168,8 @@ Deno.serve(async (req) => {
         // filtro por palavras-chave (título + descrição)
         const alvo = norm(`${titulo} ${descricao}`);
         if (!PALAVRAS_CHAVE.some((p) => alvo.includes(norm(p)))) continue;
+        // descarta notícia/processo encerrado (filtro negativo conservador)
+        if (EXCLUIR.some((n) => alvo.includes(norm(n)))) continue;
 
         const hashUrl = await sha256(urlCanonica(link));
 
