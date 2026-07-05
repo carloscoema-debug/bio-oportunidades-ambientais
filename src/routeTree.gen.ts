@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RelatorioRouteImport } from './routes/relatorio'
 import { Route as PoliticaDePrivacidadeRouteImport } from './routes/politica-de-privacidade'
 import { Route as DivulgarRouteImport } from './routes/divulgar'
 import { Route as DescadastrarRouteImport } from './routes/descadastrar'
@@ -16,6 +17,11 @@ import { Route as ComoSeCandidatarRouteImport } from './routes/como-se-candidata
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 
+const RelatorioRoute = RelatorioRouteImport.update({
+  id: '/relatorio',
+  path: '/relatorio',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PoliticaDePrivacidadeRoute = PoliticaDePrivacidadeRouteImport.update({
   id: '/politica-de-privacidade',
   path: '/politica-de-privacidade',
@@ -54,6 +60,7 @@ export interface FileRoutesByFullPath {
   '/descadastrar': typeof DescadastrarRoute
   '/divulgar': typeof DivulgarRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
+  '/relatorio': typeof RelatorioRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByTo {
   '/descadastrar': typeof DescadastrarRoute
   '/divulgar': typeof DivulgarRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
+  '/relatorio': typeof RelatorioRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,6 +79,7 @@ export interface FileRoutesById {
   '/descadastrar': typeof DescadastrarRoute
   '/divulgar': typeof DivulgarRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
+  '/relatorio': typeof RelatorioRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -81,6 +90,7 @@ export interface FileRouteTypes {
     | '/descadastrar'
     | '/divulgar'
     | '/politica-de-privacidade'
+    | '/relatorio'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -89,6 +99,7 @@ export interface FileRouteTypes {
     | '/descadastrar'
     | '/divulgar'
     | '/politica-de-privacidade'
+    | '/relatorio'
   id:
     | '__root__'
     | '/'
@@ -97,6 +108,7 @@ export interface FileRouteTypes {
     | '/descadastrar'
     | '/divulgar'
     | '/politica-de-privacidade'
+    | '/relatorio'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -106,10 +118,18 @@ export interface RootRouteChildren {
   DescadastrarRoute: typeof DescadastrarRoute
   DivulgarRoute: typeof DivulgarRoute
   PoliticaDePrivacidadeRoute: typeof PoliticaDePrivacidadeRoute
+  RelatorioRoute: typeof RelatorioRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/relatorio': {
+      id: '/relatorio'
+      path: '/relatorio'
+      fullPath: '/relatorio'
+      preLoaderRoute: typeof RelatorioRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/politica-de-privacidade': {
       id: '/politica-de-privacidade'
       path: '/politica-de-privacidade'
@@ -162,7 +182,18 @@ const rootRouteChildren: RootRouteChildren = {
   DescadastrarRoute: DescadastrarRoute,
   DivulgarRoute: DivulgarRoute,
   PoliticaDePrivacidadeRoute: PoliticaDePrivacidadeRoute,
+  RelatorioRoute: RelatorioRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
