@@ -42,6 +42,8 @@ interface VagaAdmin {
   origem: string | null;
   origem_externa_nao_verificada: boolean | null;
   contato_submissao: string | null;
+  status_link: string | null;
+  mensagem_verificacao_link: string | null;
 }
 
 function mensagemBloqueio(msg: string): string {
@@ -106,7 +108,7 @@ export function FilaVagas() {
       const { data, error } = await supabase
         .from("vagas")
         .select(
-          "id, titulo, empresa_orgao, tipo, nivel, municipio, regiao, score_aderencia, score_urgencia, flags_incompatibilidade, status, origem, origem_externa_nao_verificada, contato_submissao",
+          "id, titulo, empresa_orgao, tipo, nivel, municipio, regiao, score_aderencia, score_urgencia, flags_incompatibilidade, status, origem, origem_externa_nao_verificada, contato_submissao, status_link, mensagem_verificacao_link",
         )
         .eq("status", status)
         .order("score_aderencia", { ascending: false });
@@ -239,6 +241,9 @@ export function FilaVagas() {
                     ))}
                     {v.origem_externa_nao_verificada && (
                       <Pill cls="bg-sol-tint text-sol border-[#EBD5A8]">Origem externa</Pill>
+                    )}
+                    {v.status_link === "inacessivel" && (
+                      <Pill cls="bg-barro-tint text-barro border-[#EBC7BE]">Link inacessível</Pill>
                     )}
                   </div>
                   <p className="font-display text-[16px] font-bold leading-tight text-ink">
