@@ -161,6 +161,10 @@ Deno.serve(async (req) => {
   const corpo = html || text;
   if (!corpo) return json({ ok: false, erro: "e-mail sem corpo (html/text)" }, 400);
 
+  // reprocessamento (via reprocessar-email) não regrava em emails_recebidos —
+  // a própria reprocessar-email atualiza a linha original.
+  const reprocessando = req.headers.get("x-bio-reprocess") === "1";
+
   // Captura o e-mail de confirmação de encaminhamento do Gmail (setup do Canal B).
   // Grava código + link em app_config para a coordenação confirmar o encaminhamento.
   if (from.toLowerCase().includes("forwarding-noreply@google.com") ||
@@ -192,13 +196,15 @@ Deno.serve(async (req) => {
   );
   if (!fonte) {
     // registra para não perder o e-mail (fila de "não reconhecidos" no painel)
-    await supabase.from("emails_recebidos").insert({
-      remetente: from || null,
-      assunto: subject || null,
-      corpo_raw: corpo.slice(0, 200000),
-      status_parsing: "nao_reconhecido",
-      vagas_geradas: 0,
-    });
+    if (!reprocessando) {
+      await supabase.from("emails_recebidos").insert({
+        remetente: from || null,
+        assunto: subject || null,
+        corpo_raw: corpo.slice(0, 200000),
+        status_parsing: "nao_reconhecido",
+        vagas_geradas: 0,
+      });
+    }
     return json({ ok: true, ignorado: true, motivo: `remetente não reconhecido: ${from || "(vazio)"}` });
   }
 
@@ -283,14 +289,16 @@ Deno.serve(async (req) => {
   }
 
   // registra o e-mail processado (auditoria + limpeza LGPD 90d + fila técnica)
-  await supabase.from("emails_recebidos").insert({
-    remetente: from || null,
-    assunto: subject || null,
-    corpo_raw: corpo.slice(0, 200000),
-    fonte_id: fonte.id,
-    status_parsing: statusExec === "falha_total" ? "erro" : "processado",
-    vagas_geradas: novos,
-  });
+  if (!reprocessando) {
+    await supabase.from("emails_recebidos").insert({
+      remetente: from || null,
+      assunto: subject || null,
+      corpo_raw: corpo.slice(0, 200000),
+      fonte_id: fonte.id,
+      status_parsing: statusExec === "falha_total" ? "erro" : "processado",
+      vagas_geradas: novos,
+    });
+  }
 
   return json({
     ok: true, fonte: fonte.nome, encontrados, novos, duplicados, erros, status: statusExec,

@@ -16,6 +16,12 @@ const CANAL_LABEL: Record<string, string> = {
   canal_b_email: "E-mail",
   canal_c_assistido: "Assistido",
 };
+const STATUS_EMAIL: Record<string, { label: string; cls: string }> = {
+  processado: { label: "Processado", cls: "bg-mata-tint text-mata-deep border-mata-line" },
+  reprocessado: { label: "Reprocessado", cls: "bg-surface-dim text-ink-soft border-line-strong" },
+  nao_reconhecido: { label: "Não reconhecido", cls: "bg-sol-tint text-sol border-[#EBD5A8]" },
+  erro: { label: "Erro", cls: "bg-barro-tint text-barro border-[#EBC7BE]" },
+};
 
 const desde = (iso: string | null) =>
   iso ? `há ${formatDistanceToNow(new Date(iso), { locale: ptBR })}` : "nunca";
@@ -27,6 +33,8 @@ export function Coleta() {
     { fonte: string; encontrados: number; novos: number; duplicados: number; status: string }[] | null
   >(null);
   const [erro, setErro] = useState<string | null>(null);
+  const [reprocessando, setReprocessando] = useState<string | null>(null);
+  const [msgEmail, setMsgEmail] = useState<string | null>(null);
 
   const { data: fontes } = useQuery({
     queryKey: ["coleta_fontes"],
@@ -52,6 +60,18 @@ export function Coleta() {
     },
   });
 
+  const { data: emails } = useQuery({
+    queryKey: ["coleta_emails"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("emails_recebidos")
+        .select("id, remetente, assunto, status_parsing, vagas_geradas, created_at")
+        .order("created_at", { ascending: false })
+        .limit(15);
+      return data ?? [];
+    },
+  });
+
   async function coletarAgora() {
     setErro(null);
     setResultado(null);
@@ -65,6 +85,26 @@ export function Coleta() {
     setResultado((data as { fontes: typeof resultado })?.fontes ?? []);
     qc.invalidateQueries({ queryKey: ["coleta_fontes"] });
     qc.invalidateQueries({ queryKey: ["coleta_execucoes"] });
+    qc.invalidateQueries({ queryKey: ["admin_vagas"] });
+    qc.invalidateQueries({ queryKey: ["admin_dashboard"] });
+  }
+
+  async function reprocessar(id: string) {
+    setMsgEmail(null);
+    setReprocessando(id);
+    const { data, error } = await supabase.functions.invoke("reprocessar-email", {
+      body: { email_id: id },
+    });
+    setReprocessando(null);
+    const r = data as { reconhecido?: boolean; novas?: number } | null;
+    if (error) {
+      setMsgEmail("Não foi possível reprocessar. Tente novamente.");
+    } else if (r?.reconhecido) {
+      setMsgEmail(`Reprocessado: ${r.novas ?? 0} vaga(s) nova(s) na fila.`);
+    } else {
+      setMsgEmail("Reprocessado, mas o remetente ainda não está mapeado numa fonte.");
+    }
+    qc.invalidateQueries({ queryKey: ["coleta_emails"] });
     qc.invalidateQueries({ queryKey: ["admin_vagas"] });
     qc.invalidateQueries({ queryKey: ["admin_dashboard"] });
   }
@@ -196,6 +236,63 @@ export function Coleta() {
                   {e.itens_erro} erro ·{" "}
                   <span className={cor}>{e.status}</span> · {desde(e.inicio)}
                 </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* E-mails recebidos (Canal B) */}
+      <div>
+        <p className="mono-caps mb-3 text-[11px] text-ink-faint">
+          E-mails recebidos (Canal B)
+        </p>
+        {msgEmail && (
+          <p className="mb-2 rounded-[9px] border border-mata-line bg-mata-tint px-3 py-2 text-[13px] text-mata-deep">
+            {msgEmail}
+          </p>
+        )}
+        <div className="grid gap-2">
+          {emails?.length === 0 && (
+            <p className="text-[13px] text-ink-soft">
+              Nenhum e-mail recebido ainda. Quando os alertas do Indeed/LinkedIn
+              chegarem à caixa, eles aparecem aqui.
+            </p>
+          )}
+          {emails?.map((em) => {
+            const s = STATUS_EMAIL[em.status_parsing] ?? STATUS_EMAIL.nao_reconhecido;
+            const podeReprocessar =
+              em.status_parsing === "nao_reconhecido" || em.status_parsing === "erro";
+            return (
+              <div
+                key={em.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-[9px] border border-line bg-surface px-3.5 py-2"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-[13.5px] font-bold text-ink">
+                    {em.assunto || "(sem assunto)"}
+                  </p>
+                  <p className="mono-caps text-[11px] text-ink-faint">
+                    {em.remetente || "(remetente vazio)"} · {desde(em.created_at)}
+                    {em.vagas_geradas > 0 && ` · ${em.vagas_geradas} vaga(s)`}
+                  </p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <span
+                    className={`mono-caps inline-flex rounded-full border px-2 py-0.5 text-[10.5px] ${s.cls}`}
+                  >
+                    {s.label}
+                  </span>
+                  {podeReprocessar && (
+                    <button
+                      onClick={() => reprocessar(em.id)}
+                      disabled={reprocessando === em.id}
+                      className="mono-caps rounded-full border border-line-strong px-2.5 py-1 text-[10.5px] text-ink-soft hover:border-mata hover:text-mata disabled:opacity-60"
+                    >
+                      {reprocessando === em.id ? "…" : "Reprocessar"}
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })}
