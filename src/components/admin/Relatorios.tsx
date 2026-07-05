@@ -11,6 +11,9 @@ interface VagaRel {
   score_aderencia: number;
   data_captura: string;
   data_publicacao: string | null;
+  contagem_cliques: number;
+  count_me_candidatei: number;
+  origem: string | null;
 }
 
 const TIPO_LABEL: Record<string, string> = {
@@ -99,10 +102,20 @@ export function Relatorios() {
       const { data, error } = await supabase
         .from("vagas")
         .select(
-          "tipo, setor, nivel, regiao, status, score_aderencia, data_captura, data_publicacao",
+          "tipo, setor, nivel, regiao, status, score_aderencia, data_captura, data_publicacao, contagem_cliques, count_me_candidatei, origem",
         );
       if (error) throw error;
       return (data ?? []) as VagaRel[];
+    },
+  });
+
+  const { data: totalInsercoes } = useQuery({
+    queryKey: ["relatorio_insercoes"],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("insercoes_profissionais")
+        .select("id", { count: "exact", head: true });
+      return count ?? 0;
     },
   });
 
@@ -143,7 +156,30 @@ export function Relatorios() {
       ? Math.round((tecnicas / publicadas.length) * 100)
       : 0;
 
+    // funil: publicadas → cliques → candidaturas marcadas
+    const totalCliques = publicadas.reduce((s, v) => s + (v.contagem_cliques ?? 0), 0);
+    const totalCandidaturas = publicadas.reduce((s, v) => s + (v.count_me_candidatei ?? 0), 0);
+
+    // aproveitamento por origem/fonte (aprovadas ÷ total captado)
+    const om = new Map<string, { total: number; aprovadas: number }>();
+    for (const v of lista) {
+      const o = v.origem ?? "—";
+      const e = om.get(o) ?? { total: 0, aprovadas: 0 };
+      e.total++;
+      if (v.status === "aprovada") e.aprovadas++;
+      om.set(o, e);
+    }
+    const aproveitamento = [...om.entries()]
+      .map(([origem, { total, aprovadas }]) => ({
+        origem, total, aprovadas,
+        pct: total ? Math.round((aprovadas / total) * 100) : 0,
+      }))
+      .sort((a, b) => b.total - a.total);
+
     return {
+      totalCliques,
+      totalCandidaturas,
+      aproveitamento,
       total: lista.length,
       publicadas: publicadas.length,
       pendentes: lista.filter((v) => v.status === "pendente").length,
@@ -217,6 +253,63 @@ export function Relatorios() {
         <p className="mt-1 text-[12.5px] text-mata-deep/80">
           Meta institucional: ≥ 50% do total publicado.
         </p>
+      </div>
+
+      {/* Funil de engajamento */}
+      <div className="rounded-[16px] border border-line bg-surface p-5">
+        <p className="mono-caps text-[11px] text-ink-faint">
+          Funil de engajamento (vagas publicadas no período)
+        </p>
+        <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { n: r.publicadas, l: "Vagas publicadas", sub: "no portal" },
+            {
+              n: r.totalCliques, l: "Cliques em candidatar",
+              sub: r.publicadas ? `${(r.totalCliques / r.publicadas).toFixed(1)} por vaga` : "—",
+            },
+            {
+              n: r.totalCandidaturas, l: "“Me candidatei”",
+              sub: r.totalCliques ? `${Math.round((r.totalCandidaturas / r.totalCliques) * 100)}% dos cliques` : "—",
+            },
+            { n: totalInsercoes ?? 0, l: "Inserções registradas", sub: "egressos (F4-02)" },
+          ].map((e, i) => (
+            <div key={i} className="rounded-[12px] bg-surface-dim/50 p-3.5">
+              <p className="font-display text-[26px] font-bold leading-none text-ink">{e.n}</p>
+              <p className="mt-1.5 text-[12.5px] font-semibold text-ink">{e.l}</p>
+              <p className="mono-caps text-[10.5px] text-ink-faint">{e.sub}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Aproveitamento por fonte */}
+      <div className="rounded-[16px] border border-line bg-surface p-5">
+        <p className="mono-caps text-[11px] text-ink-faint">Aproveitamento por fonte</p>
+        <div className="mt-3 overflow-hidden rounded-[10px] border border-line">
+          <table className="w-full border-collapse text-[13.5px]">
+            <thead className="bg-surface-dim/60 text-left">
+              <tr className="mono-caps text-[10.5px] text-ink-soft">
+                <th className="px-3 py-2 font-semibold">Fonte / origem</th>
+                <th className="px-3 py-2 text-right font-semibold">Captadas</th>
+                <th className="px-3 py-2 text-right font-semibold">Aprovadas</th>
+                <th className="px-3 py-2 text-right font-semibold">Aproveit.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {r.aproveitamento.length === 0 && (
+                <tr><td colSpan={4} className="px-3 py-3 text-ink-soft">Sem dados no período.</td></tr>
+              )}
+              {r.aproveitamento.map((a) => (
+                <tr key={a.origem} className="border-t border-line">
+                  <td className="px-3 py-2 text-ink">{a.origem}</td>
+                  <td className="px-3 py-2 text-right text-ink-soft">{a.total}</td>
+                  <td className="px-3 py-2 text-right text-ink-soft">{a.aprovadas}</td>
+                  <td className="px-3 py-2 text-right font-bold text-mata-deep">{a.pct}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
