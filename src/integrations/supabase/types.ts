@@ -566,6 +566,7 @@ export type Database = {
           id: string
           ip_hash_submissao: string | null
           link_candidatura: string | null
+          link_falhas_consecutivas: number
           localizacao_original: string | null
           mensagem_verificacao_link: string | null
           modalidade: Database["public"]["Enums"]["vaga_modalidade"] | null
@@ -624,6 +625,7 @@ export type Database = {
           id?: string
           ip_hash_submissao?: string | null
           link_candidatura?: string | null
+          link_falhas_consecutivas?: number
           localizacao_original?: string | null
           mensagem_verificacao_link?: string | null
           modalidade?: Database["public"]["Enums"]["vaga_modalidade"] | null
@@ -682,6 +684,7 @@ export type Database = {
           id?: string
           ip_hash_submissao?: string | null
           link_candidatura?: string | null
+          link_falhas_consecutivas?: number
           localizacao_original?: string | null
           mensagem_verificacao_link?: string | null
           modalidade?: Database["public"]["Enums"]["vaga_modalidade"] | null
