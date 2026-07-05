@@ -23,28 +23,29 @@ export const Route = createFileRoute("/")({
 function Home() {
   return (
     <SiteLayout>
-      <section aria-labelledby="hero-title" className="pt-4 sm:pt-8">
-        <p className="mono-caps text-[11px] text-mata">
-          Edição atual · Ceará
+      <section aria-labelledby="hero-title" className="pt-3 sm:pt-6">
+        <p className="mono-caps inline-flex items-center gap-2 text-[11px] text-mata-deep">
+          <span aria-hidden className="inline-block h-[6px] w-[6px] rounded-full bg-mata" />
+          Curadoria da coordenação · Ceará
         </p>
         <h1
           id="hero-title"
-          className="mt-3 font-display text-ink"
+          className="mt-4 font-display text-ink"
           style={{
-            fontSize: "clamp(26px, 6vw, 34px)",
-            fontWeight: 700,
-            lineHeight: 1.15,
-            letterSpacing: "-0.01em",
+            fontSize: "clamp(30px, 7.5vw, 46px)",
+            fontWeight: 800,
+            lineHeight: 1.04,
+            letterSpacing: "-0.028em",
           }}
         >
-          Oportunidades ambientais no Ceará, selecionadas para você
+          Oportunidades ambientais no Ceará,{" "}
+          <span className="text-mata">selecionadas para você.</span>
         </h1>
-        <p className="mt-4 max-w-[58ch] text-[16px] leading-relaxed text-ink-soft">
-          O BIO é um observatório de território mantido pela Coordenação do
-          Curso Técnico em Meio Ambiente do IFCE Campus Fortaleza. Reunimos, com
-          curadoria, vagas de estágio e emprego na área ambiental — para que
-          você acompanhe o mercado sem depender de grupos de WhatsApp ou buscas
-          soltas.
+        <p className="mt-5 max-w-[54ch] text-[16.5px] leading-relaxed text-ink-soft">
+          Estágios, empregos e seleções públicas na área ambiental — reunidos e
+          checados pela coordenação do <span className="text-ink">Curso Técnico em
+          Meio Ambiente do IFCE Campus Fortaleza</span>. Você acompanha o mercado sem
+          depender de grupos de WhatsApp ou de buscas soltas.
         </p>
       </section>
 

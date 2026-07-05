@@ -89,7 +89,7 @@ export function VagasFeed() {
           onChange={(e) => setBusca(e.target.value)}
           placeholder="Buscar por cargo, órgão ou palavra-chave…"
           aria-label="Buscar vagas"
-          className="w-full rounded-[16px] border-[1.5px] border-line-strong bg-surface py-3.5 pl-11 pr-4 text-[16px] text-ink placeholder:text-ink-faint focus:border-mata focus:outline-none focus:ring-4 focus:ring-mata/15"
+          className="w-full rounded-[14px] border-[1.5px] border-line-strong bg-surface py-3.5 pl-11 pr-4 text-[16px] text-ink shadow-[var(--shadow-card)] transition-shadow placeholder:text-ink-faint focus:border-mata focus:outline-none focus:ring-4 focus:ring-mata/15"
         />
       </div>
 
@@ -160,20 +160,20 @@ export function VagasFeed() {
         )}
 
         {!isLoading && !isError && vagas && vagas.length === 0 && (
-          <div className="rounded-[16px] border border-line bg-surface p-8 text-center">
-            <p className="font-display text-[18px] font-bold text-ink">
-              Nenhuma vaga disponível no momento
+          <div className="rounded-[18px] border border-line bg-surface p-8 text-center shadow-[var(--shadow-card)]">
+            <p className="font-display text-[19px] font-bold text-ink">
+              Nenhuma vaga aberta neste momento
             </p>
-            <p className="mx-auto mt-2 max-w-[42ch] text-[14px] text-ink-soft">
-              Cadastre seu e-mail para ser avisado assim que novas oportunidades forem
-              publicadas.
+            <p className="mx-auto mt-2 max-w-[44ch] text-[14.5px] leading-relaxed text-ink-soft">
+              A curadoria publica novas oportunidades toda semana. Cadastre seu e-mail
+              logo abaixo e seja o primeiro a saber quando a próxima chegar.
             </p>
-            <input
-              type="email"
-              disabled
-              placeholder="Cadastro de e-mail — em breve"
-              className="mx-auto mt-4 block w-full max-w-[280px] cursor-not-allowed rounded-[9px] border border-line-strong bg-surface-dim px-3 py-2.5 text-[14px] text-ink-faint"
-            />
+            <a
+              href="#news-title"
+              className="mono-caps mt-4 inline-flex items-center gap-1.5 rounded-full bg-mata px-4 py-2 text-[12px] text-white transition-colors hover:bg-mata-deep"
+            >
+              Receber por e-mail ↓
+            </a>
           </div>
         )}
 

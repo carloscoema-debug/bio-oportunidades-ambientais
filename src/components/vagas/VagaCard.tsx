@@ -118,10 +118,10 @@ export function VagaCard({ vaga }: { vaga: VagaPublica }) {
   }
 
   return (
-    <article className="relative overflow-hidden rounded-[16px] border border-line bg-surface p-5 pb-4 shadow-[0_1px_2px_rgba(27,42,33,0.05),0_8px_24px_-12px_rgba(27,42,33,0.14)] transition-transform duration-200 hover:-translate-y-0.5">
+    <article className="group relative overflow-hidden rounded-[18px] border border-line bg-surface p-5 pb-4 shadow-[var(--shadow-card)] transition-[transform,box-shadow,border-color] duration-300 ease-out hover:-translate-y-1 hover:border-mata-line hover:shadow-[var(--shadow-card-hover)] sm:p-6 sm:pb-5">
       {/* trilho de aderência */}
       <span
-        className="absolute inset-y-0 left-0 w-[5px]"
+        className="absolute inset-y-0 left-0 w-[5px] transition-[width] duration-300 group-hover:w-[7px]"
         style={{ background: selo.trilho }}
         aria-hidden
       />
@@ -175,30 +175,31 @@ export function VagaCard({ vaga }: { vaga: VagaPublica }) {
       )}
 
       {/* ações */}
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="mt-5 flex flex-wrap gap-2.5">
+        {link && (
+          <button
+            onClick={candidatar}
+            className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-1.5 rounded-[11px] bg-mata px-4 text-[15px] font-bold text-white shadow-[0_1px_2px_rgba(10,79,51,0.25)] transition-all duration-200 hover:-translate-y-px hover:bg-mata-deep hover:shadow-[0_4px_14px_-4px_rgba(10,79,51,0.4)]"
+          >
+            Candidatar-se
+            <span aria-hidden className="text-[13px] transition-transform duration-200 group-hover:translate-x-0.5">↗</span>
+          </button>
+        )}
         <button
           onClick={compartilharWhatsApp}
-          className="inline-flex min-h-[46px] flex-1 items-center justify-center gap-2 rounded-[9px] bg-whatsapp px-4 text-[15px] font-bold text-white transition-transform hover:-translate-y-px"
+          className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-[11px] border-[1.5px] border-line-strong bg-surface px-4 text-[15px] font-bold text-ink transition-all duration-200 hover:-translate-y-px hover:border-whatsapp hover:text-whatsapp"
         >
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" className="text-whatsapp" aria-hidden>
             <path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.4 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.4-.7-2.9-1.2-4.7-4.1-4.9-4.3-.1-.2-1.1-1.5-1.1-2.9s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .6l-.4.6-.5.5c-.2.2-.3.4-.1.7.2.3.9 1.5 2 2.4 1.4 1.2 2.5 1.6 2.9 1.7.3.2.5.1.7-.1l1-1.1c.2-.3.4-.2.7-.1l2 1c.3.1.5.2.6.4.1.1.1.7-.1 1.3Z" />
           </svg>
           Compartilhar
         </button>
         {link && (
           <button
-            onClick={candidatar}
-            className="inline-flex min-h-[46px] flex-1 items-center justify-center gap-2 rounded-[9px] bg-ink px-4 text-[15px] font-bold text-paper transition-transform hover:-translate-y-px"
-          >
-            Candidatar-se ↗
-          </button>
-        )}
-        {link && (
-          <button
             onClick={copiarLink}
             title="Copiar link"
-            aria-label="Copiar link"
-            className="inline-flex min-h-[46px] items-center justify-center rounded-[9px] border-[1.5px] border-line-strong px-3.5 text-ink-soft transition-colors hover:border-ink hover:text-ink"
+            aria-label="Copiar link da vaga"
+            className="inline-flex min-h-[48px] items-center justify-center rounded-[11px] border-[1.5px] border-line-strong bg-surface px-3.5 text-[15px] text-ink-soft transition-colors hover:border-ink hover:text-ink"
           >
             {copiado ? "✓" : "⧉"}
           </button>

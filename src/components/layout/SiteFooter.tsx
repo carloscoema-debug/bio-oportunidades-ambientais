@@ -1,44 +1,40 @@
 import { Link } from "@tanstack/react-router";
 
 export function SiteFooter() {
+  const linkCls =
+    "mono-caps text-[11px] text-ink-soft underline-offset-4 transition-colors hover:text-mata hover:underline";
   return (
-    <footer className="mt-16 border-t border-line bg-surface-dim/60">
-      <div className="mx-auto max-w-[680px] px-4 py-10">
-        <p className="mono-caps text-[10.5px] text-ink-faint">Aviso institucional</p>
-        <p className="mt-3 text-[14px] leading-relaxed text-ink-soft">
-          O BIO é operado pela Coordenação do Curso Técnico em Meio Ambiente do
-          IFCE Campus Fortaleza. As oportunidades são divulgadas como serviço de
-          informação — o IFCE não conduz, não endossa e não se responsabiliza
-          pelos processos seletivos, pelas condições dos vínculos nem pela
-          idoneidade dos anunciantes.
+    <footer className="mt-20 border-t border-line bg-surface-dim/50">
+      <div className="mx-auto max-w-[680px] px-4 py-12">
+        <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-6">
+          <div>
+            <span
+              className="font-display text-2xl leading-none text-ink"
+              style={{ fontWeight: 800, letterSpacing: "-0.02em" }}
+            >
+              BIO<span className="text-mata">.</span>
+            </span>
+            <p className="mt-2 max-w-[34ch] text-[13px] leading-relaxed text-ink-soft">
+              Observatório Institucional de Oportunidades Ambientais — curadoria de
+              vagas para quem estuda meio ambiente no Ceará.
+            </p>
+          </div>
+          <nav aria-label="Links institucionais" className="flex flex-col gap-2.5">
+            <Link to="/como-se-candidatar" className={linkCls}>Como se candidatar</Link>
+            <Link to="/divulgar" className={linkCls}>Divulgue uma oportunidade</Link>
+            <Link to="/politica-de-privacidade" className={linkCls}>Política de privacidade</Link>
+          </nav>
+        </div>
+
+        <p className="mono-caps mt-10 text-[10.5px] text-ink-faint">Aviso institucional</p>
+        <p className="mt-2 max-w-[64ch] text-[13px] leading-relaxed text-ink-soft">
+          As oportunidades são divulgadas como serviço de informação. O IFCE não conduz,
+          não endossa e não se responsabiliza pelos processos seletivos, pelas condições
+          dos vínculos nem pela idoneidade dos anunciantes — confira sempre a fonte oficial.
         </p>
 
-        <nav
-          aria-label="Links institucionais"
-          className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-3"
-        >
-          <Link
-            to="/como-se-candidatar"
-            className="mono-caps text-[11px] text-ink hover:text-mata"
-          >
-            Como se candidatar
-          </Link>
-          <Link
-            to="/divulgar"
-            className="mono-caps text-[11px] text-ink hover:text-mata"
-          >
-            Divulgue uma oportunidade
-          </Link>
-          <Link
-            to="/politica-de-privacidade"
-            className="mono-caps text-[11px] text-ink hover:text-mata"
-          >
-            Política de privacidade
-          </Link>
-        </nav>
-
-        <p className="mono-caps mt-8 text-[10.5px] text-ink-faint">
-          IFCE · Campus Fortaleza · Curso Técnico em Meio Ambiente
+        <p className="mono-caps mt-8 border-t border-line pt-6 text-[10.5px] text-ink-faint">
+          IFCE · Campus Fortaleza · Curso Técnico em Meio Ambiente (EaD)
         </p>
       </div>
     </footer>

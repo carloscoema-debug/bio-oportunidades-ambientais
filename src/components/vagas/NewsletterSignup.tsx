@@ -46,7 +46,7 @@ export function NewsletterSignup() {
   return (
     <section
       aria-labelledby="news-title"
-      className="mt-12 rounded-[16px] border border-mata-line bg-mata-tint p-6 sm:p-8"
+      className="mt-14 scroll-mt-24 overflow-hidden rounded-[20px] border border-mata-line bg-mata-tint p-6 shadow-[var(--shadow-card)] sm:p-9"
     >
       {estado === "ok" ? (
         <div>
@@ -58,15 +58,17 @@ export function NewsletterSignup() {
         </div>
       ) : (
         <>
+          <p className="mono-caps text-[11px] text-mata-deep">A curadoria vai até você</p>
           <h2
             id="news-title"
-            className="font-display text-[20px] font-bold text-ink"
+            className="mt-1.5 font-display text-[24px] font-bold leading-tight text-ink"
+            style={{ letterSpacing: "-0.02em" }}
           >
             Receba as vagas por e-mail
           </h2>
-          <p className="mt-1 max-w-[56ch] text-[14px] text-ink-soft">
-            No máximo <strong className="text-ink">um e-mail por semana</strong>, com uma
-            seleção de oportunidades ambientais. Sem spam.
+          <p className="mt-2 max-w-[52ch] text-[14.5px] leading-relaxed text-ink-soft">
+            No máximo <strong className="text-ink">um e-mail por semana</strong>, com a
+            seleção da coordenação. Nada de spam — e você sai quando quiser, em um clique.
           </p>
 
           <form onSubmit={onSubmit} className="mt-5 space-y-4">
