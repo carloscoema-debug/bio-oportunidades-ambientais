@@ -61,6 +61,20 @@ const MODALIDADE_LABEL: Record<string, string> = {
   hibrido: "Híbrido",
 };
 
+interface Dup {
+  vaga_id: string;
+  dup_id: string;
+  dup_titulo: string;
+  dup_empresa: string | null;
+  dup_origem: string | null;
+  dup_status: string;
+  similaridade: number;
+}
+const STATUS_DUP: Record<string, string> = {
+  pendente: "também na fila",
+  aprovada: "já publicada",
+};
+
 // Link "genérico" = aponta só para a home do domínio (sem caminho da vaga).
 // O candidato não conseguiria ver a vaga original — o coordenador precisa
 // abrir e substituir pelo link específico antes de aprovar.
@@ -156,6 +170,20 @@ export function FilaVagas() {
     },
   });
 
+  // P3 · possíveis duplicatas (título semelhante entre pendentes e já publicadas)
+  const { data: duplicatas } = useQuery({
+    queryKey: ["admin_duplicatas"],
+    enabled: status === "pendente",
+    queryFn: async () => {
+      const { data } = await supabase.rpc("bio_duplicatas_fila");
+      const mapa: Record<string, Dup[]> = {};
+      for (const d of (data ?? []) as Dup[]) {
+        (mapa[d.vaga_id] ??= []).push(d);
+      }
+      return mapa;
+    },
+  });
+
   const visiveis = useMemo(() => {
     const lista = vagas ?? [];
     if (status !== "pendente" || balde === "todas") return lista;
@@ -173,6 +201,7 @@ export function FilaVagas() {
     const { error } = await supabase.from("vagas").update(patch).eq("id", v.id);
     if (error) return setErro(mensagemBloqueio(error.message));
     qc.invalidateQueries({ queryKey: ["admin_vagas"] });
+    qc.invalidateQueries({ queryKey: ["admin_duplicatas"] });
     qc.invalidateQueries({ queryKey: ["admin_dashboard"] });
     qc.invalidateQueries({ queryKey: ["vagas_publicas"] });
   }
@@ -192,6 +221,7 @@ export function FilaVagas() {
     setDetalhe("");
     setMotivo("fora_do_perfil");
     qc.invalidateQueries({ queryKey: ["admin_vagas"] });
+    qc.invalidateQueries({ queryKey: ["admin_duplicatas"] });
     qc.invalidateQueries({ queryKey: ["admin_dashboard"] });
   }
 
@@ -269,6 +299,7 @@ export function FilaVagas() {
               ? `Inscrições até ${v.prazo_inscricao}`
               : null,
           ].filter(Boolean) as string[];
+          const dups = duplicatas?.[v.id] ?? [];
           return (
             <div key={v.id} className="rounded-[12px] border border-line bg-surface p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -294,6 +325,11 @@ export function FilaVagas() {
                     )}
                     {linkGenerico(v.link_candidatura) && (
                       <Pill cls="bg-sol-tint text-sol border-[#EBD5A8]">Link genérico</Pill>
+                    )}
+                    {dups.length > 0 && (
+                      <Pill cls="bg-ceu-tint text-ceu border-[#C4D4E2]">
+                        Possível duplicata
+                      </Pill>
                     )}
                   </div>
                   <p className="font-display text-[16px] font-bold leading-tight text-ink">
@@ -342,6 +378,23 @@ export function FilaVagas() {
                     <p className="mt-1.5 line-clamp-2 max-w-[70ch] text-[12.5px] leading-relaxed text-ink-soft">
                       {v.descricao}
                     </p>
+                  )}
+                  {dups.length > 0 && (
+                    <div className="mt-2 rounded-[8px] border border-[#C4D4E2] bg-ceu-tint/40 px-2.5 py-2">
+                      <p className="mono-caps text-[10.5px] text-ceu">
+                        Título semelhante a {dups.length === 1 ? "outra vaga" : `${dups.length} vagas`}
+                      </p>
+                      {dups.slice(0, 3).map((d) => (
+                        <p key={d.dup_id} className="mt-1 text-[12px] text-ink-soft">
+                          <span className="font-bold text-ink">{d.dup_titulo}</span>{" "}
+                          <span className="text-ink-faint">
+                            ({STATUS_DUP[d.dup_status] ?? d.dup_status}
+                            {d.dup_origem ? ` · ${d.dup_origem}` : ""} ·{" "}
+                            {Math.round(d.similaridade * 100)}%)
+                          </span>
+                        </p>
+                      ))}
+                    </div>
                   )}
                   {v.origem_externa_nao_verificada && v.contato_submissao && (
                     <p className="mt-1.5 text-[12px] text-ink-soft">
