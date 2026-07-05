@@ -18,6 +18,15 @@ export function SiteFooter() {
               Observatório Institucional de Oportunidades Ambientais — curadoria de
               vagas para quem estuda meio ambiente no Ceará.
             </p>
+            <a
+              href="https://portal.ifce.edu.br/cursos/fortaleza-tecnico-subsequente-meio-ambiente/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mono-caps mt-4 inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-mata-line bg-mata-tint px-4 py-2 text-[11px] text-mata-deep transition-colors hover:border-mata hover:bg-mata hover:text-white"
+            >
+              Conheça o curso técnico
+              <span aria-hidden>↗</span>
+            </a>
           </div>
           <nav aria-label="Links institucionais" className="flex flex-col gap-2.5">
             <Link to="/como-se-candidatar" className={linkCls}>Como se candidatar</Link>
