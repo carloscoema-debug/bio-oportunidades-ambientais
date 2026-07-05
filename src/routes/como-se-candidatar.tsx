@@ -17,7 +17,8 @@ export const Route = createFileRoute("/como-se-candidatar")({
 
 function H2({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="mt-10 font-display text-[22px] font-bold tracking-[-0.01em] text-ink">
+    <h2 className="mt-10 flex items-center gap-2.5 font-display text-[22px] font-bold tracking-[-0.01em] text-ink">
+      <span aria-hidden className="h-4 w-[3px] shrink-0 rounded-full bg-mata" />
       {children}
     </h2>
   );
@@ -27,7 +28,10 @@ function ComoSeCandidatar() {
   return (
     <SiteLayout>
       <article className="py-4 sm:py-6">
-        <p className="mono-caps text-[11px] text-mata">Guia do estudante</p>
+        <p className="mono-caps inline-flex items-center gap-2 text-[11px] text-mata-deep">
+          <span aria-hidden className="inline-block h-[6px] w-[6px] rounded-full bg-mata" />
+          Guia do estudante
+        </p>
         <h1
           className="mt-3 font-display text-ink"
           style={{

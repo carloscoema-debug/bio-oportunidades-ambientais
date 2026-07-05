@@ -81,19 +81,23 @@ function Divulgar() {
   if (estado === "ok") {
     return (
       <SiteLayout>
-        <section className="mx-auto max-w-[560px] py-16 text-center">
-          <p className="mono-caps text-[11px] text-mata">Recebido</p>
-          <h1 className="mt-3 font-display text-[26px] font-bold text-ink">
-            Obrigado! Recebemos a sua oportunidade.
-          </h1>
-          <p className="mt-4 text-[16px] leading-relaxed text-ink-soft">
-            Ela passará pela <strong className="text-ink">curadoria da coordenação</strong> antes
-            de ser publicada. Se precisarmos de mais informações, entramos em contato pelo e-mail
-            que você informou.
-          </p>
-          <a href="/" className="mt-6 inline-block text-[14px] font-bold text-mata-deep underline">
-            Voltar ao portal
-          </a>
+        <section className="mx-auto max-w-[540px] py-14">
+          <div className="overflow-hidden rounded-[20px] border border-mata-line bg-mata-tint p-8 text-center shadow-[var(--shadow-card)] sm:p-10">
+            <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-mata text-[22px] text-white shadow-[0_6px_16px_-6px_rgba(10,79,51,0.5)]" aria-hidden>
+              ✓
+            </span>
+            <p className="mono-caps mt-4 text-[11px] text-mata-deep">Oportunidade recebida</p>
+            <h1 className="mt-1.5 font-display text-[25px] font-bold leading-tight text-ink" style={{ letterSpacing: "-0.02em" }}>
+              Obrigado! Já está com a coordenação.
+            </h1>
+            <p className="mx-auto mt-3 max-w-[42ch] text-[15px] leading-relaxed text-ink-soft">
+              Toda vaga passa pela <strong className="text-ink">curadoria</strong> antes de ir ao ar.
+              Se faltar algum detalhe, falamos com você pelo e-mail informado.
+            </p>
+            <a href="/" className="mono-caps mt-6 inline-flex items-center gap-1.5 rounded-full bg-mata px-5 py-2.5 text-[12px] text-white transition-colors hover:bg-mata-deep">
+              Ver as vagas do portal ↗
+            </a>
+          </div>
         </section>
       </SiteLayout>
     );
@@ -102,17 +106,20 @@ function Divulgar() {
   return (
     <SiteLayout>
       <section className="mx-auto max-w-[620px] py-8">
-        <p className="mono-caps text-[11px] text-mata">Para empresas e órgãos</p>
-        <h1 className="mt-3 font-display text-[28px] font-bold leading-tight text-ink">
+        <p className="mono-caps inline-flex items-center gap-2 text-[11px] text-mata-deep">
+          <span aria-hidden className="inline-block h-[6px] w-[6px] rounded-full bg-mata" />
+          Para empresas e órgãos
+        </p>
+        <h1 className="mt-3 font-display text-[30px] font-bold leading-[1.08] text-ink" style={{ letterSpacing: "-0.025em" }}>
           Divulgue uma oportunidade
         </h1>
-        <p className="mt-3 max-w-[58ch] text-[15px] leading-relaxed text-ink-soft">
+        <p className="mt-3 max-w-[58ch] text-[15.5px] leading-relaxed text-ink-soft">
           Tem uma vaga de estágio ou emprego na área ambiental? Envie abaixo. Toda vaga passa por
-          <strong className="text-ink"> curadoria</strong> antes de aparecer no portal — nada é
-          publicado automaticamente.
+          <strong className="text-ink"> curadoria da coordenação</strong> antes de aparecer no
+          portal — nada é publicado automaticamente.
         </p>
 
-        <form onSubmit={onSubmit} className="mt-8 space-y-5">
+        <form onSubmit={onSubmit} className="mt-8 space-y-5 rounded-[20px] border border-line bg-surface p-6 shadow-[var(--shadow-card)] sm:p-8">
           <Campo label="Título da vaga *">
             <input required value={form.titulo} onChange={(e) => set("titulo", e.target.value)}
               placeholder="Ex.: Estágio em Educação Ambiental" className={inputCls} />
@@ -182,8 +189,8 @@ function Divulgar() {
           {estado === "erro" && <p className="text-[13px] text-barro">{msg}</p>}
 
           <button type="submit" disabled={estado === "enviando" || !aceite}
-            className="inline-flex min-h-[48px] items-center justify-center rounded-[9px] bg-mata px-6 text-[15px] font-bold text-white transition-colors hover:bg-mata-deep disabled:opacity-50">
-            {estado === "enviando" ? "Enviando…" : "Enviar oportunidade"}
+            className="inline-flex min-h-[48px] w-full items-center justify-center gap-1.5 rounded-[11px] bg-mata px-6 text-[15px] font-bold text-white shadow-[0_1px_2px_rgba(10,79,51,0.25)] transition-all duration-200 hover:-translate-y-px hover:bg-mata-deep hover:shadow-[0_4px_14px_-4px_rgba(10,79,51,0.4)] disabled:pointer-events-none disabled:opacity-50 sm:w-auto">
+            {estado === "enviando" ? "Enviando…" : <>Enviar oportunidade <span aria-hidden>↗</span></>}
           </button>
         </form>
       </section>

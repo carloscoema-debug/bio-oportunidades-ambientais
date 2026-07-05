@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/85">
+    <header className="sticky top-0 z-40 border-b border-line bg-surface/95 shadow-[0_1px_0_rgba(27,42,33,0.03),0_10px_24px_-20px_rgba(27,42,33,0.28)] backdrop-blur-md supports-[backdrop-filter]:bg-surface/80">
       <div className="mx-auto flex min-h-[64px] max-w-[680px] items-center px-4 py-3">
         <Link
           to="/"

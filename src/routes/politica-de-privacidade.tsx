@@ -17,7 +17,8 @@ export const Route = createFileRoute("/politica-de-privacidade")({
 
 function H2({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="mt-9 font-display text-[20px] font-bold tracking-[-0.01em] text-ink">
+    <h2 className="mt-9 flex items-center gap-2.5 font-display text-[20px] font-bold tracking-[-0.01em] text-ink">
+      <span aria-hidden className="h-4 w-[3px] shrink-0 rounded-full bg-mata" />
       {children}
     </h2>
   );
@@ -27,7 +28,10 @@ function Privacidade() {
   return (
     <SiteLayout>
       <article className="py-4 sm:py-6">
-        <p className="mono-caps text-[11px] text-mata">Transparência</p>
+        <p className="mono-caps inline-flex items-center gap-2 text-[11px] text-mata-deep">
+          <span aria-hidden className="inline-block h-[6px] w-[6px] rounded-full bg-mata" />
+          Transparência
+        </p>
         <h1
           className="mt-3 font-display text-ink"
           style={{
@@ -80,14 +84,24 @@ function Privacidade() {
           estatísticos e de qualidade. Não há dados pessoais associados a eles.
         </p>
 
-        <H2>Recursos que ainda vão chegar</H2>
+        <H2>Cadastro voluntário na newsletter</H2>
         <p className="mt-3 max-w-[62ch] text-[15px] leading-relaxed text-ink-soft">
-          Em breve, o BIO oferecerá um cadastro <em>voluntário</em> de e-mail para
-          receber oportunidades e um formulário para empresas divulgarem vagas.
-          Esses recursos coletarão dados (como e-mail) apenas com o seu{" "}
-          <strong className="text-ink">consentimento explícito</strong>, com
-          finalidade declarada e opção de descadastramento a qualquer momento. Esta
-          política será atualizada quando eles forem ativados.
+          Se você optar por receber as oportunidades por e-mail, guardamos apenas o{" "}
+          <strong className="text-ink">seu endereço de e-mail</strong> e o registro do
+          consentimento (data e finalidade). O envio é de no máximo um e-mail por semana.
+        </p>
+        <p className="mt-3 max-w-[62ch] text-[15px] leading-relaxed text-ink-soft">
+          <strong className="text-ink">Base legal:</strong> consentimento (art. 7º, I,
+          da LGPD). Você pode <strong className="text-ink">se descadastrar a qualquer
+          momento</strong> pelo link presente em todos os e-mails — sem burocracia.
+        </p>
+
+        <H2>Envio de vagas por empresas</H2>
+        <p className="mt-3 max-w-[62ch] text-[15px] leading-relaxed text-ink-soft">
+          Empresas e órgãos que divulgam uma vaga informam dados de contato (nome e
+          e-mail). Usamos essas informações apenas para{" "}
+          <strong className="text-ink">validar a oportunidade</strong> junto ao
+          anunciante antes da publicação — nunca para outra finalidade.
         </p>
 
         <H2>Seus direitos</H2>
