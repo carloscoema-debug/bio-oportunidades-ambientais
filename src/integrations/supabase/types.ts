@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_config: {
+        Row: {
+          atualizado_em: string
+          chave: string
+          valor: string
+        }
+        Insert: {
+          atualizado_em?: string
+          chave: string
+          valor: string
+        }
+        Update: {
+          atualizado_em?: string
+          chave?: string
+          valor?: string
+        }
+        Relationships: []
+      }
       areas_tematicas: {
         Row: {
           ativo: boolean
@@ -215,6 +233,7 @@ export type Database = {
           id: string
           metodo_coleta: Database["public"]["Enums"]["fonte_metodo"]
           nome: string
+          padrao_remetente: string | null
           score_confiabilidade: number
           status: Database["public"]["Enums"]["fonte_status"]
           taxa_aproveitamento: number
@@ -229,6 +248,7 @@ export type Database = {
           id?: string
           metodo_coleta: Database["public"]["Enums"]["fonte_metodo"]
           nome: string
+          padrao_remetente?: string | null
           score_confiabilidade?: number
           status?: Database["public"]["Enums"]["fonte_status"]
           taxa_aproveitamento?: number
@@ -243,6 +263,7 @@ export type Database = {
           id?: string
           metodo_coleta?: Database["public"]["Enums"]["fonte_metodo"]
           nome?: string
+          padrao_remetente?: string | null
           score_confiabilidade?: number
           status?: Database["public"]["Enums"]["fonte_status"]
           taxa_aproveitamento?: number
