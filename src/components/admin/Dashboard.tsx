@@ -139,9 +139,9 @@ export function Dashboard({ onIrParaFila }: { onIrParaFila: () => void }) {
         {/* Pergunta 3 */}
         <Card rotulo="Coleta automática">
           <p className="text-[14px] leading-relaxed text-ink-soft">
-            A coleta automática de fontes (SEMACE, SRH, alertas por e-mail…) entra na{" "}
-            <strong className="text-ink">Fase 2</strong>. Por enquanto, as vagas são
-            cadastradas manualmente pela coordenação.
+            A coleta automática está <strong className="text-ink">ativa</strong> (RSS/Google
+            Alerts e e-mail). As vagas chegam sozinhas à fila como pendentes — acompanhe e
+            dispare na aba <strong className="text-ink">Coleta</strong>.
           </p>
         </Card>
       </div>

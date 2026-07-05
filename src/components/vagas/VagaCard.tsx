@@ -111,6 +111,12 @@ export function VagaCard({ vaga }: { vaga: VagaPublica }) {
     await registrarFeedback(vaga.id, opcao.tipo);
   }
 
+  async function marcarCandidatura() {
+    setMenuAberto(false);
+    setFeedbackMsg("Boa sorte! Isso ajuda a medir o alcance das vagas.");
+    await registrarFeedback(vaga.id, "me_candidatei");
+  }
+
   return (
     <article className="relative overflow-hidden rounded-[16px] border border-line bg-surface p-5 pb-4 shadow-[0_1px_2px_rgba(27,42,33,0.05),0_8px_24px_-12px_rgba(27,42,33,0.14)] transition-transform duration-200 hover:-translate-y-0.5">
       {/* trilho de aderência */}
@@ -209,7 +215,15 @@ export function VagaCard({ vaga }: { vaga: VagaPublica }) {
             ✓ {feedbackMsg}
           </span>
         ) : (
-          <div className="relative">
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={marcarCandidatura}
+              className="text-[13px] font-bold text-mata-deep underline decoration-dotted underline-offset-[3px] hover:text-mata"
+            >
+              Já me candidatei
+            </button>
+            <div className="relative">
             <button
               type="button"
               aria-haspopup="menu"
@@ -246,6 +260,7 @@ export function VagaCard({ vaga }: { vaga: VagaPublica }) {
                 </div>
               </>
             )}
+            </div>
           </div>
         )}
       </div>
