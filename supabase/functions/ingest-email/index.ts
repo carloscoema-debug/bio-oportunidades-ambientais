@@ -160,6 +160,24 @@ Deno.serve(async (req) => {
   const corpo = html || text;
   if (!corpo) return json({ ok: false, erro: "e-mail sem corpo (html/text)" }, 400);
 
+  // Captura o e-mail de confirmação de encaminhamento do Gmail (setup do Canal B).
+  // Grava código + link em app_config para a coordenação confirmar o encaminhamento.
+  if (from.toLowerCase().includes("forwarding-noreply@google.com") ||
+      /forwarding confirmation|confirma[çc][ãa]o de encaminhamento/i.test(subject)) {
+    const blob = `${subject}\n${text}\n${html}`;
+    const code = blob.match(/\b\d{8,12}\b/)?.[0] ?? null;
+    const urls = [...new Set(
+      [...blob.matchAll(/https?:\/\/[^\s"'<>]*google\.com[^\s"'<>]*/gi)]
+        .map((m) => m[0].replace(/&amp;/g, "&")),
+    )].slice(0, 6);
+    await supabase.from("app_config").upsert({
+      chave: "gmail_forward_confirm",
+      valor: JSON.stringify({ code, urls, subject, capturado_em: new Date().toISOString() }),
+      atualizado_em: new Date().toISOString(),
+    });
+    return json({ ok: true, forwarding_confirmation_captured: true, code });
+  }
+
   // casa remetente -> fonte
   const { data: fontes } = await supabase
     .from("fontes_coleta")
