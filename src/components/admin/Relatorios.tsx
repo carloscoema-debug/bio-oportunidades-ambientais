@@ -93,8 +93,41 @@ function BarraLista({
   );
 }
 
+const CSV_COLS = [
+  "titulo", "empresa_orgao", "tipo", "nivel", "regiao", "municipio", "status",
+  "origem", "score_aderencia", "contagem_cliques", "count_me_candidatei",
+  "link_candidatura", "data_captura", "data_publicacao",
+] as const;
+
+function celulaCsv(v: unknown): string {
+  const s = v == null ? "" : String(v);
+  return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
 export function Relatorios() {
   const [periodo, setPeriodo] = useState<"30" | "90" | "tudo">("tudo");
+  const [exportando, setExportando] = useState(false);
+
+  async function exportarCSV() {
+    setExportando(true);
+    const { data } = await supabase
+      .from("vagas")
+      .select(CSV_COLS.join(", "))
+      .order("data_captura", { ascending: false });
+    setExportando(false);
+    const rows = (data ?? []) as Record<string, unknown>[];
+    const linhas = [
+      CSV_COLS.join(";"),
+      ...rows.map((r) => CSV_COLS.map((c) => celulaCsv(r[c])).join(";")),
+    ];
+    const blob = new Blob(["﻿" + linhas.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `bio-vagas-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   const { data: todas, isLoading } = useQuery({
     queryKey: ["relatorio_vagas"],
@@ -220,14 +253,23 @@ export function Relatorios() {
           </button>
         ))}
         </div>
-        <a
-          href="/relatorio"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mono-caps rounded-full border-[1.5px] border-mata bg-mata-tint px-3.5 py-1.5 text-[12px] text-mata-deep hover:bg-mata hover:text-white"
-        >
-          Gerar PDF semestral ↗
-        </a>
+        <div className="flex gap-2">
+          <button
+            onClick={exportarCSV}
+            disabled={exportando}
+            className="mono-caps rounded-full border-[1.5px] border-line-strong bg-surface px-3.5 py-1.5 text-[12px] text-ink-soft hover:border-mata hover:text-mata disabled:opacity-60"
+          >
+            {exportando ? "Exportando…" : "Exportar CSV ↓"}
+          </button>
+          <a
+            href="/relatorio"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mono-caps rounded-full border-[1.5px] border-mata bg-mata-tint px-3.5 py-1.5 text-[12px] text-mata-deep hover:bg-mata hover:text-white"
+          >
+            Gerar PDF semestral ↗
+          </a>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
