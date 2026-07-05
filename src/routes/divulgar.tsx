@@ -114,9 +114,11 @@ function Divulgar() {
           Divulgue uma oportunidade
         </h1>
         <p className="mt-3 max-w-[58ch] text-[15.5px] leading-relaxed text-ink-soft">
-          Tem uma vaga de estágio ou emprego na área ambiental? Envie abaixo. Toda vaga passa por
-          <strong className="text-ink"> curadoria da coordenação</strong> antes de aparecer no
-          portal — nada é publicado automaticamente.
+          O BIO é o observatório de oportunidades ambientais do IFCE Campus Fortaleza, com uma
+          base de estudantes e egressos do Curso Técnico em Meio Ambiente. Tem uma vaga na área?
+          Envie abaixo — toda oportunidade passa pela{" "}
+          <strong className="text-ink">curadoria da coordenação</strong> antes de aparecer no
+          portal. Nada é publicado automaticamente.
         </p>
 
         <form onSubmit={onSubmit} className="mt-8 space-y-5 rounded-[20px] border border-line bg-surface p-6 shadow-[var(--shadow-card)] sm:p-8">
