@@ -44,6 +44,31 @@ interface VagaAdmin {
   contato_submissao: string | null;
   status_link: string | null;
   mensagem_verificacao_link: string | null;
+  link_candidatura: string | null;
+  forma_candidatura: string | null;
+}
+
+// Link "genérico" = aponta só para a home do domínio (sem caminho da vaga).
+// O candidato não conseguiria ver a vaga original — o coordenador precisa
+// abrir e substituir pelo link específico antes de aprovar.
+function linkGenerico(url: string | null): boolean {
+  if (!url) return false;
+  try {
+    const u = new URL(url);
+    const path = u.pathname.replace(/\/+$/, "");
+    return path === "" && !u.search;
+  } catch {
+    return false;
+  }
+}
+
+function dominioDe(url: string | null): string | null {
+  if (!url) return null;
+  try {
+    return new URL(url).host.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
 }
 
 function mensagemBloqueio(msg: string): string {
@@ -108,7 +133,7 @@ export function FilaVagas() {
       const { data, error } = await supabase
         .from("vagas")
         .select(
-          "id, titulo, empresa_orgao, tipo, nivel, municipio, regiao, score_aderencia, score_urgencia, flags_incompatibilidade, status, origem, origem_externa_nao_verificada, contato_submissao, status_link, mensagem_verificacao_link",
+          "id, titulo, empresa_orgao, tipo, nivel, municipio, regiao, score_aderencia, score_urgencia, flags_incompatibilidade, status, origem, origem_externa_nao_verificada, contato_submissao, status_link, mensagem_verificacao_link, link_candidatura, forma_candidatura",
         )
         .eq("status", status)
         .order("score_aderencia", { ascending: false });
@@ -245,6 +270,9 @@ export function FilaVagas() {
                     {v.status_link === "inacessivel" && (
                       <Pill cls="bg-barro-tint text-barro border-[#EBC7BE]">Link inacessível</Pill>
                     )}
+                    {linkGenerico(v.link_candidatura) && (
+                      <Pill cls="bg-sol-tint text-sol border-[#EBD5A8]">Link genérico</Pill>
+                    )}
                   </div>
                   <p className="font-display text-[16px] font-bold leading-tight text-ink">
                     {v.titulo}
@@ -252,6 +280,32 @@ export function FilaVagas() {
                   <p className="mono-caps mt-1 text-[11.5px] text-ink-soft">
                     {v.empresa_orgao ?? "—"} · {v.municipio ?? "sem município"} · {v.nivel}
                   </p>
+                  {v.link_candidatura ? (
+                    <p className="mt-1.5 text-[12px]">
+                      <a
+                        href={v.link_candidatura}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mono-caps text-mata-deep underline underline-offset-2 hover:text-mata"
+                      >
+                        Ver vaga na fonte ↗
+                      </a>
+                      <span className="text-ink-faint"> · {dominioDe(v.link_candidatura)}</span>
+                      {linkGenerico(v.link_candidatura) && (
+                        <span className="mt-1 block text-[12px] text-sol">
+                          Este link abre só a página inicial do site — encontre o endereço
+                          específico da vaga e edite antes de aprovar, para o candidato ver os detalhes.
+                        </span>
+                      )}
+                    </p>
+                  ) : (
+                    v.forma_candidatura && (
+                      <p className="mt-1.5 text-[12px] text-ink-soft">
+                        <span className="mono-caps text-ink-faint">Candidatura:</span>{" "}
+                        {v.forma_candidatura}
+                      </p>
+                    )
+                  )}
                   {v.origem_externa_nao_verificada && v.contato_submissao && (
                     <p className="mt-1.5 text-[12px] text-ink-soft">
                       <span className="mono-caps text-ink-faint">Enviada por</span>{" "}

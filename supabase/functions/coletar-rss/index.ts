@@ -116,6 +116,12 @@ const CORS = {
   "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
 };
 
+// TODA resposta precisa dos headers de CORS — senão o navegador bloqueia a
+// resposta (mesmo 200) e o functions.invoke do painel acusa erro.
+function json(body: unknown, status = 200) {
+  return Response.json(body, { status, headers: CORS });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
 
@@ -143,7 +149,7 @@ Deno.serve(async (req) => {
     if (isAdmin) autorizado = true;
   }
   if (!autorizado) {
-    return Response.json({ ok: false, erro: "não autorizado" }, { status: 401, headers: CORS });
+    return json({ ok: false, erro: "não autorizado" }, 401);
   }
 
   const { data: fontes, error: erroFontes } = await supabase
@@ -154,7 +160,7 @@ Deno.serve(async (req) => {
     .in("status", ["ativa", "em_teste"]);
 
   if (erroFontes) {
-    return Response.json({ ok: false, erro: erroFontes.message }, { status: 500 });
+    return json({ ok: false, erro: erroFontes.message }, 500);
   }
 
   const resumo: Record<string, unknown>[] = [];
@@ -287,5 +293,5 @@ Deno.serve(async (req) => {
     });
   }
 
-  return Response.json({ ok: true, fontes: resumo });
+  return json({ ok: true, fontes: resumo });
 });
