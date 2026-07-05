@@ -879,6 +879,18 @@ export type Database = {
         Args: { p_cron: string; p_nome: string; p_sql: string }
         Returns: undefined
       }
+      bio_duplicatas_fila: {
+        Args: never
+        Returns: {
+          dup_empresa: string
+          dup_id: string
+          dup_origem: string
+          dup_status: string
+          dup_titulo: string
+          similaridade: number
+          vaga_id: string
+        }[]
+      }
       bio_is_admin: { Args: never; Returns: boolean }
       bio_score_aderencia: {
         Args: { v: Database["public"]["Tables"]["vagas"]["Row"] }
