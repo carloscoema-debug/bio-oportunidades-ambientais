@@ -19,6 +19,14 @@ const AMBIENTAL = [
   "residuo", "hidric", "florest", "ecolog", "climat", "energia renovavel",
   "geoproces", "licenciamento", "reciclag", "efluente", "recursos hidricos",
   "gestao ambiental", "biolog",
+  // energias renováveis — polo eólico/solar do Ceará emprega técnicos ambientais
+  "eolic", "fotovoltaic", "energia solar", "parque solar", "parque eolico",
+  "hidrogenio verde",
+  // conservação e monitoramento
+  "esg", "biodiversidad", "fauna", "flora", "unidade de conservacao",
+  "educacao ambiental", "qualidade da agua", "qualidade do ar",
+  "tratamento de agua", "tratamento de esgoto", "carbono", "agroecolog",
+  "aquicultura", "pesca", "carcinicultura",
 ];
 
 // Textos de âncora que NÃO são vaga (rodapé/gestão do alerta).
