@@ -20,6 +20,10 @@ const EXCLUIR = [
   "recepcionad", "toma posse", "tomam posse", "gabarito", "resultado final",
   "resultado do", "resultado da", "homologa", "convocacao", "convocados",
   "convocada", "reuniao", "assembleia", "recepciona", "sao recepcion",
+  // chamamentos de compras/parcerias (não são vaga para estudante)
+  "firmar parceria", "prestadores de servico", "prestador de servico",
+  "celebrar contratos", "aquisicao de", "credenciamento de empresas",
+  "tomada de preco", "licitac", "pregao",
 ];
 
 const norm = (s: string) =>

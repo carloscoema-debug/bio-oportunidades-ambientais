@@ -46,7 +46,19 @@ interface VagaAdmin {
   mensagem_verificacao_link: string | null;
   link_candidatura: string | null;
   forma_candidatura: string | null;
+  remuneracao_bolsa: string | null;
+  carga_horaria: string | null;
+  modalidade: string | null;
+  prazo_inscricao: string | null;
+  sem_prazo_definido: boolean | null;
+  descricao: string | null;
 }
+
+const MODALIDADE_LABEL: Record<string, string> = {
+  presencial: "Presencial",
+  remoto: "Remoto",
+  hibrido: "Híbrido",
+};
 
 // Link "genérico" = aponta só para a home do domínio (sem caminho da vaga).
 // O candidato não conseguiria ver a vaga original — o coordenador precisa
@@ -133,7 +145,7 @@ export function FilaVagas() {
       const { data, error } = await supabase
         .from("vagas")
         .select(
-          "id, titulo, empresa_orgao, tipo, nivel, municipio, regiao, score_aderencia, score_urgencia, flags_incompatibilidade, status, origem, origem_externa_nao_verificada, contato_submissao, status_link, mensagem_verificacao_link, link_candidatura, forma_candidatura",
+          "id, titulo, empresa_orgao, tipo, nivel, municipio, regiao, score_aderencia, score_urgencia, flags_incompatibilidade, status, origem, origem_externa_nao_verificada, contato_submissao, status_link, mensagem_verificacao_link, link_candidatura, forma_candidatura, remuneracao_bolsa, carga_horaria, modalidade, prazo_inscricao, sem_prazo_definido, descricao",
         )
         .eq("status", status)
         .order("score_aderencia", { ascending: false });
@@ -247,6 +259,14 @@ export function FilaVagas() {
           const selo = seloAderencia(v.score_aderencia);
           const urg = badgeUrgencia(v.score_urgencia);
           const flags = flagsAtivas(v);
+          const detalhes = [
+            v.remuneracao_bolsa,
+            v.carga_horaria,
+            v.modalidade ? MODALIDADE_LABEL[v.modalidade] ?? v.modalidade : null,
+            !v.sem_prazo_definido && v.prazo_inscricao
+              ? `Inscrições até ${v.prazo_inscricao}`
+              : null,
+          ].filter(Boolean) as string[];
           return (
             <div key={v.id} className="rounded-[12px] border border-line bg-surface p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -305,6 +325,21 @@ export function FilaVagas() {
                         {v.forma_candidatura}
                       </p>
                     )
+                  )}
+                  {detalhes.length > 0 && (
+                    <p className="mt-1.5 flex flex-wrap gap-x-2 text-[12.5px] text-ink">
+                      {detalhes.map((d, i) => (
+                        <span key={i}>
+                          {i > 0 && <span className="mr-2 text-ink-faint">◦</span>}
+                          {d}
+                        </span>
+                      ))}
+                    </p>
+                  )}
+                  {v.descricao && (
+                    <p className="mt-1.5 line-clamp-2 max-w-[70ch] text-[12.5px] leading-relaxed text-ink-soft">
+                      {v.descricao}
+                    </p>
                   )}
                   {v.origem_externa_nao_verificada && v.contato_submissao && (
                     <p className="mt-1.5 text-[12px] text-ink-soft">

@@ -31,6 +31,16 @@ const BOILERPLATE = [
   "todos os resultados", "see all", "ver todas", "ver mais vagas",
 ];
 
+// E-mails de CONFIRMAÇÃO de alerta (Indeed/LinkedIn enviam um ao criar o alerta):
+// trazem "seu alerta foi ativado/criado" + no máximo 1 vaga-exemplo mal casada e sem
+// detalhes. Não devem virar vaga — as vagas reais vêm nos resumos recorrentes.
+const CONFIRMACAO = [
+  "foi ativado com sucesso", "foi criado seu alerta", "criado seu alerta de",
+  "seu alerta foi criado", "seu alerta foi ativado", "seu alerta de vaga foi",
+  "job alert confirmation", "created your job alert", "your job alert is",
+  "alert is set up",
+];
+
 const norm = (s: string) =>
   s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
@@ -80,11 +90,21 @@ async function sha256(s: string): Promise<string> {
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-// Extrai candidatos { titulo, link } do HTML do e-mail.
-function extrairVagas(html: string): { titulo: string; link: string }[] {
-  const out: { titulo: string; link: string }[] = [];
+// Captura de detalhes visíveis no próprio e-mail (quando existirem).
+// Salário: "R$ 2.500", "R$ 1.500,00", "R$ 10 mil"…
+const RE_SALARIO = /R\$\s?\d[\d.\s]{0,12}(?:,\d{2})?(?:\s?mil)?/i;
+
+// Extrai candidatos { titulo, link, trecho, remuneracao } do HTML do e-mail.
+// O "trecho" é o bloco de texto logo após o link — nos resumos do Indeed/LinkedIn
+// costuma trazer empresa, local e, às vezes, salário; ajuda a leitura na fila.
+function extrairVagas(
+  html: string,
+): { titulo: string; link: string; trecho: string | null; remuneracao: string | null }[] {
+  const out: { titulo: string; link: string; trecho: string | null; remuneracao: string | null }[] = [];
   const vistos = new Set<string>();
-  for (const m of html.matchAll(/<a\b[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi)) {
+  const re = /<a\b[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(html)) !== null) {
     const hrefRaw = m[1];
     if (/^(mailto:|tel:|#)/i.test(hrefRaw)) continue;
     const link = urlReal(hrefRaw);
@@ -101,7 +121,21 @@ function extrairVagas(html: string): { titulo: string; link: string }[] {
     const chave = urlCanonica(link);
     if (vistos.has(chave)) continue;
     vistos.add(chave);
-    out.push({ titulo: titulo.slice(0, 300), link });
+
+    // bloco após a âncora = contexto da vaga (empresa/local/salário)
+    const bloco = limparTexto(html.slice(m.index, m.index + 1400));
+    let trecho = bloco.toLowerCase().startsWith(titulo.toLowerCase())
+      ? bloco.slice(titulo.length).trim()
+      : bloco;
+    trecho = trecho.replace(/^[\s·|—–-]+/, "").slice(0, 240).trim();
+    const sal = bloco.match(RE_SALARIO);
+
+    out.push({
+      titulo: titulo.slice(0, 300),
+      link,
+      trecho: trecho.length >= 12 ? trecho : null,
+      remuneracao: sal ? sal[0].replace(/\s+/g, " ").trim() : null,
+    });
   }
   return out;
 }
@@ -200,6 +234,23 @@ Deno.serve(async (req) => {
     return json({ ok: true, ignorado: true, motivo: `remetente não reconhecido: ${from || "(vazio)"}` });
   }
 
+  // Pula e-mails de CONFIRMAÇÃO de alerta (não são vagas reais). Registra para
+  // rastreio, mas não cria vaga — evita ruído mal casado e sem detalhes.
+  const cabecalho = norm(`${subject} ${limparTexto(corpo).slice(0, 400)}`);
+  if (CONFIRMACAO.some((c) => cabecalho.includes(norm(c)))) {
+    if (!reprocessando) {
+      await supabase.from("emails_recebidos").insert({
+        remetente: from || null,
+        assunto: subject || null,
+        corpo_raw: corpo.slice(0, 200000),
+        fonte_id: fonte.id,
+        status_parsing: "processado",
+        vagas_geradas: 0,
+      });
+    }
+    return json({ ok: true, confirmacao_de_alerta: true, vagas: 0 });
+  }
+
   // registra o e-mail (reconhecido) ANTES das vagas, para vinculá-las (email_recebido_id)
   let emailId: string | null = null;
   if (!reprocessando) {
@@ -227,7 +278,7 @@ Deno.serve(async (req) => {
     const itens = extrairVagas(corpo);
     encontrados = itens.length;
 
-    for (const { titulo, link } of itens) {
+    for (const { titulo, link, trecho, remuneracao } of itens) {
       const hashUrl = await sha256(urlCanonica(link));
       const hashSem = await sha256(`${norm(titulo)}|${norm(fonte.nome)}`);
 
@@ -239,6 +290,12 @@ Deno.serve(async (req) => {
         .limit(1).maybeSingle();
       if (existe) { duplicados++; continue; }
 
+      // descrição para leitura na fila: o trecho do e-mail (empresa/local/salário)
+      // quando houver; senão, o assunto como contexto mínimo.
+      const descricao = trecho
+        ? `${trecho}${subject ? `\n\nAlerta: ${subject}` : ""}`.slice(0, 2000)
+        : subject ? `Via alerta: ${subject}`.slice(0, 2000) : null;
+
       const { data: bruta, error: erroBruta } = await supabase
         .from("vagas_brutas")
         .insert({
@@ -246,7 +303,7 @@ Deno.serve(async (req) => {
           execucao_id: execId,
           email_recebido_id: emailId,
           titulo_raw: titulo,
-          descricao_raw: subject.slice(0, 4000),
+          descricao_raw: (trecho ?? subject).slice(0, 4000),
           url_original: link,
           hash_url: hashUrl,
           hash_semantico: hashSem,
@@ -264,7 +321,8 @@ Deno.serve(async (req) => {
         tipo: "processo_seletivo",
         nivel: "tecnico",
         curso_alvo: ["tecnico_meio_ambiente"],
-        descricao: subject ? `Via alerta: ${subject}`.slice(0, 2000) : null,
+        descricao,
+        remuneracao_bolsa: remuneracao,
         link_candidatura: link,
         origem: `Canal B · ${fonte.nome}`,
         score_confiabilidade_fonte: fonte.score_confiabilidade,
