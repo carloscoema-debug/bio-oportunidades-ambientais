@@ -12,11 +12,13 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const PALAVRAS_CHAVE = [
-  "estagio", "estágio", "selecao", "seleção", "edital", "processo seletivo",
-  "vaga", "vagas", "concurso", "chamamento", "bolsa", "emprego", "contratacao",
-  "contratação", "recrutamento", "trabalhe conosco", "analista", "tecnico",
-  "técnico", "ambiental", "meio ambiente",
+// Canal B: o título precisa ter SINAL AMBIENTAL. O alerta de e-mail já filtra "vaga";
+// aqui garantimos aderência ao curso e cortamos ruído (enfermagem, TI, manutenção…).
+const AMBIENTAL = [
+  "ambient", "meio ambiente", "meio-ambiente", "sustentab", "ssma", "saneamento",
+  "residuo", "hidric", "florest", "ecolog", "climat", "energia renovavel",
+  "geoproces", "licenciamento", "reciclag", "efluente", "recursos hidricos",
+  "gestao ambiental", "biolog",
 ];
 
 // Textos de âncora que NÃO são vaga (rodapé/gestão do alerta).
@@ -27,12 +29,6 @@ const BOILERPLATE = [
   "ver online", "editar alerta", "edit this", "editar este", "sign in", "entrar",
   "configuraç", "settings", "feedback", "denunciar", "report", "atualizar preferências",
   "todos os resultados", "see all", "ver todas", "ver mais vagas",
-];
-
-// Dicas de que o link É de vaga (mesmo sem palavra-chave no texto).
-const HREF_JOB_HINT = [
-  "/rc/clk", "/pagead", "viewjob", "jk=", "/jobs/view", "/comm/jobs",
-  "currentjobid=", "/vaga", "/vagas", "/job/", "/jobs/", "/cargo", "/carreira",
 ];
 
 const norm = (s: string) =>
@@ -99,12 +95,8 @@ function extrairVagas(html: string): { titulo: string; link: string }[] {
 
     const tnorm = norm(titulo);
     if (BOILERPLATE.some((b) => tnorm.includes(b))) continue;
-
-    const lnorm = link.toLowerCase();
-    const pareceVaga =
-      HREF_JOB_HINT.some((h) => lnorm.includes(h)) ||
-      PALAVRAS_CHAVE.some((p) => tnorm.includes(norm(p)));
-    if (!pareceVaga) continue;
+    // aderência ao curso: exige sinal ambiental no título (corta enfermagem/TI/etc.)
+    if (!AMBIENTAL.some((a) => tnorm.includes(norm(a)))) continue;
 
     const chave = urlCanonica(link);
     if (vistos.has(chave)) continue;
@@ -208,6 +200,20 @@ Deno.serve(async (req) => {
     return json({ ok: true, ignorado: true, motivo: `remetente não reconhecido: ${from || "(vazio)"}` });
   }
 
+  // registra o e-mail (reconhecido) ANTES das vagas, para vinculá-las (email_recebido_id)
+  let emailId: string | null = null;
+  if (!reprocessando) {
+    const { data: emRow } = await supabase.from("emails_recebidos").insert({
+      remetente: from || null,
+      assunto: subject || null,
+      corpo_raw: corpo.slice(0, 200000),
+      fonte_id: fonte.id,
+      status_parsing: "processado",
+      vagas_geradas: 0,
+    }).select("id").single();
+    emailId = emRow?.id ?? null;
+  }
+
   // registra execução
   const { data: exec } = await supabase
     .from("execucoes_coleta").insert({ fonte_id: fonte.id }).select("id").single();
@@ -223,9 +229,14 @@ Deno.serve(async (req) => {
 
     for (const { titulo, link } of itens) {
       const hashUrl = await sha256(urlCanonica(link));
+      const hashSem = await sha256(`${norm(titulo)}|${norm(fonte.nome)}`);
 
+      // dedup: URL exata OU semântico (título+fonte). O Indeed troca o link de
+      // alerta a cada envio, então só o semântico pega a mesma vaga reenviada.
       const { data: existe } = await supabase
-        .from("vagas_brutas").select("id").eq("hash_url", hashUrl).maybeSingle();
+        .from("vagas_brutas").select("id")
+        .or(`hash_url.eq.${hashUrl},hash_semantico.eq.${hashSem}`)
+        .limit(1).maybeSingle();
       if (existe) { duplicados++; continue; }
 
       const { data: bruta, error: erroBruta } = await supabase
@@ -233,10 +244,13 @@ Deno.serve(async (req) => {
         .insert({
           fonte_id: fonte.id,
           execucao_id: execId,
+          email_recebido_id: emailId,
           titulo_raw: titulo,
           descricao_raw: subject.slice(0, 4000),
           url_original: link,
           hash_url: hashUrl,
+          hash_semantico: hashSem,
+          dedup_incompleta: false,
           status: "normalizada",
         })
         .select("id").single();
@@ -288,16 +302,14 @@ Deno.serve(async (req) => {
       .eq("id", fonte.id);
   }
 
-  // registra o e-mail processado (auditoria + limpeza LGPD 90d + fila técnica)
-  if (!reprocessando) {
-    await supabase.from("emails_recebidos").insert({
-      remetente: from || null,
-      assunto: subject || null,
-      corpo_raw: corpo.slice(0, 200000),
-      fonte_id: fonte.id,
-      status_parsing: statusExec === "falha_total" ? "erro" : "processado",
-      vagas_geradas: novos,
-    });
+  // fecha o registro do e-mail com o resultado final (vagas geradas + status)
+  if (!reprocessando && emailId) {
+    await supabase.from("emails_recebidos")
+      .update({
+        status_parsing: statusExec === "falha_total" ? "erro" : "processado",
+        vagas_geradas: novos,
+      })
+      .eq("id", emailId);
   }
 
   return json({

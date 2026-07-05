@@ -172,16 +172,18 @@ Deno.serve(async (req) => {
         if (EXCLUIR.some((n) => alvo.includes(norm(n)))) continue;
 
         const hashUrl = await sha256(urlCanonica(link));
+        const hashSem = await sha256(`${norm(titulo)}|${norm(fonte.nome)}`);
 
-        // dedup: já existe essa URL?
+        // dedup: URL exata OU semântico (título+fonte) — pega o mesmo item
+        // reaparecendo com URL diferente (ex.: redirect do Google Alerts).
         const { data: existe } = await supabase
           .from("vagas_brutas")
           .select("id")
-          .eq("hash_url", hashUrl)
+          .or(`hash_url.eq.${hashUrl},hash_semantico.eq.${hashSem}`)
+          .limit(1)
           .maybeSingle();
         if (existe) { duplicados++; continue; }
 
-        // lista negra (hash de vaga rejeitada) — checa por hash_url também
         const { data: bruta, error: erroBruta } = await supabase
           .from("vagas_brutas")
           .insert({
@@ -191,6 +193,8 @@ Deno.serve(async (req) => {
             descricao_raw: descricao.slice(0, 4000),
             url_original: link,
             hash_url: hashUrl,
+            hash_semantico: hashSem,
+            dedup_incompleta: false,
             status: "normalizada",
           })
           .select("id")
