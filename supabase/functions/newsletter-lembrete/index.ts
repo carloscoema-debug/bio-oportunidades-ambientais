@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
     <p style="font-size:16px;font-weight:700;margin:0 0 4px">Newsletter da semana pronta para revisar</p>
     <p style="font-size:14px;color:#5B6B60;margin:0 0 14px">Há <strong>${lista.length}</strong> vaga(s) nova(s) sugerida(s). Revise e envie quando quiser — nada é disparado automaticamente.</p>
     <ul style="font-size:14px;padding-left:18px;margin:0 0 18px">${itens}</ul>
-    <a href="${esc(portalBase)}/admin" style="display:inline-block;background:#0D6B44;color:#fff;text-decoration:none;font-size:14px;font-weight:700;padding:11px 20px;border-radius:9px">Abrir o painel e revisar →</a>
+    <a href="${esc(portalBase)}/admin?aba=newsletter" style="display:inline-block;background:#0D6B44;color:#fff;text-decoration:none;font-size:14px;font-weight:700;padding:11px 20px;border-radius:9px">Abrir o painel e revisar →</a>
     <p style="font-size:12px;color:#8A968C;margin-top:20px">No painel, as vagas novas já vêm pré-selecionadas na aba Newsletter. Aviso automático do BIO.</p>
   </div>`;
 

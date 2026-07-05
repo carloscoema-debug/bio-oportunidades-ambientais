@@ -8,7 +8,13 @@ import { Coleta } from "@/components/admin/Coleta";
 import { Newsletter } from "@/components/admin/Newsletter";
 import { Relatorios } from "@/components/admin/Relatorios";
 
+const ABAS = ["painel", "fila", "cadastrar", "coleta", "newsletter", "relatorios"] as const;
+type Aba = (typeof ABAS)[number];
+
 export const Route = createFileRoute("/admin")({
+  validateSearch: (s: Record<string, unknown>): { aba?: Aba } => ({
+    aba: ABAS.includes(s.aba as Aba) ? (s.aba as Aba) : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Painel da coordenação — BIO" },
@@ -143,9 +149,8 @@ function Login({
 }
 
 function Painel({ email, signOut }: { email: string; signOut: () => void }) {
-  const [aba, setAba] = useState<
-    "painel" | "fila" | "cadastrar" | "coleta" | "newsletter" | "relatorios"
-  >("painel");
+  const { aba: abaUrl } = Route.useSearch();
+  const [aba, setAba] = useState<Aba>(abaUrl ?? "painel");
 
   return (
     <div className="min-h-screen bg-paper">
