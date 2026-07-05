@@ -198,7 +198,8 @@ export function Relatorios() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
         {(
           [
             ["tudo", "Todo o período"],
@@ -218,6 +219,15 @@ export function Relatorios() {
             {l}
           </button>
         ))}
+        </div>
+        <a
+          href="/relatorio"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mono-caps rounded-full border-[1.5px] border-mata bg-mata-tint px-3.5 py-1.5 text-[12px] text-mata-deep hover:bg-mata hover:text-white"
+        >
+          Gerar PDF semestral ↗
+        </a>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
