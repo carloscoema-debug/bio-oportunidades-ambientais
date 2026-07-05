@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { EditarVaga } from "./EditarVaga";
 
 const STATUS = [
   ["pendente", "Pendentes"],
@@ -136,6 +137,7 @@ export function FilaVagas() {
   const [balde, setBalde] = useState<"todas" | "prontas" | "atencao">("todas");
   const [erro, setErro] = useState<string | null>(null);
   const [rejeitando, setRejeitando] = useState<string | null>(null);
+  const [editando, setEditando] = useState<string | null>(null);
   const [motivo, setMotivo] = useState("fora_do_perfil");
   const [detalhe, setDetalhe] = useState("");
 
@@ -348,20 +350,36 @@ export function FilaVagas() {
                     </p>
                   )}
                 </div>
-                {status === "pendente" && (
-                  <div className="flex shrink-0 gap-2">
+                {(status === "pendente" || status === "aprovada") && (
+                  <div className="flex shrink-0 flex-wrap justify-end gap-2">
+                    {status === "pendente" && (
+                      <button
+                        onClick={() => aprovar(v)}
+                        className="rounded-[8px] bg-mata px-3.5 py-2 text-[13px] font-bold text-white hover:bg-mata-deep"
+                      >
+                        Aprovar
+                      </button>
+                    )}
                     <button
-                      onClick={() => aprovar(v)}
-                      className="rounded-[8px] bg-mata px-3.5 py-2 text-[13px] font-bold text-white hover:bg-mata-deep"
+                      onClick={() => {
+                        setEditando(editando === v.id ? null : v.id);
+                        setRejeitando(null);
+                      }}
+                      className="rounded-[8px] border border-line-strong px-3.5 py-2 text-[13px] font-bold text-ink-soft hover:border-mata hover:text-mata"
                     >
-                      Aprovar
+                      {editando === v.id ? "Fechar" : "Editar"}
                     </button>
-                    <button
-                      onClick={() => setRejeitando(rejeitando === v.id ? null : v.id)}
-                      className="rounded-[8px] border border-line-strong px-3.5 py-2 text-[13px] font-bold text-ink-soft hover:border-barro hover:text-barro"
-                    >
-                      Rejeitar
-                    </button>
+                    {status === "pendente" && (
+                      <button
+                        onClick={() => {
+                          setRejeitando(rejeitando === v.id ? null : v.id);
+                          setEditando(null);
+                        }}
+                        className="rounded-[8px] border border-line-strong px-3.5 py-2 text-[13px] font-bold text-ink-soft hover:border-barro hover:text-barro"
+                      >
+                        Rejeitar
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -396,6 +414,12 @@ export function FilaVagas() {
                       Confirmar
                     </button>
                   </div>
+                </div>
+              )}
+
+              {editando === v.id && (
+                <div className="mt-3 rounded-[9px] border border-mata-line bg-paper p-3 sm:p-4">
+                  <EditarVaga id={v.id} onClose={() => setEditando(null)} />
                 </div>
               )}
             </div>
