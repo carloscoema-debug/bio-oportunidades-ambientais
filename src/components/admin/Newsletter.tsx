@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -21,8 +21,9 @@ export function Newsletter() {
     queryFn: async () => {
       const { data } = await supabase
         .from("vagas")
-        .select("id, titulo, empresa_orgao, regiao")
+        .select("id, titulo, empresa_orgao, regiao, data_envio_newsletter")
         .eq("status", "aprovada")
+        .order("data_envio_newsletter", { ascending: true, nullsFirst: true })
         .order("data_publicacao", { ascending: false });
       return data ?? [];
     },
@@ -51,7 +52,17 @@ export function Newsletter() {
     },
   });
 
+  // pré-seleciona as vagas ainda não enviadas (fecha o ciclo do aviso semanal)
+  const preselecionou = useRef(false);
+  useEffect(() => {
+    if (preselecionou.current || !vagas || vagas.length === 0) return;
+    preselecionou.current = true;
+    const novas = vagas.filter((v) => !v.data_envio_newsletter).map((v) => v.id);
+    if (novas.length > 0) setSelec(new Set(novas));
+  }, [vagas]);
+
   const ids = [...selec];
+  const novasCount = (vagas ?? []).filter((v) => !v.data_envio_newsletter).length;
 
   function toggle(id: string) {
     setSelec((p) => {
@@ -141,6 +152,7 @@ export function Newsletter() {
         <div className="mb-2 flex items-center justify-between">
           <p className="mono-caps text-[11px] text-ink-faint">
             Vagas a incluir · {selec.size} selecionada(s)
+            {novasCount > 0 && ` · ${novasCount} nova(s) pré-selecionada(s)`}
           </p>
           <div className="flex gap-2">
             <button onClick={todas} className="mono-caps text-[11px] text-mata-deep hover:underline">
@@ -167,7 +179,14 @@ export function Newsletter() {
                 className="mt-0.5 h-4 w-4 shrink-0 accent-[#0D6B44]"
               />
               <span>
-                <span className="block text-[14px] font-semibold text-ink">{v.titulo}</span>
+                <span className="block text-[14px] font-semibold text-ink">
+                  {v.titulo}
+                  {v.data_envio_newsletter && (
+                    <span className="mono-caps ml-2 rounded-full bg-surface-dim px-2 py-0.5 text-[10px] font-normal text-ink-soft">
+                      já enviada
+                    </span>
+                  )}
+                </span>
                 <span className="mono-caps text-[11px] text-ink-faint">
                   {[v.empresa_orgao, v.regiao].filter(Boolean).join(" · ")}
                 </span>

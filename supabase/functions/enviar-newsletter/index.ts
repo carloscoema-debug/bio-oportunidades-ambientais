@@ -153,5 +153,13 @@ Deno.serve(async (req) => {
     mensagem_erro: falhas > 0 ? `${falhas} destinatário(s) falharam` : null,
   });
 
+  // carimba as vagas como já enviadas (não serão re-sugeridas na próxima semana)
+  if (enviados > 0) {
+    await svc.from("vagas")
+      .update({ data_envio_newsletter: new Date().toISOString() })
+      .in("id", vagas.map((v) => v.id))
+      .is("data_envio_newsletter", null);
+  }
+
   return json({ ok: true, status, enviados, falhas, vagas: vagas.length });
 });
