@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PoliticaDePrivacidadeRouteImport } from './routes/politica-de-privacidade'
+import { Route as DivulgarRouteImport } from './routes/divulgar'
 import { Route as DescadastrarRouteImport } from './routes/descadastrar'
 import { Route as ComoSeCandidatarRouteImport } from './routes/como-se-candidatar'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -18,6 +19,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const PoliticaDePrivacidadeRoute = PoliticaDePrivacidadeRouteImport.update({
   id: '/politica-de-privacidade',
   path: '/politica-de-privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DivulgarRoute = DivulgarRouteImport.update({
+  id: '/divulgar',
+  path: '/divulgar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DescadastrarRoute = DescadastrarRouteImport.update({
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/como-se-candidatar': typeof ComoSeCandidatarRoute
   '/descadastrar': typeof DescadastrarRoute
+  '/divulgar': typeof DivulgarRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/como-se-candidatar': typeof ComoSeCandidatarRoute
   '/descadastrar': typeof DescadastrarRoute
+  '/divulgar': typeof DivulgarRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
 }
 export interface FileRoutesById {
@@ -61,6 +69,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/como-se-candidatar': typeof ComoSeCandidatarRoute
   '/descadastrar': typeof DescadastrarRoute
+  '/divulgar': typeof DivulgarRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
 }
 export interface FileRouteTypes {
@@ -70,6 +79,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/como-se-candidatar'
     | '/descadastrar'
+    | '/divulgar'
     | '/politica-de-privacidade'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -77,6 +87,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/como-se-candidatar'
     | '/descadastrar'
+    | '/divulgar'
     | '/politica-de-privacidade'
   id:
     | '__root__'
@@ -84,6 +95,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/como-se-candidatar'
     | '/descadastrar'
+    | '/divulgar'
     | '/politica-de-privacidade'
   fileRoutesById: FileRoutesById
 }
@@ -92,6 +104,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   ComoSeCandidatarRoute: typeof ComoSeCandidatarRoute
   DescadastrarRoute: typeof DescadastrarRoute
+  DivulgarRoute: typeof DivulgarRoute
   PoliticaDePrivacidadeRoute: typeof PoliticaDePrivacidadeRoute
 }
 
@@ -102,6 +115,13 @@ declare module '@tanstack/react-router' {
       path: '/politica-de-privacidade'
       fullPath: '/politica-de-privacidade'
       preLoaderRoute: typeof PoliticaDePrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/divulgar': {
+      id: '/divulgar'
+      path: '/divulgar'
+      fullPath: '/divulgar'
+      preLoaderRoute: typeof DivulgarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/descadastrar': {
@@ -140,6 +160,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   ComoSeCandidatarRoute: ComoSeCandidatarRoute,
   DescadastrarRoute: DescadastrarRoute,
+  DivulgarRoute: DivulgarRoute,
   PoliticaDePrivacidadeRoute: PoliticaDePrivacidadeRoute,
 }
 export const routeTree = rootRouteImport

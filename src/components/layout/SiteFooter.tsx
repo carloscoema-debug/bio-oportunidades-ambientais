@@ -23,12 +23,12 @@ export function SiteFooter() {
           >
             Como se candidatar
           </Link>
-          <span
-            className="mono-caps cursor-default text-[11px] text-ink-faint"
-            title="Disponível em breve"
+          <Link
+            to="/divulgar"
+            className="mono-caps text-[11px] text-ink hover:text-mata"
           >
             Divulgue uma oportunidade
-          </span>
+          </Link>
           <Link
             to="/politica-de-privacidade"
             className="mono-caps text-[11px] text-ink hover:text-mata"

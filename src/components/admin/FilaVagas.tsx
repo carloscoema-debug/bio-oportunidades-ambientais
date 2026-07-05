@@ -39,6 +39,9 @@ interface VagaAdmin {
   score_urgencia: number;
   flags_incompatibilidade: Record<string, boolean> | null;
   status: string;
+  origem: string | null;
+  origem_externa_nao_verificada: boolean | null;
+  contato_submissao: string | null;
 }
 
 function mensagemBloqueio(msg: string): string {
@@ -103,7 +106,7 @@ export function FilaVagas() {
       const { data, error } = await supabase
         .from("vagas")
         .select(
-          "id, titulo, empresa_orgao, tipo, nivel, municipio, regiao, score_aderencia, score_urgencia, flags_incompatibilidade, status",
+          "id, titulo, empresa_orgao, tipo, nivel, municipio, regiao, score_aderencia, score_urgencia, flags_incompatibilidade, status, origem, origem_externa_nao_verificada, contato_submissao",
         )
         .eq("status", status)
         .order("score_aderencia", { ascending: false });
@@ -118,12 +121,15 @@ export function FilaVagas() {
     return lista.filter((v) => (balde === "prontas" ? estaPronta(v) : precisaAtencao(v)));
   }, [vagas, status, balde]);
 
-  async function aprovar(id: string) {
+  async function aprovar(v: VagaAdmin) {
     setErro(null);
-    const { error } = await supabase
-      .from("vagas")
-      .update({ status: "aprovada" })
-      .eq("id", id);
+    const patch: Record<string, unknown> = { status: "aprovada" };
+    // aprovar uma vaga de origem externa É a revisão manual exigida pelo bloqueio B4
+    if (v.origem_externa_nao_verificada) {
+      patch.revisao_manual_origem_externa = true;
+      patch.data_revisao_origem_externa = new Date().toISOString();
+    }
+    const { error } = await supabase.from("vagas").update(patch).eq("id", v.id);
     if (error) return setErro(mensagemBloqueio(error.message));
     qc.invalidateQueries({ queryKey: ["admin_vagas"] });
     qc.invalidateQueries({ queryKey: ["admin_dashboard"] });
@@ -231,6 +237,9 @@ export function FilaVagas() {
                         {FLAG_LABEL[f] ?? f}
                       </Pill>
                     ))}
+                    {v.origem_externa_nao_verificada && (
+                      <Pill cls="bg-sol-tint text-sol border-[#EBD5A8]">Origem externa</Pill>
+                    )}
                   </div>
                   <p className="font-display text-[16px] font-bold leading-tight text-ink">
                     {v.titulo}
@@ -238,11 +247,17 @@ export function FilaVagas() {
                   <p className="mono-caps mt-1 text-[11.5px] text-ink-soft">
                     {v.empresa_orgao ?? "—"} · {v.municipio ?? "sem município"} · {v.nivel}
                   </p>
+                  {v.origem_externa_nao_verificada && v.contato_submissao && (
+                    <p className="mt-1.5 text-[12px] text-ink-soft">
+                      <span className="mono-caps text-ink-faint">Enviada por</span>{" "}
+                      {v.contato_submissao} — confira a origem antes de aprovar.
+                    </p>
+                  )}
                 </div>
                 {status === "pendente" && (
                   <div className="flex shrink-0 gap-2">
                     <button
-                      onClick={() => aprovar(v.id)}
+                      onClick={() => aprovar(v)}
                       className="rounded-[8px] bg-mata px-3.5 py-2 text-[13px] font-bold text-white hover:bg-mata-deep"
                     >
                       Aprovar
