@@ -77,7 +77,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "BIO — Observatório de Oportunidades Ambientais" },
+      { title: "BIO — Oportunidades ambientais no Ceará" },
       {
         name: "description",
         content:
@@ -99,6 +99,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:type", content: "website" },
       { property: "og:locale", content: "pt_BR" },
       { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:title", content: "BIO — Oportunidades ambientais no Ceará" },
+      { name: "twitter:title", content: "BIO — Oportunidades ambientais no Ceará" },
+      { name: "description", content: "Curadoria de vagas de estágio e emprego em meio ambiente no Ceará, para estudantes e egressos do Curso Técnico em Meio Ambiente do IFCE Campus Fortaleza." },
+      { property: "og:description", content: "Curadoria de vagas de estágio e emprego em meio ambiente no Ceará, para estudantes e egressos do Curso Técnico em Meio Ambiente do IFCE Campus Fortaleza." },
+      { name: "twitter:description", content: "Curadoria de vagas de estágio e emprego em meio ambiente no Ceará, para estudantes e egressos do Curso Técnico em Meio Ambiente do IFCE Campus Fortaleza." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fac90e39-979f-4ba2-b9c7-86a86e7aa06f/id-preview-774070c2--b6443174-a053-46a7-8fe0-96c6acdc14f6.lovable.app-1783214042804.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fac90e39-979f-4ba2-b9c7-86a86e7aa06f/id-preview-774070c2--b6443174-a053-46a7-8fe0-96c6acdc14f6.lovable.app-1783214042804.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
