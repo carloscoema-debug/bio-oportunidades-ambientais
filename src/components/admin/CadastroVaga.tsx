@@ -74,6 +74,7 @@ export function CadastroVaga() {
     link_candidatura: "",
     sem_prazo_definido: false,
     prazo_inscricao: "",
+    parceiro_id: "",
   });
   const set = (k: keyof typeof f, v: string | boolean) =>
     setF((p) => ({ ...p, [k]: v }));
@@ -98,6 +99,17 @@ export function CadastroVaga() {
         .eq("ativo", true)
         .order("label_display");
       return (data ?? []) as { id: string; label_display: string }[];
+    },
+  });
+  const { data: parceiros } = useQuery({
+    queryKey: ["ref_parceiros"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("parceiros")
+        .select("id, nome")
+        .eq("ativo", true)
+        .order("nome");
+      return (data ?? []) as { id: string; nome: string }[];
     },
   });
 
@@ -140,6 +152,7 @@ export function CadastroVaga() {
       link_candidatura: f.link_candidatura.trim() || null,
       sem_prazo_definido: f.sem_prazo_definido,
       prazo_inscricao: f.sem_prazo_definido ? null : f.prazo_inscricao || null,
+      parceiro_id: f.parceiro_id || null,
       origem: "cadastro manual",
       status: "pendente",
     });
@@ -165,6 +178,7 @@ export function CadastroVaga() {
       forma_candidatura: "",
       link_candidatura: "",
       prazo_inscricao: "",
+      parceiro_id: "",
     }));
     qc.invalidateQueries({ queryKey: ["admin_vagas"] });
   }
@@ -278,6 +292,20 @@ export function CadastroVaga() {
             {areas?.map((a) => (
               <option key={a.id} value={a.id}>
                 {a.label_display}
+              </option>
+            ))}
+          </select>
+        </Campo>
+        <Campo label="Parceiro (opcional — exibe o selo)">
+          <select
+            className={inputCls}
+            value={f.parceiro_id}
+            onChange={(e) => set("parceiro_id", e.target.value)}
+          >
+            <option value="">— nenhum —</option>
+            {parceiros?.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.nome}
               </option>
             ))}
           </select>
