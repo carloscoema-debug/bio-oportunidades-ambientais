@@ -553,6 +553,7 @@ export type Database = {
           count_vaga_suspeita: number
           curso_alvo: string[]
           data_captura: string
+          data_envio_newsletter: string | null
           data_expiracao_calculada: string | null
           data_publicacao: string | null
           data_revisao_origem_externa: string | null
@@ -610,6 +611,7 @@ export type Database = {
           count_vaga_suspeita?: number
           curso_alvo?: string[]
           data_captura?: string
+          data_envio_newsletter?: string | null
           data_expiracao_calculada?: string | null
           data_publicacao?: string | null
           data_revisao_origem_externa?: string | null
@@ -667,6 +669,7 @@ export type Database = {
           count_vaga_suspeita?: number
           curso_alvo?: string[]
           data_captura?: string
+          data_envio_newsletter?: string | null
           data_expiracao_calculada?: string | null
           data_publicacao?: string | null
           data_revisao_origem_externa?: string | null
