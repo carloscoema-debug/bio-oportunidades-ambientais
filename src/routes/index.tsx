@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout } from "../components/layout/SiteLayout";
 import { VagasFeed } from "@/components/vagas/VagasFeed";
+import { NewsletterSignup } from "@/components/vagas/NewsletterSignup";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -48,6 +49,7 @@ function Home() {
       </section>
 
       <VagasFeed />
+      <NewsletterSignup />
     </SiteLayout>
   );
 }

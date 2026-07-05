@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as PoliticaDePrivacidadeRouteImport } from './routes/politica-de-privacidade'
+import { Route as DescadastrarRouteImport } from './routes/descadastrar'
 import { Route as ComoSeCandidatarRouteImport } from './routes/como-se-candidatar'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -17,6 +18,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const PoliticaDePrivacidadeRoute = PoliticaDePrivacidadeRouteImport.update({
   id: '/politica-de-privacidade',
   path: '/politica-de-privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DescadastrarRoute = DescadastrarRouteImport.update({
+  id: '/descadastrar',
+  path: '/descadastrar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ComoSeCandidatarRoute = ComoSeCandidatarRouteImport.update({
@@ -39,12 +45,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/como-se-candidatar': typeof ComoSeCandidatarRoute
+  '/descadastrar': typeof DescadastrarRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/como-se-candidatar': typeof ComoSeCandidatarRoute
+  '/descadastrar': typeof DescadastrarRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
 }
 export interface FileRoutesById {
@@ -52,18 +60,30 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/como-se-candidatar': typeof ComoSeCandidatarRoute
+  '/descadastrar': typeof DescadastrarRoute
   '/politica-de-privacidade': typeof PoliticaDePrivacidadeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/como-se-candidatar' | '/politica-de-privacidade'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/como-se-candidatar'
+    | '/descadastrar'
+    | '/politica-de-privacidade'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/como-se-candidatar' | '/politica-de-privacidade'
+  to:
+    | '/'
+    | '/admin'
+    | '/como-se-candidatar'
+    | '/descadastrar'
+    | '/politica-de-privacidade'
   id:
     | '__root__'
     | '/'
     | '/admin'
     | '/como-se-candidatar'
+    | '/descadastrar'
     | '/politica-de-privacidade'
   fileRoutesById: FileRoutesById
 }
@@ -71,6 +91,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   ComoSeCandidatarRoute: typeof ComoSeCandidatarRoute
+  DescadastrarRoute: typeof DescadastrarRoute
   PoliticaDePrivacidadeRoute: typeof PoliticaDePrivacidadeRoute
 }
 
@@ -81,6 +102,13 @@ declare module '@tanstack/react-router' {
       path: '/politica-de-privacidade'
       fullPath: '/politica-de-privacidade'
       preLoaderRoute: typeof PoliticaDePrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/descadastrar': {
+      id: '/descadastrar'
+      path: '/descadastrar'
+      fullPath: '/descadastrar'
+      preLoaderRoute: typeof DescadastrarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/como-se-candidatar': {
@@ -111,6 +139,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   ComoSeCandidatarRoute: ComoSeCandidatarRoute,
+  DescadastrarRoute: DescadastrarRoute,
   PoliticaDePrivacidadeRoute: PoliticaDePrivacidadeRoute,
 }
 export const routeTree = rootRouteImport

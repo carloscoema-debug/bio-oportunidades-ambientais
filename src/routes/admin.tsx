@@ -5,6 +5,7 @@ import { Dashboard } from "@/components/admin/Dashboard";
 import { CadastroVaga } from "@/components/admin/CadastroVaga";
 import { FilaVagas } from "@/components/admin/FilaVagas";
 import { Coleta } from "@/components/admin/Coleta";
+import { Newsletter } from "@/components/admin/Newsletter";
 import { Relatorios } from "@/components/admin/Relatorios";
 
 export const Route = createFileRoute("/admin")({
@@ -143,7 +144,7 @@ function Login({
 
 function Painel({ email, signOut }: { email: string; signOut: () => void }) {
   const [aba, setAba] = useState<
-    "painel" | "fila" | "cadastrar" | "coleta" | "relatorios"
+    "painel" | "fila" | "cadastrar" | "coleta" | "newsletter" | "relatorios"
   >("painel");
 
   return (
@@ -178,6 +179,7 @@ function Painel({ email, signOut }: { email: string; signOut: () => void }) {
               ["fila", "Fila de curadoria"],
               ["cadastrar", "Cadastrar vaga"],
               ["coleta", "Coleta"],
+              ["newsletter", "Newsletter"],
               ["relatorios", "Relatórios"],
             ] as const
           ).map(([v, l]) => (
@@ -199,6 +201,7 @@ function Painel({ email, signOut }: { email: string; signOut: () => void }) {
         {aba === "fila" && <FilaVagas />}
         {aba === "cadastrar" && <CadastroVaga />}
         {aba === "coleta" && <Coleta />}
+        {aba === "newsletter" && <Newsletter />}
         {aba === "relatorios" && <Relatorios />}
       </main>
     </div>
