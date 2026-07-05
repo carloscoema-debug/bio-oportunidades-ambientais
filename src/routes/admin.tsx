@@ -7,9 +7,10 @@ import { FilaVagas } from "@/components/admin/FilaVagas";
 import { Coleta } from "@/components/admin/Coleta";
 import { Newsletter } from "@/components/admin/Newsletter";
 import { Parceiros } from "@/components/admin/Parceiros";
+import { Insercoes } from "@/components/admin/Insercoes";
 import { Relatorios } from "@/components/admin/Relatorios";
 
-const ABAS = ["painel", "fila", "cadastrar", "coleta", "newsletter", "parceiros", "relatorios"] as const;
+const ABAS = ["painel", "fila", "cadastrar", "coleta", "newsletter", "parceiros", "insercoes", "relatorios"] as const;
 type Aba = (typeof ABAS)[number];
 
 export const Route = createFileRoute("/admin")({
@@ -187,6 +188,7 @@ function Painel({ email, signOut }: { email: string; signOut: () => void }) {
               ["coleta", "Coleta"],
               ["newsletter", "Newsletter"],
               ["parceiros", "Parceiros"],
+              ["insercoes", "Inserções"],
               ["relatorios", "Relatórios"],
             ] as const
           ).map(([v, l]) => (
@@ -210,6 +212,7 @@ function Painel({ email, signOut }: { email: string; signOut: () => void }) {
         {aba === "coleta" && <Coleta />}
         {aba === "newsletter" && <Newsletter />}
         {aba === "parceiros" && <Parceiros />}
+        {aba === "insercoes" && <Insercoes />}
         {aba === "relatorios" && <Relatorios />}
       </main>
     </div>
