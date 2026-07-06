@@ -29,7 +29,7 @@ const AMBIENTAL = [
   "aquicultura", "pesca", "carcinicultura",
 ];
 
-// Textos de âncora que NÃO são vaga (rodapé/gestão do alerta).
+// Textos de âncora que NÃO são vaga (rodapé/gestão do alerta OU cabeçalho de digest).
 const BOILERPLATE = [
   "unsubscribe", "cancelar", "descadastr", "gerenciar", "manage", "preferenc",
   "privacidade", "privacy", "termos", "terms", "ajuda", "help center", "central de ajuda",
@@ -37,6 +37,10 @@ const BOILERPLATE = [
   "ver online", "editar alerta", "edit this", "editar este", "sign in", "entrar",
   "configuraç", "settings", "feedback", "denunciar", "report", "atualizar preferências",
   "todos os resultados", "see all", "ver todas", "ver mais vagas",
+  // cabeçalhos/CTAs de digest (não são o título de uma vaga específica)
+  "novas vagas", "resultados deste aviso", "enviar curriculo", "enviar currículo",
+  "ver vaga", "ver detalhes", "candidatar-se agora", "vagas para voce", "vagas para você",
+  "novos resultados", "clique neste link",
 ];
 
 // E-mails de CONFIRMAÇÃO de alerta (Indeed/LinkedIn enviam um ao criar o alerta):
