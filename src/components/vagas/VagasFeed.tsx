@@ -93,11 +93,11 @@ export function VagasFeed() {
         />
       </div>
 
-      {/* Chips de filtro */}
+      {/* Chips de filtro — quebram em linha (sem scroll oculto que corta filtros) */}
       <div
         role="group"
         aria-label="Filtros"
-        className="mt-3 flex gap-2 overflow-x-auto pb-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="mt-3 flex flex-wrap gap-2"
       >
         {FILTROS.map((f) => {
           const ativo = f.key === filtroKey;
@@ -107,10 +107,10 @@ export function VagasFeed() {
               type="button"
               aria-pressed={ativo}
               onClick={() => setFiltroKey(f.key)}
-              className={`mono-caps flex-none rounded-full border-[1.5px] px-3.5 py-2 text-[12.5px] tracking-normal transition-colors ${
+              className={`mono-caps cursor-pointer rounded-full border-[1.5px] px-3.5 py-2 text-[12.5px] tracking-normal transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mata/40 focus-visible:ring-offset-2 focus-visible:ring-offset-paper ${
                 ativo
-                  ? "border-ink bg-ink text-paper"
-                  : "border-line-strong bg-surface text-ink-soft hover:border-mata hover:text-mata-deep"
+                  ? "border-ink bg-ink text-paper shadow-[0_2px_10px_-3px_rgba(27,42,33,0.5)]"
+                  : "border-line-strong bg-surface text-ink-soft hover:-translate-y-px hover:border-mata hover:text-mata-deep hover:shadow-[var(--shadow-card)]"
               }`}
             >
               {f.label}

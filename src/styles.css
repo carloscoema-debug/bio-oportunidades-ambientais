@@ -136,6 +136,16 @@
 
   html {
     -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  /* clicáveis sempre com cursor de mão (regra de polimento) */
+  button:not(:disabled),
+  a[href],
+  [role="button"]:not([aria-disabled="true"]),
+  label:has(input[type="checkbox"]),
+  summary {
+    cursor: pointer;
   }
 
   body {
@@ -159,6 +169,13 @@
     font-family: var(--font-display);
     color: var(--ink);
     font-feature-settings: "ss01", "cv01";
+    /* evita "órfãos" (uma palavra sozinha na última linha) em títulos */
+    text-wrap: balance;
+  }
+
+  /* corpo de texto: quebra que evita órfãos sem prejudicar a leitura */
+  p {
+    text-wrap: pretty;
   }
 
   :focus-visible {
