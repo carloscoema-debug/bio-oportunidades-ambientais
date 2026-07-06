@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" role="img" aria-label="BIO">
+  <rect width="100" height="100" rx="22" fill="#0D6B44"/>
+  <text x="45" y="72" text-anchor="middle"
+        font-family="ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif"
+        font-weight="800" font-size="70" letter-spacing="-3" fill="#F6F3EB">B</text>
+  <circle cx="76" cy="66" r="8.5" fill="#E9B84D"/>
+</svg>
