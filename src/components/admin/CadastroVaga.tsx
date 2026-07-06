@@ -256,18 +256,19 @@ export function CadastroVaga() {
           </select>
         </Campo>
         <Campo label="Município">
-          <select
+          <input
             className={inputCls}
+            list="municipios-cadastro"
             value={f.municipio}
             onChange={(e) => set("municipio", e.target.value)}
-          >
-            <option value="">— selecionar —</option>
+            placeholder="Digite para buscar…"
+            autoComplete="off"
+          />
+          <datalist id="municipios-cadastro">
             {municipios?.map((m) => (
-              <option key={m.municipio} value={m.municipio}>
-                {m.municipio}
-              </option>
+              <option key={m.municipio} value={m.municipio} />
             ))}
-          </select>
+          </datalist>
         </Campo>
         <Campo label="Modalidade">
           <select

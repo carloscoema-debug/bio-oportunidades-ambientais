@@ -246,10 +246,17 @@ export function EditarVaga({ id, onClose }: { id: string; onClose: () => void })
           </select>
         </Campo>
         <Campo label="Município">
-          <select className={inputCls} value={f.municipio} onChange={(e) => set("municipio", e.target.value)}>
-            <option value="">— selecionar —</option>
-            {municipios?.map((m) => <option key={m.municipio} value={m.municipio}>{m.municipio}</option>)}
-          </select>
+          <input
+            className={inputCls}
+            list={`municipios-editar-${id}`}
+            value={f.municipio}
+            onChange={(e) => set("municipio", e.target.value)}
+            placeholder="Digite para buscar…"
+            autoComplete="off"
+          />
+          <datalist id={`municipios-editar-${id}`}>
+            {municipios?.map((m) => <option key={m.municipio} value={m.municipio} />)}
+          </datalist>
         </Campo>
         <Campo label="Modalidade">
           <select className={inputCls} value={f.modalidade} onChange={(e) => set("modalidade", e.target.value)}>
