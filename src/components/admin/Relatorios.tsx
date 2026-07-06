@@ -115,7 +115,7 @@ export function Relatorios() {
       .select(CSV_COLS.join(", "))
       .order("data_captura", { ascending: false });
     setExportando(false);
-    const rows = (data ?? []) as Record<string, unknown>[];
+    const rows = ((data ?? []) as unknown) as Record<string, unknown>[];
     const linhas = [
       CSV_COLS.join(";"),
       ...rows.map((r) => CSV_COLS.map((c) => celulaCsv(r[c])).join(";")),
