@@ -53,12 +53,24 @@ interface VagaAdmin {
   prazo_inscricao: string | null;
   sem_prazo_definido: boolean | null;
   descricao: string | null;
+  uf: string | null;
+  ai_recomendacao: string | null;
+  ai_score: number | null;
+  ai_justificativa: string | null;
+  ai_modalidade: string | null;
 }
 
 const MODALIDADE_LABEL: Record<string, string> = {
   presencial: "Presencial",
   remoto: "Remoto",
   hibrido: "Híbrido",
+};
+
+// Recomendação da IA (curadoria assistida) — pílula + rótulo
+const AI_RECO: Record<string, { label: string; cls: string }> = {
+  aprovar: { label: "IA: aprovar", cls: "bg-mata-tint text-mata-deep border-mata-line" },
+  revisar: { label: "IA: revisar", cls: "bg-sol-tint text-sol border-[#EBD5A8]" },
+  descartar: { label: "IA: descartar", cls: "bg-barro-tint text-barro border-[#EBC7BE]" },
 };
 
 interface Dup {
@@ -107,6 +119,8 @@ function mensagemBloqueio(msg: string): string {
     return "Não publicável: origem externa ainda não verificada.";
   if (msg.includes("BLOQUEIO_B5"))
     return "Não publicável: vaga sob suspeita (2+ denúncias) — investigue antes.";
+  if (msg.includes("BLOQUEIO_B6"))
+    return "Não publicável: presencial/híbrida fora do Ceará. Só vaga 100% remota pode ser de outro estado (ou corrija a UF/modalidade).";
   return `Erro: ${msg}`;
 }
 
@@ -148,7 +162,7 @@ function Pill({ children, cls }: { children: React.ReactNode; cls: string }) {
 export function FilaVagas() {
   const qc = useQueryClient();
   const [status, setStatus] = useState<string>("pendente");
-  const [balde, setBalde] = useState<"todas" | "prontas" | "atencao">("todas");
+  const [balde, setBalde] = useState<"todas" | "prontas" | "atencao" | "ia_descartar">("todas");
   const [erro, setErro] = useState<string | null>(null);
   const [rejeitando, setRejeitando] = useState<string | null>(null);
   const [editando, setEditando] = useState<string | null>(null);
@@ -161,7 +175,7 @@ export function FilaVagas() {
       const { data, error } = await supabase
         .from("vagas")
         .select(
-          "id, titulo, empresa_orgao, tipo, nivel, municipio, regiao, score_aderencia, score_urgencia, flags_incompatibilidade, status, origem, origem_externa_nao_verificada, contato_submissao, status_link, mensagem_verificacao_link, link_candidatura, forma_candidatura, remuneracao_bolsa, carga_horaria, modalidade, prazo_inscricao, sem_prazo_definido, descricao",
+          "id, titulo, empresa_orgao, tipo, nivel, municipio, regiao, score_aderencia, score_urgencia, flags_incompatibilidade, status, origem, origem_externa_nao_verificada, contato_submissao, status_link, mensagem_verificacao_link, link_candidatura, forma_candidatura, remuneracao_bolsa, carga_horaria, modalidade, prazo_inscricao, sem_prazo_definido, descricao, uf, ai_recomendacao, ai_score, ai_justificativa, ai_modalidade",
         )
         .eq("status", status)
         .order("score_aderencia", { ascending: false });
@@ -187,7 +201,9 @@ export function FilaVagas() {
   const visiveis = useMemo(() => {
     const lista = vagas ?? [];
     if (status !== "pendente" || balde === "todas") return lista;
-    return lista.filter((v) => (balde === "prontas" ? estaPronta(v) : precisaAtencao(v)));
+    if (balde === "ia_descartar") return lista.filter((v) => v.ai_recomendacao === "descartar");
+    if (balde === "prontas") return lista.filter(estaPronta);
+    return lista.filter(precisaAtencao);
   }, [vagas, status, balde]);
 
   async function aprovar(v: VagaAdmin) {
@@ -257,6 +273,7 @@ export function FilaVagas() {
               ["todas", `Todas (${vagas.length})`],
               ["prontas", `Prontas p/ aprovar (${vagas.filter(estaPronta).length})`],
               ["atencao", `Precisam de atenção (${vagas.filter(precisaAtencao).length})`],
+              ["ia_descartar", `IA sugere descartar (${vagas.filter((v) => v.ai_recomendacao === "descartar").length})`],
             ] as const
           ).map(([v, l]) => (
             <button
@@ -305,6 +322,12 @@ export function FilaVagas() {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+                    {v.ai_recomendacao && AI_RECO[v.ai_recomendacao] && (
+                      <Pill cls={AI_RECO[v.ai_recomendacao].cls}>
+                        {AI_RECO[v.ai_recomendacao].label}
+                        {typeof v.ai_score === "number" ? ` · ${v.ai_score}` : ""}
+                      </Pill>
+                    )}
                     <Pill cls={selo.cls}>{selo.label} · {v.score_aderencia}</Pill>
                     {urg && <Pill cls={urg.cls}>{urg.label}</Pill>}
                     {municipioIndefinido(v) && (
@@ -337,7 +360,15 @@ export function FilaVagas() {
                   </p>
                   <p className="mono-caps mt-1 text-[11.5px] text-ink-soft">
                     {v.empresa_orgao ?? "—"} · {v.municipio ?? "sem município"} · {v.nivel}
+                    {v.uf ? ` · ${v.uf}` : ""}
+                    {v.ai_modalidade ? ` · ${MODALIDADE_LABEL[v.ai_modalidade] ?? v.ai_modalidade}` : ""}
                   </p>
+                  {v.ai_justificativa && (
+                    <p className="mt-1.5 rounded-[8px] border border-line bg-surface-dim/40 px-2.5 py-1.5 text-[12px] leading-relaxed text-ink-soft">
+                      <span className="mono-caps text-[10px] text-ink-faint">Leitura da IA · </span>
+                      {v.ai_justificativa}
+                    </p>
+                  )}
                   {v.link_candidatura ? (
                     <p className="mt-1.5 text-[12px]">
                       <a

@@ -35,6 +35,8 @@ export function Coleta() {
   const [erro, setErro] = useState<string | null>(null);
   const [reprocessando, setReprocessando] = useState<string | null>(null);
   const [msgEmail, setMsgEmail] = useState<string | null>(null);
+  const [classificando, setClassificando] = useState(false);
+  const [msgIa, setMsgIa] = useState<string | null>(null);
 
   const { data: fontes } = useQuery({
     queryKey: ["coleta_fontes"],
@@ -89,6 +91,27 @@ export function Coleta() {
     qc.invalidateQueries({ queryKey: ["admin_dashboard"] });
   }
 
+  async function classificarAgora() {
+    setMsgIa(null);
+    setClassificando(true);
+    const { data, error } = await supabase.functions.invoke("classificar-vagas");
+    setClassificando(false);
+    const r = data as { classificadas?: number; resumo?: Record<string, number> } | null;
+    if (error) {
+      setMsgIa("Não foi possível classificar agora. Tente novamente.");
+      return;
+    }
+    const n = r?.classificadas ?? 0;
+    const s = r?.resumo;
+    setMsgIa(
+      n === 0
+        ? "Nenhuma vaga pendente para classificar."
+        : `IA classificou ${n} vaga(s)${s ? ` · ${s.aprovar ?? 0} aprovar / ${s.revisar ?? 0} revisar / ${s.descartar ?? 0} descartar` : ""}.`,
+    );
+    qc.invalidateQueries({ queryKey: ["admin_vagas"] });
+    qc.invalidateQueries({ queryKey: ["admin_dashboard"] });
+  }
+
   async function reprocessar(id: string) {
     setMsgEmail(null);
     setReprocessando(id);
@@ -117,19 +140,35 @@ export function Coleta() {
             Coleta automática
           </h2>
           <p className="mt-1 max-w-[62ch] text-[14px] text-ink-soft">
-            A coleta roda sozinha todo dia às 6h. Fontes RSS/Atom viram vagas
+            A coleta roda sozinha (6h e 15h). Fontes RSS/Atom viram vagas
             <strong className="text-ink"> pendentes</strong> na fila; a curadoria
-            segue sendo sua. Você também pode disparar uma coleta agora.
+            segue sendo sua. A <strong className="text-ink">IA</strong> lê cada vaga e
+            sugere aprovar/revisar/descartar. Você pode disparar os dois agora.
           </p>
         </div>
-        <button
-          onClick={coletarAgora}
-          disabled={rodando}
-          className="shrink-0 rounded-[9px] bg-mata px-5 py-2.5 text-[14px] font-bold text-white hover:bg-mata-deep disabled:opacity-60"
-        >
-          {rodando ? "Coletando…" : "Coletar agora"}
-        </button>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <button
+            onClick={coletarAgora}
+            disabled={rodando}
+            className="rounded-[9px] bg-mata px-5 py-2.5 text-[14px] font-bold text-white hover:bg-mata-deep disabled:opacity-60"
+          >
+            {rodando ? "Coletando…" : "Coletar agora"}
+          </button>
+          <button
+            onClick={classificarAgora}
+            disabled={classificando}
+            className="rounded-[9px] border-[1.5px] border-mata-line bg-surface px-5 py-2.5 text-[14px] font-bold text-mata-deep hover:border-mata hover:bg-mata-tint disabled:opacity-60"
+          >
+            {classificando ? "Classificando…" : "Classificar com IA"}
+          </button>
+        </div>
       </div>
+
+      {msgIa && (
+        <p className="rounded-[9px] border border-mata-line bg-mata-tint px-3 py-2.5 text-[14px] text-mata-deep">
+          {msgIa}
+        </p>
+      )}
 
       {erro && (
         <p className="rounded-[9px] border border-[#EBC7BE] bg-barro-tint px-3 py-2.5 text-[14px] text-barro">
