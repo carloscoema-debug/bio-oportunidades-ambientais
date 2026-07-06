@@ -56,7 +56,11 @@ export function VagaCard({ vaga }: { vaga: VagaPublica }) {
   const [menuAberto, setMenuAberto] = useState(false);
   const selo = seloAderenciaConfig[vaga.selo_aderencia];
   const badge = urgenciaBadge(vaga.score_urgencia);
-  const link = vaga.link_candidatura ?? undefined;
+  // só aceita link http(s) — proteção final contra javascript:/data: na renderização
+  const link =
+    vaga.link_candidatura && /^https?:\/\//i.test(vaga.link_candidatura)
+      ? vaga.link_candidatura
+      : undefined;
 
   const metadados = [
     tipoLabel[vaga.tipo] ?? vaga.tipo,

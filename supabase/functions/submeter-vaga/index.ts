@@ -17,6 +17,8 @@ const TIPOS = ["estagio", "emprego", "processo_seletivo", "bolsa"];
 const REGIOES = ["rmf", "interior_ceara", "fora_ceara", "indefinido"];
 const RATE_SALT = "bio-submissao-v1";
 const emailOk = (s: string) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(s);
+// link deve ser http(s) — bloqueia javascript:/data:/vbscript: (XSS via link)
+const httpOk = (s: string) => /^https?:\/\//i.test(s);
 
 async function sha256(s: string): Promise<string> {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s));
@@ -47,6 +49,7 @@ Deno.serve(async (req) => {
   if (!TIPOS.includes(tipo)) return json({ ok: false, motivo: "tipo_invalido" }, 400);
   if (!emailOk(contatoEmail)) return json({ ok: false, motivo: "email_invalido" }, 400);
   if (!link && !forma) return json({ ok: false, motivo: "sem_forma_candidatura" }, 400);
+  if (link && !httpOk(link)) return json({ ok: false, motivo: "link_invalido" }, 400);
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
