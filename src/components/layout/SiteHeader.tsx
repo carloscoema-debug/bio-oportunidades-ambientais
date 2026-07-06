@@ -45,6 +45,16 @@ export function SiteHeader() {
             Observatório de Oportunidades Ambientais
           </span>
         )}
+
+        {pathname !== "/divulgar" && (
+          <Link
+            to="/divulgar"
+            className="mono-caps ml-auto flex shrink-0 items-center gap-1.5 rounded-full bg-mata px-3.5 py-2 text-[11px] text-white shadow-[0_1px_2px_rgba(10,79,51,0.25)] transition-all duration-200 hover:-translate-y-px hover:bg-mata-deep hover:shadow-[0_4px_12px_-4px_rgba(10,79,51,0.45)]"
+          >
+            Divulgar vaga
+            <span aria-hidden className="hidden sm:inline">↗</span>
+          </Link>
+        )}
       </div>
 
       {/* Mobile: tagline do observatório só na home (o contexto já aparece inline) */}

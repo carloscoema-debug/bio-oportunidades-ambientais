@@ -7,11 +7,11 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/divulgar")({
   head: () => ({
     meta: [
-      { title: "Divulgue uma oportunidade — BIO" },
+      { title: "Divulgue uma vaga ambiental — BIO · IFCE" },
       {
         name: "description",
         content:
-          "Empresas e órgãos podem enviar vagas de estágio e emprego na área ambiental. Toda vaga passa por curadoria antes de ser publicada.",
+          "Divulgue gratuitamente sua vaga de estágio ou emprego para estudantes e egressos dos cursos ambientais do IFCE (Meio Ambiente, Gestão Ambiental, Saneamento, Engenharia Ambiental e Sanitária). Curadoria da coordenação, sem custo.",
       },
     ],
   }),
@@ -51,6 +51,74 @@ function Campo({ label, children, hint }: { label: string; children: React.React
 
 const inputCls =
   "block w-full rounded-[9px] border border-line-strong bg-surface px-3 py-2.5 text-[15px] text-ink placeholder:text-ink-faint focus:border-mata focus:outline-none";
+
+const CURSOS = [
+  "Técnico em Meio Ambiente",
+  "Gestão Ambiental",
+  "Saneamento Ambiental",
+  "Engenharia Ambiental e Sanitária",
+];
+
+const MOTIVOS_DIVULGAR = [
+  {
+    titulo: "O público certo, não o público grande",
+    texto:
+      "A sua vaga aparece para quem estuda ou já se formou em cursos ambientais do IFCE — pessoas que chegam sabendo o que é licenciamento, resíduos, saneamento e monitoramento.",
+  },
+  {
+    titulo: "A curadoria funciona como recomendação",
+    texto:
+      "Cada vaga passa pela coordenação do curso antes de ir ao ar. Para quem procura, estar no BIO é sinal de que a oportunidade foi conferida por uma instituição de ensino pública.",
+  },
+  {
+    titulo: "De graça e sem burocracia",
+    texto:
+      "Sem custo, sem cadastro e sem contrato. Você preenche o formulário abaixo em poucos minutos e a coordenação cuida da publicação.",
+  },
+];
+
+function PorQueDivulgar() {
+  return (
+    <section
+      aria-labelledby="porque-title"
+      className="mt-6 overflow-hidden rounded-[18px] border border-mata-line bg-mata-tint/50 p-6 sm:p-7"
+    >
+      <p id="porque-title" className="mono-caps text-[11px] text-mata-deep">
+        Por que divulgar no BIO
+      </p>
+      <ol className="mt-4 space-y-4">
+        {MOTIVOS_DIVULGAR.map((m, i) => (
+          <li key={m.titulo} className="flex gap-3.5">
+            <span
+              aria-hidden
+              className="mono-caps mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-mata text-[12px] text-white"
+            >
+              {i + 1}
+            </span>
+            <div>
+              <p className="text-[15px] font-bold text-ink">{m.titulo}</p>
+              <p className="mt-0.5 text-[14px] leading-relaxed text-ink-soft">{m.texto}</p>
+            </div>
+          </li>
+        ))}
+      </ol>
+
+      <div className="mt-5 border-t border-mata-line pt-4">
+        <p className="mono-caps text-[10.5px] text-mata-deep">Quem vai ver a sua vaga</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {CURSOS.map((c) => (
+            <span
+              key={c}
+              className="rounded-full border border-mata-line bg-surface px-3 py-1.5 text-[12.5px] font-medium text-ink"
+            >
+              {c}
+            </span>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
 
 function Divulgar() {
   const [form, setForm] = useState({
@@ -109,8 +177,8 @@ function Divulgar() {
               </a>
             </div>
             <p className="mt-4 text-[12.5px] leading-relaxed text-ink-faint">
-              O BIO é mantido pelo Curso Técnico em Meio Ambiente do IFCE — formando
-              profissionais para a área que você contrata.
+              O BIO é mantido pela coordenação do Curso Técnico em Meio Ambiente do IFCE,
+              que forma profissionais para a área que você contrata.
             </p>
           </div>
         </section>
@@ -126,17 +194,20 @@ function Divulgar() {
           Para empresas e órgãos
         </p>
         <h1 className="mt-3 font-display text-[30px] font-bold leading-[1.08] text-ink" style={{ letterSpacing: "-0.025em" }}>
-          Divulgue uma oportunidade
+          A sua vaga na frente de quem{" "}
+          <span className="text-mata">estudou para ela.</span>
         </h1>
         <p className="mt-3 max-w-[58ch] text-[15.5px] leading-relaxed text-ink-soft">
-          O BIO é o observatório de oportunidades ambientais do IFCE Campus Fortaleza, com uma
-          base de estudantes e egressos do Curso Técnico em Meio Ambiente. Tem uma vaga na área?
-          Envie abaixo — toda oportunidade passa pela{" "}
-          <strong className="text-ink">curadoria da coordenação</strong> antes de aparecer no
-          portal. Nada é publicado automaticamente.
+          O BIO é o observatório de oportunidades ambientais do IFCE Campus Fortaleza. Divulgar
+          aqui leva a sua vaga direto a estudantes e egressos formados para a área ambiental. E
+          não custa nada: toda oportunidade passa pela{" "}
+          <strong className="text-ink">curadoria da coordenação</strong> antes de ir ao ar.
         </p>
 
-        <form onSubmit={onSubmit} className="mt-8 space-y-5 rounded-[20px] border border-line bg-surface p-6 shadow-[var(--shadow-card)] sm:p-8">
+        <PorQueDivulgar />
+
+        <p className="mono-caps mt-8 text-[11px] text-ink-faint">Envie a sua vaga</p>
+        <form onSubmit={onSubmit} className="mt-2 space-y-5 rounded-[20px] border border-line bg-surface p-6 shadow-[var(--shadow-card)] sm:p-8">
           <Campo label="Título da vaga *">
             <input required value={form.titulo} onChange={(e) => set("titulo", e.target.value)}
               placeholder="Ex.: Estágio em Educação Ambiental" className={inputCls} />
