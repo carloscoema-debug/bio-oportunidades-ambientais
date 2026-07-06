@@ -1,5 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout } from "../components/layout/SiteLayout";
+import { VoltarPortal } from "../components/layout/VoltarPortal";
 
 export const Route = createFileRoute("/como-se-candidatar")({
   head: () => ({
@@ -124,14 +125,7 @@ function ComoSeCandidatar() {
           Campus Fortaleza.
         </p>
 
-        <div className="mt-10 border-t border-line pt-6">
-          <Link
-            to="/"
-            className="mono-caps text-[12px] text-mata-deep underline underline-offset-2 hover:text-mata"
-          >
-            ← Voltar às vagas
-          </Link>
-        </div>
+        <VoltarPortal />
       </article>
     </SiteLayout>
   );

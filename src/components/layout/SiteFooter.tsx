@@ -3,6 +3,12 @@ import { Link } from "@tanstack/react-router";
 export function SiteFooter() {
   const linkCls =
     "mono-caps text-[11px] text-ink-soft underline-offset-4 transition-colors hover:text-mata hover:underline";
+  // destaca a página atual (orientação): verde + marcador
+  const activeProps = {
+    className:
+      "mono-caps text-[11px] text-mata-deep underline decoration-mata underline-offset-4",
+    "aria-current": "page" as const,
+  };
   return (
     <footer className="mt-20 border-t border-line bg-surface-dim/50">
       <div className="mx-auto max-w-[680px] px-4 py-12">
@@ -29,9 +35,9 @@ export function SiteFooter() {
             </a>
           </div>
           <nav aria-label="Links institucionais" className="flex flex-col gap-2.5">
-            <Link to="/como-se-candidatar" className={linkCls}>Como se candidatar</Link>
-            <Link to="/divulgar" className={linkCls}>Divulgue uma oportunidade</Link>
-            <Link to="/politica-de-privacidade" className={linkCls}>Política de privacidade</Link>
+            <Link to="/como-se-candidatar" className={linkCls} activeProps={activeProps}>Como se candidatar</Link>
+            <Link to="/divulgar" className={linkCls} activeProps={activeProps}>Divulgue uma oportunidade</Link>
+            <Link to="/politica-de-privacidade" className={linkCls} activeProps={activeProps}>Política de privacidade</Link>
           </nav>
         </div>
 

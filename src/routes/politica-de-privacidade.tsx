@@ -1,5 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { SiteLayout } from "../components/layout/SiteLayout";
+import { VoltarPortal } from "../components/layout/VoltarPortal";
 
 export const Route = createFileRoute("/politica-de-privacidade")({
   head: () => ({
@@ -111,7 +112,7 @@ function Privacidade() {
         </p>
 
         <H2>Aviso institucional</H2>
-        <p className="mt-3 max-w-[68ch] text-[14px] leading-relaxed text-ink-faint">
+        <p className="mt-3 max-w-[68ch] text-[15px] leading-relaxed text-ink-soft">
           O IFCE Campus Fortaleza divulga as oportunidades como serviço de informação
           aos estudantes e egressos do Curso Técnico em Meio Ambiente. O IFCE não
           conduz, não endossa e não se responsabiliza pelos processos seletivos, pelas
@@ -124,14 +125,7 @@ function Privacidade() {
           institucional competente. Última atualização: julho de 2026.
         </p>
 
-        <div className="mt-8 border-t border-line pt-6">
-          <Link
-            to="/"
-            className="mono-caps text-[12px] text-mata-deep underline underline-offset-2 hover:text-mata"
-          >
-            ← Voltar às vagas
-          </Link>
-        </div>
+        <VoltarPortal />
       </article>
     </SiteLayout>
   );

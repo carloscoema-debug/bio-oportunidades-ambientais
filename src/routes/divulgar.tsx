@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { SiteLayout } from "../components/layout/SiteLayout";
+import { VoltarPortal } from "../components/layout/VoltarPortal";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/divulgar")({
@@ -209,6 +210,8 @@ function Divulgar() {
             {estado === "enviando" ? "Enviando…" : <>Enviar oportunidade <span aria-hidden>↗</span></>}
           </button>
         </form>
+
+        <VoltarPortal />
       </section>
     </SiteLayout>
   );
