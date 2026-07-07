@@ -23,27 +23,34 @@ const PROMPT_REGRAS = `Você é o assistente de curadoria do BIO, portal do IFCE
 - TÉCNICO: Técnico em Meio Ambiente, Técnico em Saneamento.
 IMPORTANTE: como há cursos SUPERIORES, vaga que exige nível superior na área (engenheiro ambiental/sanitário, gestor ambiental, coordenador de licenciamento, analista ambiental, biólogo, etc.) É ADERENTE. Nível superior NUNCA é, por si só, motivo para rebaixar ou descartar.
 
+LEIA O CONTEXTO COMPLETO: use o título E a descrição E a página da vaga (campo "pagina", quando houver). O TÍTULO/ASSUNTO SOZINHO ENGANA (às vezes diz uma cidade no assunto do e-mail, mas a vaga é em outra). Sempre que houver "pagina", ela é a fonte da verdade.
+
 REGRA DE REGIÃO (rígida):
+- Extraia a localização REAL do texto (ex.: "Local de atuação: Três Lagoas MS"). Se o corpo/página indicar cidade/estado diferente do título, VALE O CORPO.
 - Vaga presencial ou híbrida só serve se o local for no CEARÁ. Presencial/híbrida em outro estado => "descartar".
 - Vaga 100% remota pode ser de qualquer estado.
 - Se não der para saber o local, uf=null e modalidade="indefinido".
 
-ADERÊNCIA (por ÁREA, não por nível):
-- APROVAR (aderente): vagas reais (emprego/estágio/seleção pública) das áreas de meio ambiente, saneamento, recursos hídricos, licenciamento/gestão ambiental, resíduos, efluentes, energia renovável (eólica/solar), monitoramento ambiental — em qualquer nível (técnico OU superior). Ex.: Coordenador(a) de Licenciamento, Engenheiro(a) Ambiental/Sanitário, Analista/Gestor Ambiental, Técnico em Meio Ambiente/Saneamento.
-- DESCARTAR (não aderente): notícia/reportagem (não é vaga), chamamento público/licitação/pregão/parceria (não é vaga de pessoa), concurso nacional sem relação ambiental, cargos operacionais não-ambientais (servente, pedreiro), e vagas de outras áreas sem relação com meio ambiente/saneamento (TI, administrativo genérico, vendas, saúde, etc.).
-- "revisar" só quando houver dúvida REAL (área ambígua ou faltam dados), nunca só por ser nível superior.
+ADERÊNCIA — checar ÁREA e FORMAÇÃO exigida (não o nível):
+- Cursos do BIO: Gestão Ambiental, Engenharia Sanitária e Ambiental, Saneamento Ambiental (superior); Técnico em Meio Ambiente, Técnico em Saneamento.
+- APROVAR: vaga real (emprego/estágio/seleção pública) da área ambiental/saneamento/recursos hídricos/licenciamento ambiental/resíduos/energia renovável, cuja FORMAÇÃO exigida seja compatível com os cursos do BIO (ou aberta a "engenharias", "áreas ambientais", "meio ambiente", ou sem exigência de curso específico). Ex.: Engenheiro(a) Ambiental/Sanitário, Analista/Gestor Ambiental, Técnico em Meio Ambiente.
+- DESCARTAR se a FORMAÇÃO exigida for de OUTRA área — ex.: Arquitetura e Urbanismo, Enfermagem, Direito, Administração, TI, Medicina — MESMO que o título diga "Licenciamento", "Ambiental" ou "SMS". A formação exigida manda mais que o título.
+- DESCARTAR também: notícia/reportagem (não é vaga), chamamento público/licitação/pregão/parceria, concurso nacional sem relação ambiental, cargos operacionais não-ambientais (servente, pedreiro), vagas de outras áreas.
+- "revisar" só quando houver dúvida REAL (dados insuficientes, área/formação ambígua).
 
-PRIORIDADE: estas REGRAS valem mais que os exemplos abaixo (o histórico pode conter decisões antigas de quando o escopo era só o curso técnico).
+PRIORIDADE: estas REGRAS valem mais que os exemplos abaixo (o histórico pode ter decisões antigas ou baseadas só no título).
 
 Para CADA vaga devolva um objeto com:
 - titulo_limpo (string curta e legível)
-- municipio (nome da cidade, ou null)
-- uf (sigla de 2 letras como "CE" ou "SP"; null se não souber)
+- municipio (cidade da vaga extraída do texto, ou null)
+- uf (sigla de 2 letras como "CE" ou "MS"; null se não souber)
 - modalidade ("presencial" | "remoto" | "hibrido" | "indefinido")
 - nivel ("tecnico" | "superior" | "ambos" | "operacional" | "indefinido")
+- formacao_exigida (curso/área exigido no texto, ou null)
+- faixa_salarial (ex.: "R$ 3.000" ou "R$ 2.000 a R$ 4.000"; null se não aparecer)
 - score (0-100)
 - recomendacao ("aprovar" | "revisar" | "descartar")
-- justificativa (uma frase curta)
+- justificativa (uma frase curta citando o que decidiu — local e/ou formação)
 
 Responda SOMENTE com JSON: {"resultados": [ um objeto por vaga, na MESMA ordem ]}.`;
 
@@ -51,7 +58,44 @@ type Classif = {
   titulo_limpo?: string; municipio?: string | null; uf?: string | null;
   modalidade?: string; nivel?: string; score?: number;
   recomendacao?: string; justificativa?: string;
+  formacao_exigida?: string | null; faixa_salarial?: string | null;
 };
+
+// Busca o texto da página da vaga (o corpo tem a verdade: local, formação, salário).
+// Best-effort: muitos links são redirects/anti-bot (Indeed/LinkedIn/Catho) e podem
+// falhar ou vir vazios — nesse caso a IA usa só o título + descrição do e-mail.
+async function buscarPagina(url: string): Promise<string | null> {
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 7000);
+    const resp = await fetch(url, {
+      redirect: "follow",
+      signal: ctrl.signal,
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml",
+        "Accept-Language": "pt-BR,pt;q=0.9",
+      },
+    });
+    clearTimeout(t);
+    if (!resp.ok) return null;
+    const ct = (resp.headers.get("content-type") ?? "").toLowerCase();
+    if (!ct.includes("text/html") && !ct.includes("text/plain")) return null;
+    const html = await resp.text();
+    const texto = html
+      .replace(/<script[\s\S]*?<\/script>/gi, " ")
+      .replace(/<style[\s\S]*?<\/style>/gi, " ")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+      .replace(/\s+/g, " ")
+      .trim();
+    return texto.length > 80 ? texto.slice(0, 3500) : null;
+  } catch {
+    return null;
+  }
+}
 
 async function chamarGemini(cfg: (k: string) => Promise<string | null>, prompt: string): Promise<Classif[]> {
   const key = await cfg("gemini_api_key");
@@ -124,7 +168,7 @@ Deno.serve(async (req) => {
 
   // vagas pendentes ainda não classificadas
   const { data: vagas } = await svc.from("vagas")
-    .select("id, titulo, empresa_orgao, descricao, modalidade")
+    .select("id, titulo, empresa_orgao, descricao, modalidade, remuneracao_bolsa, link_candidatura")
     .eq("status", "pendente")
     .is("ai_classificado_em", null)
     .limit(30);
@@ -154,11 +198,17 @@ Deno.serve(async (req) => {
 
   for (let i = 0; i < vagas.length; i += LOTE) {
     const lote = vagas.slice(i, i + LOTE);
+    // busca o conteúdo real da página de cada vaga (em paralelo) — a verdade
+    // (local, formação, salário) costuma estar só no corpo, não no título.
+    const paginas = await Promise.all(
+      lote.map((v) => (v.link_candidatura ? buscarPagina(v.link_candidatura) : Promise.resolve(null))),
+    );
     const payload = lote.map((v, idx) => ({
       n: idx,
       titulo: v.titulo,
       empresa: v.empresa_orgao,
       descricao: (v.descricao ?? "").slice(0, 500),
+      pagina: paginas[idx] ?? undefined,
     }));
     const prompt = `${PROMPT_REGRAS}${fewshot}\n\nVAGAS A CLASSIFICAR:\n${JSON.stringify(payload, null, 0)}`;
 
@@ -179,8 +229,11 @@ Deno.serve(async (req) => {
         ? c.recomendacao! : "revisar";
       resumo[rec] = (resumo[rec] ?? 0) + 1;
 
+      // UF só se for realmente sigla de 2 letras (a IA às vezes devolve "Não informado")
+      const ufOk = c.uf && /^[a-zA-Z]{2}$/.test(String(c.uf).trim())
+        ? String(c.uf).trim().toUpperCase() : null;
       const patch: Record<string, unknown> = {
-        uf: c.uf ? String(c.uf).toUpperCase().slice(0, 2) : null,
+        uf: ufOk,
         ai_recomendacao: rec,
         ai_score: typeof c.score === "number" ? Math.round(c.score) : null,
         ai_justificativa: (c.justificativa ?? "").slice(0, 400) || null,
@@ -196,6 +249,10 @@ Deno.serve(async (req) => {
       // preenche modalidade (enum) só se estava vazia e a IA foi conclusiva
       if (!v.modalidade && ["presencial", "remoto", "hibrido"].includes(c.modalidade ?? "")) {
         patch.modalidade = c.modalidade;
+      }
+      // preenche a faixa salarial (quando a IA achou e a vaga ainda não tinha)
+      if (!v.remuneracao_bolsa && c.faixa_salarial && /R\$|\d/.test(c.faixa_salarial)) {
+        patch.remuneracao_bolsa = String(c.faixa_salarial).slice(0, 120);
       }
 
       const { error } = await svc.from("vagas").update(patch).eq("id", v.id);
