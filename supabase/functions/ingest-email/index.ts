@@ -12,22 +12,9 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Canal B: o título precisa ter SINAL AMBIENTAL. O alerta de e-mail já filtra "vaga";
-// aqui garantimos aderência ao curso e cortamos ruído (enfermagem, TI, manutenção…).
-const AMBIENTAL = [
-  "ambient", "meio ambiente", "meio-ambiente", "sustentab", "ssma", "saneamento",
-  "residuo", "hidric", "florest", "ecolog", "climat", "energia renovavel",
-  "geoproces", "licenciamento", "reciclag", "efluente", "recursos hidricos",
-  "gestao ambiental", "biolog",
-  // energias renováveis — polo eólico/solar do Ceará emprega técnicos ambientais
-  "eolic", "fotovoltaic", "energia solar", "parque solar", "parque eolico",
-  "hidrogenio verde",
-  // conservação e monitoramento
-  "esg", "biodiversidad", "fauna", "flora", "unidade de conservacao",
-  "educacao ambiental", "qualidade da agua", "qualidade do ar",
-  "tratamento de agua", "tratamento de esgoto", "carbono", "agroecolog",
-  "aquicultura", "pesca", "carcinicultura",
-];
+// Canal B: NÃO filtramos mais o título por palavra-chave ambiental — muitas vagas
+// aderentes têm título neutro (ex.: "Supervisor de Qualidade - SGI" p/ Gestão
+// Ambiental). Capturamos todo link de vaga e a IA decide a aderência depois.
 
 // Textos de âncora que NÃO são vaga (rodapé/gestão do alerta OU cabeçalho de digest).
 const BOILERPLATE = [
@@ -41,7 +28,19 @@ const BOILERPLATE = [
   "novas vagas", "resultados deste aviso", "enviar curriculo", "enviar currículo",
   "ver vaga", "ver detalhes", "candidatar-se agora", "vagas para voce", "vagas para você",
   "novos resultados", "clique neste link",
+  // como agora capturamos todo link, cortamos os CTAs/rótulos que não são título de vaga
+  "candidate-se", "candidatura", "salvar vaga", "salvar esta", "ver empresa",
+  "sobre a empresa", "avaliaç", "seguir empresa", "patrocinad", "sponsored",
+  "compartilhar", "mais vagas", "vagas semelhantes", "empregos em", "ver salário",
+  "ver salario", "criar alerta", "editar pesquisa", "recomendadas para voce",
+  // rótulos de "data de publicação" do Indeed que também são links (não são vaga)
+  "nos ultimos", "ultimos 7 dias", "ultimas 24", "desde ontem", "publicado", "postado",
 ];
+
+// Título que é só filtro de data/tempo (Indeed): "desde ontem", "nos últimos 7 dias",
+// "há 3 dias", "30+ dias"… — nunca é uma vaga.
+const RE_DATA_RUIDO =
+  /^(ha\s+\d|nos ultimos|ultim[oa]s|desde\s|ontem|hoje|\d+\+?\s*dias?|\d+\+?\s*h(oras?)?)\b/;
 
 // E-mails de CONFIRMAÇÃO de alerta (Indeed/LinkedIn enviam um ao criar o alerta):
 // trazem "seu alerta foi ativado/criado" + no máximo 1 vaga-exemplo mal casada e sem
@@ -63,7 +62,9 @@ function limparTexto(s: string): string {
     .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
     .replace(/&#8211;/g, "–").replace(/&#8217;/g, "'").replace(/&nbsp;/g, " ")
     .replace(/&#39;/g, "'").replace(/&quot;/g, '"')
-    .replace(/<[^>]+>/g, " ")
+    // remove tags; o `>?` também apaga uma tag "cortada" no fim do trecho (ex.: um
+    // <a href="url gigante"> cujo `>` ficou além da janela) — senão o HTML vaza.
+    .replace(/<[^>]*>?/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -127,19 +128,22 @@ function extrairVagas(
 
     const tnorm = norm(titulo);
     if (BOILERPLATE.some((b) => tnorm.includes(b))) continue;
-    // aderência ao curso: exige sinal ambiental no título (corta enfermagem/TI/etc.)
-    if (!AMBIENTAL.some((a) => tnorm.includes(norm(a)))) continue;
+    if (RE_DATA_RUIDO.test(tnorm)) continue;
+    // NÃO filtramos mais por palavra-chave no título: capturamos TODO link de vaga.
+    // Muitas vagas aderentes têm título neutro (ex.: "Supervisor de Qualidade - SGI"
+    // para Gestão Ambiental) — a aderência é decidida DEPOIS pela IA (que lê o
+    // trecho do e-mail e, quando o site permite, a página). Assim nada se perde.
 
     const chave = urlCanonica(link);
     if (vistos.has(chave)) continue;
     vistos.add(chave);
 
-    // bloco após a âncora = contexto da vaga (empresa/local/salário)
-    const bloco = limparTexto(html.slice(m.index, m.index + 1400));
+    // bloco após a âncora = contexto da vaga (empresa/local/salário/formação)
+    const bloco = limparTexto(html.slice(m.index, m.index + 1800));
     let trecho = bloco.toLowerCase().startsWith(titulo.toLowerCase())
       ? bloco.slice(titulo.length).trim()
       : bloco;
-    trecho = trecho.replace(/^[\s·|—–-]+/, "").slice(0, 240).trim();
+    trecho = trecho.replace(/^[\s·|—–-]+/, "").slice(0, 500).trim();
     const sal = bloco.match(RE_SALARIO);
 
     out.push({

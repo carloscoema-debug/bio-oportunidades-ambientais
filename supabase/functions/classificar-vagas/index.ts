@@ -36,7 +36,8 @@ ADERÊNCIA — checar ÁREA e FORMAÇÃO exigida (não o nível):
 - APROVAR: vaga real (emprego/estágio/seleção pública) da área ambiental/saneamento/recursos hídricos/licenciamento ambiental/resíduos/energia renovável, cuja FORMAÇÃO exigida seja compatível com os cursos do BIO (ou aberta a "engenharias", "áreas ambientais", "meio ambiente", ou sem exigência de curso específico). Ex.: Engenheiro(a) Ambiental/Sanitário, Analista/Gestor Ambiental, Técnico em Meio Ambiente.
 - DESCARTAR se a FORMAÇÃO exigida for de OUTRA área — ex.: Arquitetura e Urbanismo, Enfermagem, Direito, Administração, TI, Medicina — MESMO que o título diga "Licenciamento", "Ambiental" ou "SMS". A formação exigida manda mais que o título.
 - DESCARTAR também: notícia/reportagem (não é vaga), chamamento público/licitação/pregão/parceria, concurso nacional sem relação ambiental, cargos operacionais não-ambientais (servente, pedreiro), vagas de outras áreas.
-- "revisar" só quando houver dúvida REAL (dados insuficientes, área/formação ambígua).
+- ATENÇÃO a cargos de Qualidade/SGI/SMS/HSE/QSMS: costumam envolver meio ambiente (SGI = Sistema de Gestão Integrada: qualidade + meio ambiente + segurança). São POSSIVELMENTE aderentes — se local (CE) e formação baterem, aprove; na dúvida, "revisar". NÃO descarte só por dizer "qualidade".
+- "revisar" só quando houver dúvida REAL (dados insuficientes, área/formação ambígua). Prefira "revisar" a "descartar" quando faltar informação e a vaga PUDER ser ambiental.
 
 PRIORIDADE: estas REGRAS valem mais que os exemplos abaixo (o histórico pode ter decisões antigas ou baseadas só no título).
 
