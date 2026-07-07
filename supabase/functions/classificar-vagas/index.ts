@@ -126,6 +126,23 @@ Deno.serve(async (req) => {
 
   if (!vagas || vagas.length === 0) return json({ ok: true, classificadas: 0, motivo: "nada_pendente" });
 
+  // APRENDIZADO (few-shot): decisões recentes da coordenação viram exemplos no
+  // prompt. Sem retreinar — a IA calibra ao gosto real de quem cura.
+  const [aprovadas, rejeitadas] = await Promise.all([
+    svc.from("vagas").select("titulo, empresa_orgao")
+      .eq("status", "aprovada").order("data_captura", { ascending: false }).limit(18),
+    svc.from("vagas").select("titulo, motivo_rejeicao_categoria, motivo_rejeicao_detalhe")
+      .eq("status", "rejeitada").order("data_captura", { ascending: false }).limit(18),
+  ]);
+  const cortar = (s: string | null) => (s ?? "").slice(0, 90);
+  const fewshot = (aprovadas.data?.length || rejeitadas.data?.length)
+    ? `\n\nDECISÕES RECENTES DA COORDENAÇÃO (aprenda com o gosto real dela; case novas vagas por analogia):\n` +
+      `APROVADAS (aceitas — bons exemplos):\n` +
+      (aprovadas.data ?? []).map((a) => `- ${cortar(a.titulo)}${a.empresa_orgao ? ` (${cortar(a.empresa_orgao)})` : ""}`).join("\n") +
+      `\nREJEITADAS (recusadas — NÃO recomende aprovar coisas parecidas):\n` +
+      (rejeitadas.data ?? []).map((r) => `- ${cortar(r.titulo)} — motivo: ${r.motivo_rejeicao_categoria ?? "?"}${r.motivo_rejeicao_detalhe ? ` (${cortar(r.motivo_rejeicao_detalhe)})` : ""}`).join("\n")
+    : "";
+
   const LOTE = 8;
   let classificadas = 0, erros = 0;
   const resumo: Record<string, number> = { aprovar: 0, revisar: 0, descartar: 0 };
@@ -138,7 +155,7 @@ Deno.serve(async (req) => {
       empresa: v.empresa_orgao,
       descricao: (v.descricao ?? "").slice(0, 500),
     }));
-    const prompt = `${PROMPT_REGRAS}\n\nVAGAS:\n${JSON.stringify(payload, null, 0)}`;
+    const prompt = `${PROMPT_REGRAS}${fewshot}\n\nVAGAS A CLASSIFICAR:\n${JSON.stringify(payload, null, 0)}`;
 
     let res: Classif[] = [];
     try {
