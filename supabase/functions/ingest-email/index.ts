@@ -35,6 +35,10 @@ const BOILERPLATE = [
   "ver salario", "criar alerta", "editar pesquisa", "recomendadas para voce",
   // rótulos de "data de publicação" do Indeed que também são links (não são vaga)
   "nos ultimos", "ultimos 7 dias", "ultimas 24", "desde ontem", "publicado", "postado",
+  // cabeçalho do alerta (ex.: LinkedIn "Seu alerta de vaga para X") — é o título do
+  // alerta e leva a uma BUSCA, não a uma vaga específica
+  "seu alerta de vaga", "alerta de vaga para", "your job alert", "job alert for",
+  "ver todas as vagas do alerta", "vagas do seu alerta",
   // CTAs de chrome/marketing observados vazando de digests (não são o título de uma vaga)
   "modifique os criterios", "modificar criterios", "milhares de vagas", "se encaixam com",
   "conversar pelo whatsapp", "falar no whatsapp", "jogue agora", "saiba por que", "saiba mais",
@@ -53,7 +57,7 @@ const RE_DATA_RUIDO =
 // agora", "Modifique os critérios do alerta" etc. entrarem como vaga. É um filtro
 // NEGATIVO (bloqueia o que claramente não é vaga) para não perder vaga de verdade.
 const RE_NAO_VAGA_URL =
-  /(wa\.me|api\.whatsapp|web\.whatsapp|\/whatsapp|t\.me\/|\/conta|\/account|\/settings|\/configurac|criterios|\/alertas?\b|\/notificac|\/ajuda|\/help|\/faq|\/suporte|\/support|\/jogo|\/game|\/games\/|play\.google|apps\.apple|itunes\.apple|\/premium|\/planos?\b|\/assinatura|\/upgrade|\/pricing|linkedin\.com\/(help|games|learning|feed|comm\/feed|mynetwork|notifications|posts|pulse|company)|facebook\.com|instagram\.com|twitter\.com|x\.com\/|youtube\.com)/i;
+  /(wa\.me|api\.whatsapp|web\.whatsapp|\/whatsapp|t\.me\/|\/conta|\/account|\/settings|\/configurac|criterios|\/alertas?\b|\/notificac|\/ajuda|\/help|\/faq|\/suporte|\/support|\/jogo|\/game|\/games\/|play\.google|apps\.apple|itunes\.apple|\/premium|\/planos?\b|\/assinatura|\/upgrade|\/pricing|\/jobs\/search|\/jobs\/collections|\/jobs\/?(\?|$)|linkedin\.com\/(help|games|learning|feed|comm\/feed|mynetwork|notifications|posts|pulse|company)|facebook\.com|instagram\.com|twitter\.com|x\.com\/|youtube\.com)/i;
 
 // E-mails que NÃO trazem vagas — pular por completo (registra com 0 vagas, não extrai):
 // (a) CONFIRMAÇÃO de alerta recém-criado; (b) MARKETING/promoção (mesmo remetente que

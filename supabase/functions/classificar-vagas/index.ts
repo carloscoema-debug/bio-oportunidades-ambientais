@@ -52,6 +52,8 @@ ADERÊNCIA — checar ÁREA e FORMAÇÃO exigida (não o nível):
 - ATENÇÃO a cargos de Qualidade/SGI/SMS/HSE/QSMS: costumam envolver meio ambiente (SGI = Sistema de Gestão Integrada: qualidade + meio ambiente + segurança). São POSSIVELMENTE aderentes — se local (CE) e formação baterem, aprove; na dúvida, "revisar". NÃO descarte só por dizer "qualidade".
 - "revisar" só quando houver dúvida REAL (dados insuficientes, área/formação ambígua). Prefira "revisar" a "descartar" quando faltar informação e a vaga PUDER ser ambiental.
 
+DISPONIBILIDADE (checar SEMPRE que houver "pagina" ou descrição): se o texto indicar que a vaga NÃO aceita mais candidaturas / está encerrada / expirada — ex.: "não aceita mais candidaturas", "no longer accepting applications", "vaga encerrada", "candidaturas encerradas", "processo encerrado", "vaga expirada", "inscrições encerradas", "esta vaga não está mais disponível" — recomende "descartar" com justificativa começando por "Encerrada: " (ex.: "Encerrada: não aceita mais candidaturas"), MESMO que seja aderente ao curso. Uma vaga fechada não serve ao estudante. (Se não houver "pagina" nem sinal de encerramento no texto, não presuma que está aberta nem fechada — siga a aderência normal.)
+
 PRIORIDADE: estas REGRAS valem mais que os exemplos abaixo (o histórico pode ter decisões antigas ou baseadas só no título).
 
 CURSOS DO BIO — devolva os CÓDIGOS dos cursos que a vaga atende (pela formação exigida/área), em "cursos":
