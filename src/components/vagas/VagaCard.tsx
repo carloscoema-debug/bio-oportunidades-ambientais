@@ -24,6 +24,7 @@ export interface VagaPublica {
   remuneracao_bolsa: string | null;
   prazo_inscricao: string | null;
   sem_prazo_definido: boolean;
+  data_publicacao: string | null;
   link_candidatura: string | null;
   forma_candidatura: string | null;
   score_urgencia: number;
@@ -81,6 +82,10 @@ export function VagaCard({ vaga }: { vaga: VagaPublica }) {
       : vaga.score_urgencia >= 60
         ? "text-sol"
         : "text-ink-soft";
+
+  const publicadaTexto = vaga.data_publicacao
+    ? `Publicada no BIO em ${format(parseISO(vaga.data_publicacao), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}`
+    : null;
 
   function compartilharWhatsApp() {
     const texto = link ? `${vaga.titulo} — ${link}` : vaga.titulo;
@@ -175,6 +180,12 @@ export function VagaCard({ vaga }: { vaga: VagaPublica }) {
       {prazoTexto && (
         <p className={`mt-3 text-[14px] ${prazoClasse}`}>
           <span className="font-bold">{prazoTexto}</span>
+        </p>
+      )}
+
+      {publicadaTexto && (
+        <p className="mono-caps mt-2 text-[11px] tracking-normal text-ink-faint">
+          {publicadaTexto}
         </p>
       )}
 

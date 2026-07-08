@@ -35,6 +35,12 @@ const BOILERPLATE = [
   "ver salario", "criar alerta", "editar pesquisa", "recomendadas para voce",
   // rótulos de "data de publicação" do Indeed que também são links (não são vaga)
   "nos ultimos", "ultimos 7 dias", "ultimas 24", "desde ontem", "publicado", "postado",
+  // CTAs de chrome/marketing observados vazando de digests (não são o título de uma vaga)
+  "modifique os criterios", "modificar criterios", "milhares de vagas", "se encaixam com",
+  "conversar pelo whatsapp", "falar no whatsapp", "jogue agora", "saiba por que", "saiba mais",
+  "aproveite", "assine ja", "assine agora", "seja premium", "conta premium", "ganhe ",
+  "melhore seu perfil", "adicione um cargo", "complete seu perfil", "atualize seu curriculo",
+  "responder", "conectar", "adicionar", "ver perfil", "ver todos os empregos",
 ];
 
 // Título que é só filtro de data/tempo (Indeed): "desde ontem", "nos últimos 7 dias",
@@ -42,14 +48,30 @@ const BOILERPLATE = [
 const RE_DATA_RUIDO =
   /^(ha\s+\d|nos ultimos|ultim[oa]s|desde\s|ontem|hoje|\d+\+?\s*dias?|\d+\+?\s*h(oras?)?)\b/;
 
-// E-mails de CONFIRMAÇÃO de alerta (Indeed/LinkedIn enviam um ao criar o alerta):
-// trazem "seu alerta foi ativado/criado" + no máximo 1 vaga-exemplo mal casada e sem
-// detalhes. Não devem virar vaga — as vagas reais vêm nos resumos recorrentes.
+// URLs que NÃO são página de vaga (chrome de digest, apps, redes, marketing). Se o
+// link casar aqui, descartamos a âncora — evita "Conversar pelo Whatsapp", "Jogue
+// agora", "Modifique os critérios do alerta" etc. entrarem como vaga. É um filtro
+// NEGATIVO (bloqueia o que claramente não é vaga) para não perder vaga de verdade.
+const RE_NAO_VAGA_URL =
+  /(wa\.me|api\.whatsapp|web\.whatsapp|\/whatsapp|t\.me\/|\/conta|\/account|\/settings|\/configurac|criterios|\/alertas?\b|\/notificac|\/ajuda|\/help|\/faq|\/suporte|\/support|\/jogo|\/game|\/games\/|play\.google|apps\.apple|itunes\.apple|\/premium|\/planos?\b|\/assinatura|\/upgrade|\/pricing|linkedin\.com\/(help|games|learning|feed|comm\/feed|mynetwork|notifications|posts|pulse|company)|facebook\.com|instagram\.com|twitter\.com|x\.com\/|youtube\.com)/i;
+
+// E-mails que NÃO trazem vagas — pular por completo (registra com 0 vagas, não extrai):
+// (a) CONFIRMAÇÃO de alerta recém-criado; (b) MARKETING/promoção (mesmo remetente que
+// manda digests, ex.: InfoJobs "Ganhe 1 mês grátis"). Casado contra assunto + início do corpo.
 const CONFIRMACAO = [
   "foi ativado com sucesso", "foi criado seu alerta", "criado seu alerta de",
   "seu alerta foi criado", "seu alerta foi ativado", "seu alerta de vaga foi",
   "job alert confirmation", "created your job alert", "your job alert is",
   "alert is set up",
+];
+const PROMO = [
+  "ganhe 1 mes", "ganhe um mes", "mes gratis", "meses gratis", "conta premium",
+  "seja premium", "assine", "presente para voce", "presente de boas", "boas-vindas",
+  "boas vindas", "bem-vindo", "bem vindo", "desejamos boas", "quer receber",
+  "ja escolheu o seu", "o universo esta dizendo", "nova competencia disponivel",
+  "adicione um cargo", "melhore seu perfil", "complete seu perfil", "aproveite",
+  "novidade", "promocao", "desconto", "oferta especial", "atualize seu curriculo",
+  "confirme seu e-mail", "confirme seu email", "verifique seu e-mail",
 ];
 
 const norm = (s: string) =>
@@ -122,6 +144,8 @@ function extrairVagas(
     if (/^(mailto:|tel:|#)/i.test(hrefRaw)) continue;
     const link = urlReal(hrefRaw);
     if (!/^https?:\/\//i.test(link)) continue;
+    // filtro NEGATIVO por URL: descarta chrome/app/rede/marketing (não é página de vaga)
+    if (RE_NAO_VAGA_URL.test(link)) continue;
 
     const titulo = limparTexto(m[2]);
     if (titulo.length < 8) continue;
@@ -250,10 +274,15 @@ Deno.serve(async (req) => {
     return json({ ok: true, ignorado: true, motivo: `remetente não reconhecido: ${from || "(vazio)"}` });
   }
 
-  // Pula e-mails de CONFIRMAÇÃO de alerta (não são vagas reais). Registra para
-  // rastreio, mas não cria vaga — evita ruído mal casado e sem detalhes.
+  // Pula e-mails que NÃO trazem vagas: (a) CONFIRMAÇÃO de alerta (casada contra
+  // assunto+início do corpo) e (b) MARKETING/promoção (casada só contra o ASSUNTO —
+  // o corpo de um digest real pode conter "assine/aproveite" sem ser promo). Registra
+  // para rastreio, mas não cria vaga — evita que promo de remetente reconhecido vire vaga.
   const cabecalho = norm(`${subject} ${limparTexto(corpo).slice(0, 400)}`);
-  if (CONFIRMACAO.some((c) => cabecalho.includes(norm(c)))) {
+  const assuntoNorm = norm(subject);
+  const ehConfirmacao = CONFIRMACAO.some((c) => cabecalho.includes(norm(c)));
+  const ehPromo = PROMO.some((p) => assuntoNorm.includes(norm(p)));
+  if (ehConfirmacao || ehPromo) {
     if (!reprocessando) {
       await supabase.from("emails_recebidos").insert({
         remetente: from || null,
@@ -264,7 +293,7 @@ Deno.serve(async (req) => {
         vagas_geradas: 0,
       });
     }
-    return json({ ok: true, confirmacao_de_alerta: true, vagas: 0 });
+    return json({ ok: true, ignorado: true, motivo: ehPromo ? "marketing/promo" : "confirmacao_de_alerta", vagas: 0 });
   }
 
   // registra o e-mail (reconhecido) ANTES das vagas, para vinculá-las (email_recebido_id)
