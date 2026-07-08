@@ -6,6 +6,7 @@ import { EditarVaga } from "./EditarVaga";
 const STATUS = [
   ["pendente", "Pendentes"],
   ["aprovada", "Publicadas"],
+  ["link_inativo", "Link inativo"],
   ["rejeitada", "Rejeitadas"],
   ["suspensa", "Suspensas"],
   ["expirada", "Expiradas"],
@@ -45,6 +46,7 @@ interface VagaAdmin {
   contato_submissao: string | null;
   status_link: string | null;
   mensagem_verificacao_link: string | null;
+  data_ultima_verificacao_link: string | null;
   link_candidatura: string | null;
   forma_candidatura: string | null;
   remuneracao_bolsa: string | null;
@@ -180,15 +182,36 @@ export function FilaVagas() {
   const { data: vagas, isLoading } = useQuery({
     queryKey: ["admin_vagas", status],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("vagas")
         .select(
-          "id, titulo, empresa_orgao, tipo, nivel, municipio, regiao, score_aderencia, score_urgencia, flags_incompatibilidade, status, origem, origem_externa_nao_verificada, contato_submissao, status_link, mensagem_verificacao_link, link_candidatura, forma_candidatura, remuneracao_bolsa, carga_horaria, modalidade, prazo_inscricao, sem_prazo_definido, descricao, uf, ai_recomendacao, ai_score, ai_justificativa, ai_modalidade",
-        )
-        .eq("status", status)
-        .order("score_aderencia", { ascending: false });
+          "id, titulo, empresa_orgao, tipo, nivel, municipio, regiao, score_aderencia, score_urgencia, flags_incompatibilidade, status, origem, origem_externa_nao_verificada, contato_submissao, status_link, mensagem_verificacao_link, data_ultima_verificacao_link, link_candidatura, forma_candidatura, remuneracao_bolsa, carga_horaria, modalidade, prazo_inscricao, sem_prazo_definido, descricao, uf, ai_recomendacao, ai_score, ai_justificativa, ai_modalidade",
+        );
+      if (status === "link_inativo") {
+        // vagas aprovadas cujo link caiu (tiradas do ar) — a "área de alerta"
+        q = q.eq("status", "aprovada").eq("status_link", "inacessivel");
+      } else if (status === "aprovada") {
+        // Publicadas = aprovadas AINDA no ar (exclui as de link inativo)
+        q = q.eq("status", "aprovada").neq("status_link", "inacessivel");
+      } else {
+        q = q.eq("status", status);
+      }
+      const { data, error } = await q.order("score_aderencia", { ascending: false });
       if (error) throw error;
       return (data ?? []) as VagaAdmin[];
+    },
+  });
+
+  // Alerta: quantas vagas foram tiradas do ar por link inativo (para o badge da aba)
+  const { data: linkInativoCount = 0 } = useQuery({
+    queryKey: ["admin_link_inativo_count"],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("vagas")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "aprovada")
+        .eq("status_link", "inacessivel");
+      return count ?? 0;
     },
   });
 
@@ -260,6 +283,7 @@ export function FilaVagas() {
     qc.invalidateQueries({ queryKey: ["admin_vagas"] });
     qc.invalidateQueries({ queryKey: ["admin_duplicatas"] });
     qc.invalidateQueries({ queryKey: ["admin_dashboard"] });
+    qc.invalidateQueries({ queryKey: ["admin_link_inativo_count"] });
   }
 
   function toggleSel(id: string) {
@@ -296,6 +320,7 @@ export function FilaVagas() {
     qc.invalidateQueries({ queryKey: ["admin_vagas"] });
     qc.invalidateQueries({ queryKey: ["admin_duplicatas"] });
     qc.invalidateQueries({ queryKey: ["admin_dashboard"] });
+    qc.invalidateQueries({ queryKey: ["admin_link_inativo_count"] });
   }
 
   // roda a IA nas pendentes ainda não classificadas (para a fila já vir organizada)
@@ -325,10 +350,13 @@ export function FilaVagas() {
             className={`mono-caps rounded-full border-[1.5px] px-3.5 py-1.5 text-[12px] tracking-normal transition-colors ${
               status === v
                 ? "border-ink bg-ink text-paper"
-                : "border-line-strong bg-surface text-ink-soft hover:border-mata"
+                : v === "link_inativo" && linkInativoCount > 0
+                  ? "border-barro bg-barro-tint text-barro hover:border-barro"
+                  : "border-line-strong bg-surface text-ink-soft hover:border-mata"
             }`}
           >
             {l}
+            {v === "link_inativo" && linkInativoCount > 0 ? ` (${linkInativoCount})` : ""}
           </button>
         ))}
       </div>
@@ -502,6 +530,15 @@ export function FilaVagas() {
                     {v.uf ? ` · ${v.uf}` : ""}
                     {v.ai_modalidade ? ` · ${MODALIDADE_LABEL[v.ai_modalidade] ?? v.ai_modalidade}` : ""}
                   </p>
+                  {v.status_link === "inacessivel" && (
+                    <p className="mt-1.5 rounded-[8px] border border-[#EBC7BE] bg-barro-tint px-2.5 py-1.5 text-[12px] leading-relaxed text-barro">
+                      <span className="mono-caps text-[10px]">Fora do ar · </span>
+                      Removida do portal público — o link não respondeu em 3 verificações
+                      {v.mensagem_verificacao_link ? ` (${v.mensagem_verificacao_link})` : ""}
+                      {v.data_ultima_verificacao_link ? ` · última checagem ${v.data_ultima_verificacao_link.slice(0, 10)}` : ""}.
+                      Corrija o link em "Editar" ou rejeite a vaga.
+                    </p>
+                  )}
                   {v.ai_justificativa && (
                     <p className="mt-1.5 rounded-[8px] border border-line bg-surface-dim/40 px-2.5 py-1.5 text-[12px] leading-relaxed text-ink-soft">
                       <span className="mono-caps text-[10px] text-ink-faint">Leitura da IA · </span>
@@ -573,7 +610,7 @@ export function FilaVagas() {
                     </p>
                   )}
                 </div>
-                {(status === "pendente" || status === "aprovada") && (
+                {(status === "pendente" || status === "aprovada" || status === "link_inativo") && (
                   <div className="flex shrink-0 flex-wrap justify-end gap-2">
                     {status === "pendente" && (
                       <button
@@ -599,7 +636,7 @@ export function FilaVagas() {
                     >
                       Duplicar
                     </button>
-                    {status === "pendente" && (
+                    {(status === "pendente" || status === "link_inativo") && (
                       <button
                         onClick={() => {
                           setRejeitando(rejeitando === v.id ? null : v.id);
