@@ -183,6 +183,14 @@ async function fetchFirecrawl(url: string, key: string): Promise<string | null> 
 
 type FcBudget = { key: string | null; usados: number; max: number };
 
+// LinkedIn: fetch direto (datacenter) e Firecrawl NÃO funcionam (bloqueio/recusa).
+// Mas o endpoint PÚBLICO "guest" (/jobs-guest/jobs/api/jobPosting/<id>, SEM login)
+// traz título/empresa/local/status; o Jina (infra própria) consegue lê-lo.
+function linkedinGuest(url: string): string | null {
+  const m = url.match(/linkedin\.com\/(?:comm\/)?jobs\/view\/(\d+)/i);
+  return m ? `https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/${m[1]}` : null;
+}
+
 // Cascata: (1) fetch direto → (2) Jina (grátis) → (3) Firecrawl (pago, só quando os
 // dois falham E ainda há orçamento). O orçamento limita gasto de crédito e tempo.
 async function buscarPagina(
@@ -190,6 +198,10 @@ async function buscarPagina(
   jinaKey: string | null,
   fc: FcBudget,
 ): Promise<string | null> {
+  // LinkedIn é ilegível por fetch/Firecrawl → usa o endpoint guest público via Jina.
+  const guest = linkedinGuest(url);
+  if (guest) return await fetchJina(guest, jinaKey);
+
   const direto = await fetchDireto(url);
   if (direto) return direto;
   const jina = await fetchJina(url, jinaKey);
