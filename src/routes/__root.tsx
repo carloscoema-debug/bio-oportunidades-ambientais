@@ -109,8 +109,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "description", content: "Curadoria de vagas de estágio e emprego em meio ambiente no Ceará, para estudantes e egressos do Curso Técnico em Meio Ambiente do IFCE Campus Fortaleza." },
       { property: "og:description", content: "Curadoria de vagas de estágio e emprego em meio ambiente no Ceará, para estudantes e egressos do Curso Técnico em Meio Ambiente do IFCE Campus Fortaleza." },
       { name: "twitter:description", content: "Curadoria de vagas de estágio e emprego em meio ambiente no Ceará, para estudantes e egressos do Curso Técnico em Meio Ambiente do IFCE Campus Fortaleza." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fac90e39-979f-4ba2-b9c7-86a86e7aa06f/id-preview-774070c2--b6443174-a053-46a7-8fe0-96c6acdc14f6.lovable.app-1783214042804.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/fac90e39-979f-4ba2-b9c7-86a86e7aa06f/id-preview-774070c2--b6443174-a053-46a7-8fe0-96c6acdc14f6.lovable.app-1783214042804.png" },
+      { property: "og:site_name", content: "BIO — Oportunidades ambientais" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
