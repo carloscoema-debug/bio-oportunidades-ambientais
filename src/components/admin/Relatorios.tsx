@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { cursoLabelCurto } from "@/lib/glossario";
 
 interface VagaRel {
   tipo: string;
@@ -14,7 +15,28 @@ interface VagaRel {
   contagem_cliques: number;
   count_me_candidatei: number;
   origem: string | null;
+  curso_alvo: string[] | null;
 }
+
+// Cursos do BIO por nível (para a leitura de mercado por formação).
+const CURSOS_SUPERIOR = ["gestao_ambiental", "engenharia_sanitaria_ambiental", "saneamento_ambiental"];
+const CURSOS_TECNICO = ["tecnico_meio_ambiente", "tecnico_saneamento"];
+
+// Conta ocorrências de cada curso em curso_alvo (uma vaga pode atender vários cursos,
+// então soma para cada um). Restringe aos códigos informados.
+function contarCursos(lista: VagaRel[], codigos: string[]): [string, number][] {
+  const m = new Map<string, number>();
+  for (const c of codigos) m.set(c, 0);
+  for (const v of lista) {
+    for (const c of v.curso_alvo ?? []) {
+      if (m.has(c)) m.set(c, (m.get(c) ?? 0) + 1);
+    }
+  }
+  return [...m.entries()].sort((a, b) => b[1] - a[1]);
+}
+// Quantas VAGAS atendem ao menos um curso do grupo (nível), sem contar em dobro.
+const vagasComCurso = (lista: VagaRel[], codigos: string[]) =>
+  lista.filter((v) => (v.curso_alvo ?? []).some((c) => codigos.includes(c))).length;
 
 const TIPO_LABEL: Record<string, string> = {
   estagio: "Estágio",
@@ -135,7 +157,7 @@ export function Relatorios() {
       const { data, error } = await supabase
         .from("vagas")
         .select(
-          "tipo, setor, nivel, regiao, status, score_aderencia, data_captura, data_publicacao, contagem_cliques, count_me_candidatei, origem",
+          "tipo, setor, nivel, regiao, status, score_aderencia, data_captura, data_publicacao, contagem_cliques, count_me_candidatei, origem, curso_alvo",
         );
       if (error) throw error;
       return (data ?? []) as VagaRel[];
@@ -209,6 +231,18 @@ export function Relatorios() {
       }))
       .sort((a, b) => b.total - a.total);
 
+    // Leitura de mercado por FORMAÇÃO (só publicadas): quantas vagas por curso e
+    // como se dividem entre superior e técnico.
+    const porCursoSuperior = contarCursos(publicadas, CURSOS_SUPERIOR);
+    const porCursoTecnico = contarCursos(publicadas, CURSOS_TECNICO);
+    const vagasSuperior = vagasComCurso(publicadas, CURSOS_SUPERIOR);
+    const vagasTecnico = vagasComCurso(publicadas, CURSOS_TECNICO);
+    const vagasAmbos = publicadas.filter(
+      (v) =>
+        (v.curso_alvo ?? []).some((c) => CURSOS_SUPERIOR.includes(c)) &&
+        (v.curso_alvo ?? []).some((c) => CURSOS_TECNICO.includes(c)),
+    ).length;
+
     return {
       totalCliques,
       totalCandidaturas,
@@ -224,6 +258,11 @@ export function Relatorios() {
       porRegiao: contar(lista, (v) => v.regiao),
       porSetor: contar(lista, (v) => v.setor),
       porNivel: contar(lista, (v) => v.nivel),
+      porCursoSuperior,
+      porCursoTecnico,
+      vagasSuperior,
+      vagasTecnico,
+      vagasAmbos,
     };
   }, [todas, periodo]);
 
@@ -361,6 +400,43 @@ export function Relatorios() {
               ))}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      {/* Perfil de mercado por FORMAÇÃO — como as vagas se distribuem entre os
+          cursos do BIO e entre nível superior e técnico (visão estratégica). */}
+      <div>
+        <h3 className="mono-caps mb-3 text-[12px] text-ink-faint">
+          Perfil de mercado por formação · vagas publicadas
+        </h3>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <KPI
+            rotulo="Vagas p/ nível superior"
+            valor={String(r.vagasSuperior)}
+            sub={r.publicadas ? `${Math.round((r.vagasSuperior / r.publicadas) * 100)}% das publicadas` : "—"}
+          />
+          <KPI
+            rotulo="Vagas p/ nível técnico"
+            valor={String(r.vagasTecnico)}
+            sub={r.publicadas ? `${Math.round((r.vagasTecnico / r.publicadas) * 100)}% das publicadas` : "—"}
+          />
+          <KPI
+            rotulo="Servem aos dois níveis"
+            valor={String(r.vagasAmbos)}
+            sub="atendem superior E técnico"
+          />
+        </div>
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <BarraLista
+            titulo="Por curso · Superior"
+            dados={r.porCursoSuperior}
+            rotular={(k) => cursoLabelCurto[k] ?? k}
+          />
+          <BarraLista
+            titulo="Por curso · Técnico"
+            dados={r.porCursoTecnico}
+            rotular={(k) => cursoLabelCurto[k] ?? k}
+          />
         </div>
       </div>
 
