@@ -148,10 +148,55 @@ async function fetchJina(url: string, key: string | null): Promise<string | null
   }
 }
 
-async function buscarPagina(url: string, jinaKey: string | null): Promise<string | null> {
+// Firecrawl — renderiza com browser real + proxy stealth, vence anti-bot que o
+// fetch direto e o Jina não vencem (Indeed/LinkedIn/Cloudflare). Custa CRÉDITO
+// (pago), então é o ÚLTIMO recurso e limitado por um orçamento por execução.
+// proxy:"auto" tenta básico e só usa stealth (mais caro) se precisar.
+async function fetchFirecrawl(url: string, key: string): Promise<string | null> {
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 25000); // render com browser pode demorar
+    const resp = await fetch("https://api.firecrawl.dev/v2/scrape", {
+      method: "POST",
+      signal: ctrl.signal,
+      headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        url,
+        formats: ["markdown"],
+        onlyMainContent: true,
+        proxy: "auto",
+        timeout: 20000,
+      }),
+    });
+    clearTimeout(t);
+    if (!resp.ok) return null;
+    const d = await resp.json();
+    const texto = String(d?.data?.markdown ?? "").replace(/\s+/g, " ").trim();
+    if (ehBloqueio(texto)) return null;
+    return texto.length > 120 ? texto.slice(0, 3500) : null;
+  } catch {
+    return null;
+  }
+}
+
+type FcBudget = { key: string | null; usados: number; max: number };
+
+// Cascata: (1) fetch direto → (2) Jina (grátis) → (3) Firecrawl (pago, só quando os
+// dois falham E ainda há orçamento). O orçamento limita gasto de crédito e tempo.
+async function buscarPagina(
+  url: string,
+  jinaKey: string | null,
+  fc: FcBudget,
+): Promise<string | null> {
   const direto = await fetchDireto(url);
   if (direto) return direto;
-  return await fetchJina(url, jinaKey);
+  const jina = await fetchJina(url, jinaKey);
+  if (jina) return jina;
+  if (fc.key && fc.usados < fc.max) {
+    fc.usados++; // reserva o crédito ANTES do await (evita estourar o orçamento)
+    return await fetchFirecrawl(url, fc.key);
+  }
+  return null;
 }
 
 async function chamarGemini(cfg: (k: string) => Promise<string | null>, prompt: string): Promise<Classif[]> {
@@ -250,6 +295,9 @@ Deno.serve(async (req) => {
     : "";
 
   const jinaKey = await cfg("jina_api_key"); // opcional (limites maiores); funciona sem
+  // Firecrawl é o último recurso (pago) — no máx. FC_MAX páginas por execução p/
+  // limitar crédito e tempo; as demais bloqueadas caem em título+trecho.
+  const fc: FcBudget = { key: await cfg("firecrawl_api_key"), usados: 0, max: 6 };
   const LOTE = 8;
   let classificadas = 0, erros = 0;
   const resumo: Record<string, number> = { aprovar: 0, revisar: 0, descartar: 0 };
@@ -259,7 +307,7 @@ Deno.serve(async (req) => {
     // busca o conteúdo real da página de cada vaga (em paralelo) — a verdade
     // (local, formação, salário) costuma estar só no corpo, não no título.
     const paginas = await Promise.all(
-      lote.map((v) => (v.link_candidatura ? buscarPagina(v.link_candidatura, jinaKey) : Promise.resolve(null))),
+      lote.map((v) => (v.link_candidatura ? buscarPagina(v.link_candidatura, jinaKey, fc) : Promise.resolve(null))),
     );
     const payload = lote.map((v, idx) => ({
       n: idx,
