@@ -24,14 +24,15 @@ export const nivelLabel: Record<string, string> = {
 // `cursoLabel` = nome completo (edição); `cursoLabelCurto` = chip no card.
 export const cursoLabel: Record<string, string> = {
   gestao_ambiental: "Gestão Ambiental",
-  engenharia_sanitaria_ambiental: "Engenharia Sanitária e Ambiental",
+  // cobre também "Engenharia Ambiental" (nome de mercado do mesmo campo)
+  engenharia_sanitaria_ambiental: "Engenharia Ambiental e Sanitária",
   saneamento_ambiental: "Saneamento Ambiental",
   tecnico_meio_ambiente: "Técnico em Meio Ambiente",
   tecnico_saneamento: "Técnico em Saneamento",
 };
 export const cursoLabelCurto: Record<string, string> = {
   gestao_ambiental: "Gestão Ambiental",
-  engenharia_sanitaria_ambiental: "Eng. Sanitária Amb.",
+  engenharia_sanitaria_ambiental: "Eng. Ambiental/Sanitária",
   saneamento_ambiental: "Saneamento Amb.",
   tecnico_meio_ambiente: "Téc. Meio Ambiente",
   tecnico_saneamento: "Téc. Saneamento",
