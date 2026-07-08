@@ -73,7 +73,9 @@ Para CADA vaga devolva um objeto com:
 - nivel ("tecnico" | "superior" | "ambos" | "operacional" | "indefinido")
 - formacao_exigida (curso/área exigido no texto, ou null)
 - cursos (array de códigos do BIO atendidos; [] se não aderente)
-- faixa_salarial (ex.: "R$ 3.000" ou "R$ 2.000 a R$ 4.000"; null se não aparecer)
+- tipo ("estagio" | "emprego" | "bolsa" | "processo_seletivo"; use "estagio" se for estágio, "bolsa" se for bolsa de pesquisa/extensão, "processo_seletivo" p/ concurso/seleção pública, senão "emprego"; null se não der p/ saber)
+- faixa_salarial (remuneração OU valor de BOLSA OU benefícios, o que aparecer — ex.: "R$ 3.000", "R$ 2.000 a R$ 4.000", "Bolsa R$ 800 + auxílio-transporte", "R$ 1.500 + VR/VT"; null se não aparecer)
+- carga_horaria (jornada de trabalho, ex.: "40h/semana", "20h/semana", "6h/dia", "Tempo integral", "Meio período"; null se não aparecer)
 - score (0-100)
 - recomendacao ("aprovar" | "revisar" | "descartar")
 - justificativa (uma frase curta citando o que decidiu — local e/ou formação)
@@ -85,7 +87,7 @@ type Classif = {
   modalidade?: string; nivel?: string; score?: number;
   recomendacao?: string; justificativa?: string;
   formacao_exigida?: string | null; faixa_salarial?: string | null;
-  cursos?: string[] | null;
+  cursos?: string[] | null; tipo?: string; carga_horaria?: string | null;
 };
 
 // Busca o texto da página da vaga (o corpo tem a verdade: local, formação, salário).
@@ -284,7 +286,7 @@ Deno.serve(async (req) => {
 
   // vagas pendentes ainda não classificadas
   const { data: vagas } = await svc.from("vagas")
-    .select("id, titulo, empresa_orgao, descricao, modalidade, remuneracao_bolsa, link_candidatura")
+    .select("id, titulo, empresa_orgao, descricao, tipo, modalidade, remuneracao_bolsa, carga_horaria, link_candidatura")
     .eq("status", "pendente")
     .is("ai_classificado_em", null)
     .limit(30);
@@ -375,9 +377,19 @@ Deno.serve(async (req) => {
       if (["tecnico", "superior", "ambos"].includes(c.nivel ?? "")) {
         patch.nivel = c.nivel;
       }
-      // preenche a faixa salarial (quando a IA achou e a vaga ainda não tinha)
+      // preenche a faixa salarial / bolsa / benefícios (quando a IA achou e ainda não tinha)
       if (!v.remuneracao_bolsa && c.faixa_salarial && /R\$|\d/.test(c.faixa_salarial)) {
         patch.remuneracao_bolsa = String(c.faixa_salarial).slice(0, 120);
+      }
+      // preenche a CARGA HORÁRIA lida pela IA (quando a vaga ainda não tinha)
+      if (!v.carga_horaria && c.carga_horaria && String(c.carga_horaria).trim()) {
+        patch.carga_horaria = String(c.carga_horaria).trim().slice(0, 80);
+      }
+      // refina o TIPO (estagio/emprego/bolsa) só quando a vaga está no default da
+      // ingestão ("processo_seletivo") — não sobrescreve escolha manual da curadoria.
+      if (v.tipo === "processo_seletivo" &&
+          ["estagio", "emprego", "bolsa", "processo_seletivo"].includes(c.tipo ?? "")) {
+        patch.tipo = c.tipo;
       }
       // preenche a EMPRESA real quando a atual está vazia ou é o nome da fonte ("… Alerts").
       // Nunca grava um agregador (Indeed/Catho/…) como se fosse a empresa.
