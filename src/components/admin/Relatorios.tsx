@@ -16,7 +16,10 @@ interface VagaRel {
   count_me_candidatei: number;
   origem: string | null;
   curso_alvo: string[] | null;
+  area_tematica_id: string | null;
 }
+
+const TIPOS_ORDEM = ["estagio", "emprego", "processo_seletivo", "bolsa"];
 
 // Cursos do BIO por nível (para a leitura de mercado por formação).
 const CURSOS_SUPERIOR = ["gestao_ambiental", "engenharia_sanitaria_ambiental", "saneamento_ambiental"];
@@ -157,10 +160,21 @@ export function Relatorios() {
       const { data, error } = await supabase
         .from("vagas")
         .select(
-          "tipo, setor, nivel, regiao, status, score_aderencia, data_captura, data_publicacao, contagem_cliques, count_me_candidatei, origem, curso_alvo",
+          "tipo, setor, nivel, regiao, status, score_aderencia, data_captura, data_publicacao, contagem_cliques, count_me_candidatei, origem, curso_alvo, area_tematica_id",
         );
       if (error) throw error;
       return (data ?? []) as VagaRel[];
+    },
+  });
+
+  // rótulos das áreas temáticas (id → nome) para a leitura de demanda por área
+  const { data: areasMap = {} } = useQuery({
+    queryKey: ["relatorio_areas"],
+    queryFn: async () => {
+      const { data } = await supabase.from("areas_tematicas").select("id, label_display");
+      const m: Record<string, string> = {};
+      for (const a of (data ?? []) as { id: string; label_display: string }[]) m[a.id] = a.label_display;
+      return m;
     },
   });
 
@@ -249,6 +263,21 @@ export function Relatorios() {
         (v) => (v.curso_alvo ?? []).length === 1 && v.curso_alvo![0] === codigo,
       ).length,
     })).sort((a, b) => b.total - a.total);
+
+    // CURSO × TIPO (publicadas): p/ cada curso, quantas são estágio, emprego, etc.
+    const cursoXtipo = [
+      ...CURSOS_SUPERIOR.map((c) => [c, "superior"] as const),
+      ...CURSOS_TECNICO.map((c) => [c, "tecnico"] as const),
+    ].map(([codigo, nivel]) => {
+      const doCurso = publicadas.filter((v) => (v.curso_alvo ?? []).includes(codigo));
+      const porTipo: Record<string, number> = {};
+      for (const t of TIPOS_ORDEM) porTipo[t] = doCurso.filter((v) => v.tipo === t).length;
+      return { codigo, nivel, total: doCurso.length, porTipo };
+    });
+
+    // DEMANDA POR ÁREA TEMÁTICA ambiental (publicadas) — leitura de mercado por área.
+    const porArea = contar(publicadas, (v) => v.area_tematica_id ?? "__sem__");
+    const semArea = publicadas.filter((v) => !v.area_tematica_id).length;
     const vagasAmbos = publicadas.filter(
       (v) =>
         (v.curso_alvo ?? []).some((c) => CURSOS_SUPERIOR.includes(c)) &&
@@ -273,6 +302,9 @@ export function Relatorios() {
       porCursoSuperior,
       porCursoTecnico,
       porCursoDetalhe,
+      cursoXtipo,
+      porArea,
+      semArea,
       vagasSuperior,
       vagasTecnico,
       vagasAmbos,
@@ -468,6 +500,62 @@ export function Relatorios() {
           "Vagas" conta toda vaga que atende o curso (uma vaga pode atender mais de um);
           "Só este curso" são as destinadas exclusivamente a ele.
         </p>
+
+        {/* Curso × tipo: que tipo de oportunidade (estágio/emprego/…) o mercado
+            demanda por formação — insumo para ajustes estratégicos nos cursos. */}
+        <p className="mono-caps mt-6 mb-2 text-[11px] text-ink-faint">
+          Tipo de oportunidade por curso
+        </p>
+        <div className="overflow-x-auto rounded-[16px] border border-line bg-surface">
+          <table className="w-full text-[13px]">
+            <thead>
+              <tr className="mono-caps border-b border-line text-left text-[10.5px] text-ink-faint">
+                <th className="px-4 py-2.5">Curso</th>
+                {TIPOS_ORDEM.map((t) => (
+                  <th key={t} className="px-3 py-2.5 text-right">{TIPO_LABEL[t] ?? t}</th>
+                ))}
+                <th className="px-3 py-2.5 text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {r.cursoXtipo.map((c) => (
+                <tr key={c.codigo} className="border-b border-line last:border-0">
+                  <td className="px-4 py-2 text-ink">
+                    {cursoLabel[c.codigo] ?? c.codigo}
+                    <span className="mono-caps ml-2 text-[10px] text-ink-faint">
+                      {c.nivel === "superior" ? "superior" : "técnico"}
+                    </span>
+                  </td>
+                  {TIPOS_ORDEM.map((t) => (
+                    <td key={t} className="px-3 py-2 text-right text-ink-soft">
+                      {c.porTipo[t] || "—"}
+                    </td>
+                  ))}
+                  <td className="px-3 py-2 text-right font-bold text-mata-deep">{c.total}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Demanda por ÁREA TEMÁTICA ambiental — que áreas do mercado estão contratando
+          (leitura estratégica p/ ajustes nos cursos). A IA classifica a área. */}
+      <div>
+        <h3 className="mono-caps mb-3 text-[12px] text-ink-faint">
+          Demanda por área temática · vagas publicadas
+        </h3>
+        <BarraLista
+          titulo="Áreas ambientais que estão contratando"
+          dados={r.porArea}
+          rotular={(k) => (k === "__sem__" ? "Não classificada" : (areasMap[k] ?? k))}
+        />
+        {r.semArea > 0 && (
+          <p className="mt-2 text-[12px] text-ink-faint">
+            {r.semArea} vaga(s) ainda sem área definida — a IA classifica ao processar; as
+            antigas podem ser ajustadas na edição.
+          </p>
+        )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">

@@ -64,6 +64,10 @@ CURSOS DO BIO — devolva os CÓDIGOS dos cursos que a vaga atende (pela formaç
 - "tecnico_saneamento" (técnico — Saneamento)
 Regra: inclua TODOS os cursos plausíveis (pode ser mais de um). Ex.: Engenheiro(a) Ambiental/Sanitário → ["engenharia_sanitaria_ambiental","gestao_ambiental"]; Analista/Gestor Ambiental → ["gestao_ambiental"] (+ técnico se aceitar técnico); Técnico em Meio Ambiente → ["tecnico_meio_ambiente"]; ETE/saneamento/tratamento de água/esgoto → +"saneamento_ambiental"/"tecnico_saneamento". Se a vaga NÃO for aderente (descartar), devolva cursos: [].
 
+ÁREA TEMÁTICA (classifique a vaga na ÁREA ambiental mais específica que couber, para a leitura de demanda de mercado), em "area_tematica" — use EXATAMENTE um destes rótulos:
+"Conservação e Biodiversidade", "Consultoria Ambiental", "Educação Ambiental", "Fiscalização e Monitoramento", "Geoprocessamento", "Gestão e Auditoria Ambiental", "Laboratório e Análises", "Licenciamento Ambiental", "Meio Ambiente Industrial", "Órgãos Públicos Ambientais", "Qualidade da Água", "Recursos Hídricos", "Resíduos Sólidos", "Saneamento", "Outras Áreas".
+Dicas: SGI/HSE/QSMS/indústria → "Meio Ambiente Industrial"; ETE/água/esgoto → "Saneamento" (ou "Qualidade da Água"/"Recursos Hídricos" se for foco); consultoria/estudos ambientais → "Consultoria Ambiental"; órgão público (SEMACE, prefeitura, IBAMA) → "Órgãos Públicos Ambientais" (ou "Fiscalização e Monitoramento" se for fiscal); coleta/reciclagem/aterro → "Resíduos Sólidos"; licença/EIA/RIMA → "Licenciamento Ambiental"; laboratório/análise → "Laboratório e Análises". Se não der p/ definir, "Outras Áreas" ou null.
+
 Para CADA vaga devolva um objeto com:
 - titulo_limpo (string curta e legível)
 - empresa (nome REAL do empregador extraído do texto/página; null se só aparecer o site/agregador de origem, ex.: "Indeed", "Catho")
@@ -73,6 +77,7 @@ Para CADA vaga devolva um objeto com:
 - nivel ("tecnico" | "superior" | "ambos" | "operacional" | "indefinido")
 - formacao_exigida (curso/área exigido no texto, ou null)
 - cursos (array de códigos do BIO atendidos; [] se não aderente)
+- area_tematica (um dos rótulos de área listados acima, ou null)
 - tipo ("estagio" | "emprego" | "bolsa" | "processo_seletivo"; use "estagio" se for estágio, "bolsa" se for bolsa de pesquisa/extensão, "processo_seletivo" p/ concurso/seleção pública, senão "emprego"; null se não der p/ saber)
 - faixa_salarial (remuneração OU valor de BOLSA OU benefícios, o que aparecer — ex.: "R$ 3.000", "R$ 2.000 a R$ 4.000", "Bolsa R$ 800 + auxílio-transporte", "R$ 1.500 + VR/VT"; null se não aparecer)
 - carga_horaria (jornada de trabalho, ex.: "40h/semana", "20h/semana", "6h/dia", "Tempo integral", "Meio período"; null se não aparecer)
@@ -88,6 +93,7 @@ type Classif = {
   recomendacao?: string; justificativa?: string;
   formacao_exigida?: string | null; faixa_salarial?: string | null;
   cursos?: string[] | null; tipo?: string; carga_horaria?: string | null;
+  area_tematica?: string | null;
 };
 
 // Busca o texto da página da vaga (o corpo tem a verdade: local, formação, salário).
@@ -284,9 +290,15 @@ Deno.serve(async (req) => {
   const mapaMuni = new Map<string, string>();
   for (const m of munis ?? []) mapaMuni.set(norm(m.municipio), m.municipio);
 
+  // áreas temáticas (rótulo → id) — a IA classifica a área p/ a análise de demanda
+  const { data: areas } = await svc.from("areas_tematicas")
+    .select("id, label_display").eq("ativo", true);
+  const mapaArea = new Map<string, string>();
+  for (const a of areas ?? []) mapaArea.set(norm(a.label_display), a.id);
+
   // vagas pendentes ainda não classificadas
   const { data: vagas } = await svc.from("vagas")
-    .select("id, titulo, empresa_orgao, descricao, tipo, modalidade, remuneracao_bolsa, carga_horaria, link_candidatura")
+    .select("id, titulo, empresa_orgao, descricao, tipo, modalidade, remuneracao_bolsa, carga_horaria, area_tematica_id, link_candidatura")
     .eq("status", "pendente")
     .is("ai_classificado_em", null)
     .limit(30);
@@ -404,6 +416,11 @@ Deno.serve(async (req) => {
         const cursos = [...new Set(c.cursos.map((x) => String(x).trim().toLowerCase()))]
           .filter((x) => CURSOS_BIO.has(x));
         if (cursos.length > 0) patch.curso_alvo = cursos;
+      }
+      // área temática (mapeia o rótulo da IA → id) — só quando a vaga ainda não tem
+      if (!v.area_tematica_id && c.area_tematica) {
+        const aid = mapaArea.get(norm(String(c.area_tematica)));
+        if (aid) patch.area_tematica_id = aid;
       }
 
       const { error } = await svc.from("vagas").update(patch).eq("id", v.id);
