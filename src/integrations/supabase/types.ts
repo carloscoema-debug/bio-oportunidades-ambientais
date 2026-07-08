@@ -541,6 +541,11 @@ export type Database = {
       }
       vagas: {
         Row: {
+          ai_classificado_em: string | null
+          ai_justificativa: string | null
+          ai_modalidade: string | null
+          ai_recomendacao: string | null
+          ai_score: number | null
           area_tematica_id: string | null
           atividades: string | null
           carga_horaria: string | null
@@ -597,9 +602,15 @@ export type Database = {
           subtipo_estagio: Database["public"]["Enums"]["subtipo_estagio"]
           tipo: Database["public"]["Enums"]["vaga_tipo"]
           titulo: string
+          uf: string | null
           vaga_bruta_id: string | null
         }
         Insert: {
+          ai_classificado_em?: string | null
+          ai_justificativa?: string | null
+          ai_modalidade?: string | null
+          ai_recomendacao?: string | null
+          ai_score?: number | null
           area_tematica_id?: string | null
           atividades?: string | null
           carga_horaria?: string | null
@@ -656,9 +667,15 @@ export type Database = {
           subtipo_estagio?: Database["public"]["Enums"]["subtipo_estagio"]
           tipo: Database["public"]["Enums"]["vaga_tipo"]
           titulo: string
+          uf?: string | null
           vaga_bruta_id?: string | null
         }
         Update: {
+          ai_classificado_em?: string | null
+          ai_justificativa?: string | null
+          ai_modalidade?: string | null
+          ai_recomendacao?: string | null
+          ai_score?: number | null
           area_tematica_id?: string | null
           atividades?: string | null
           carga_horaria?: string | null
@@ -715,6 +732,7 @@ export type Database = {
           subtipo_estagio?: Database["public"]["Enums"]["subtipo_estagio"]
           tipo?: Database["public"]["Enums"]["vaga_tipo"]
           titulo?: string
+          uf?: string | null
           vaga_bruta_id?: string | null
         }
         Relationships: [
@@ -879,6 +897,7 @@ export type Database = {
         Args: { p_cron: string; p_nome: string; p_sql: string }
         Returns: undefined
       }
+      bio_duplicar_vaga: { Args: { p_id: string }; Returns: string }
       bio_duplicatas_fila: {
         Args: never
         Returns: {
