@@ -94,8 +94,8 @@ function Home() {
           <span className="text-mata">selecionadas para você.</span>
         </h1>
         <p className="mt-5 max-w-[56ch] text-[16.5px] leading-relaxed text-ink-soft">
-          O BIO reúne e verifica vagas de estágio, emprego e seleções públicas em meio
-          ambiente que já estão abertas no mercado. A curadoria é feita pela coordenação do{" "}
+          O BIO reúne e verifica vagas de estágio, emprego e seleções públicas na área
+          ambiental que já estão abertas no mercado. A curadoria é feita pela coordenação do{" "}
           <a
             href="https://portal.ifce.edu.br/cursos/fortaleza-tecnico-subsequente-meio-ambiente/"
             target="_blank"
