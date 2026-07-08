@@ -130,10 +130,13 @@ function flagsAtivas(v: VagaAdmin): string[] {
 }
 const municipioIndefinido = (v: VagaAdmin) =>
   !v.municipio || v.regiao === "indefinido";
+// Baldes orientados pelo VEREDITO DA IA (que lê a área), não pelo score_aderencia
+// (que é cego à área — pontua nível/região/completude). Mutuamente exclusivos:
+// descartar → pronta → atenção (o resto). Assim IA:descartar não vaza p/ "prontas".
+const ehDescartar = (v: VagaAdmin) => v.ai_recomendacao === "descartar";
 const estaPronta = (v: VagaAdmin) =>
-  v.score_aderencia >= 70 && flagsAtivas(v).length === 0 && !municipioIndefinido(v);
-const precisaAtencao = (v: VagaAdmin) =>
-  flagsAtivas(v).length > 0 || municipioIndefinido(v) || v.score_aderencia < 40;
+  v.ai_recomendacao === "aprovar" && flagsAtivas(v).length === 0 && !municipioIndefinido(v);
+const precisaAtencao = (v: VagaAdmin) => !ehDescartar(v) && !estaPronta(v);
 
 function seloAderencia(score: number) {
   if (score >= 70)
@@ -168,6 +171,11 @@ export function FilaVagas() {
   const [editando, setEditando] = useState<string | null>(null);
   const [motivo, setMotivo] = useState("fora_do_perfil");
   const [detalhe, setDetalhe] = useState("");
+  // seleção em massa (rejeitar várias de uma vez com o mesmo motivo)
+  const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
+  const [motivoMassa, setMotivoMassa] = useState("fora_do_perfil");
+  const [acaoMassa, setAcaoMassa] = useState(false);
+  const [classificando, setClassificando] = useState(false);
 
   const { data: vagas, isLoading } = useQuery({
     queryKey: ["admin_vagas", status],
@@ -254,6 +262,52 @@ export function FilaVagas() {
     qc.invalidateQueries({ queryKey: ["admin_dashboard"] });
   }
 
+  function toggleSel(id: string) {
+    setSelecionadas((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  }
+  function toggleTodasVisiveis(ids: string[]) {
+    setSelecionadas((s) => {
+      const marcadas = ids.length > 0 && ids.every((i) => s.has(i));
+      const n = new Set(s);
+      if (marcadas) ids.forEach((i) => n.delete(i));
+      else ids.forEach((i) => n.add(i));
+      return n;
+    });
+  }
+  const limparSel = () => setSelecionadas(new Set());
+
+  // rejeita TODAS as selecionadas de uma vez, com o mesmo motivo (uma query só)
+  async function rejeitarEmMassa() {
+    const ids = [...selecionadas];
+    if (ids.length === 0) return;
+    setErro(null);
+    setAcaoMassa(true);
+    const { error } = await supabase
+      .from("vagas")
+      .update({ status: "rejeitada", motivo_rejeicao_categoria: motivoMassa, motivo_rejeicao_detalhe: null })
+      .in("id", ids);
+    setAcaoMassa(false);
+    if (error) return setErro(`Erro ao rejeitar em massa: ${error.message}`);
+    limparSel();
+    qc.invalidateQueries({ queryKey: ["admin_vagas"] });
+    qc.invalidateQueries({ queryKey: ["admin_duplicatas"] });
+    qc.invalidateQueries({ queryKey: ["admin_dashboard"] });
+  }
+
+  // roda a IA nas pendentes ainda não classificadas (para a fila já vir organizada)
+  async function classificarPendentes() {
+    setErro(null);
+    setClassificando(true);
+    const { error } = await supabase.functions.invoke("classificar-vagas");
+    setClassificando(false);
+    if (error) return setErro(`Erro ao classificar: ${error.message}`);
+    qc.invalidateQueries({ queryKey: ["admin_vagas"] });
+  }
+
   return (
     <div>
       {/* filtro por status */}
@@ -266,6 +320,7 @@ export function FilaVagas() {
               setBalde("todas");
               setRejeitando(null);
               setErro(null);
+              limparSel();
             }}
             className={`mono-caps rounded-full border-[1.5px] px-3.5 py-1.5 text-[12px] tracking-normal transition-colors ${
               status === v
@@ -291,7 +346,7 @@ export function FilaVagas() {
           ).map(([v, l]) => (
             <button
               key={v}
-              onClick={() => setBalde(v)}
+              onClick={() => { setBalde(v); limparSel(); }}
               className={`rounded-full px-3 py-1.5 text-[12.5px] font-bold transition-colors ${
                 balde === v
                   ? "bg-mata-tint text-mata-deep"
@@ -301,6 +356,63 @@ export function FilaVagas() {
               {l}
             </button>
           ))}
+        </div>
+      )}
+
+      {/* Banner: pendentes que a IA ainda não classificou (a fila fica desorganizada
+          sem o veredito da IA). Um clique roda a IA e organiza os baldes. */}
+      {status === "pendente" && (vagas?.filter((v) => v.ai_recomendacao == null).length ?? 0) > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-3 rounded-[10px] border border-[#EBD5A8] bg-sol-tint px-4 py-2.5">
+          <span className="text-[13.5px] text-ink">
+            <strong>{vagas!.filter((v) => v.ai_recomendacao == null).length}</strong> vaga(s) ainda não classificadas pela IA — os baldes só ficam certos depois disso.
+          </span>
+          <button
+            onClick={classificarPendentes}
+            disabled={classificando}
+            className="mono-caps rounded-full bg-mata px-3.5 py-1.5 text-[12px] font-bold tracking-normal text-white hover:bg-mata-deep disabled:opacity-60"
+          >
+            {classificando ? "Classificando…" : "Classificar com IA"}
+          </button>
+        </div>
+      )}
+
+      {/* Barra de ação em massa (só em pendentes): seleção + rejeição com 1 motivo. */}
+      {status === "pendente" && (vagas?.length ?? 0) > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-3 rounded-[10px] border border-line-strong bg-surface px-4 py-2.5">
+          <label className="flex items-center gap-2 text-[13px] font-bold text-ink-soft">
+            <input
+              type="checkbox"
+              checked={visiveis.length > 0 && visiveis.every((v) => selecionadas.has(v.id))}
+              onChange={() => toggleTodasVisiveis(visiveis.map((v) => v.id))}
+            />
+            Selecionar todas ({visiveis.length})
+          </label>
+          {selecionadas.size > 0 ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="mono-caps text-[11px] text-ink-faint">{selecionadas.size} selecionada(s) · rejeitar como</span>
+              <select
+                value={motivoMassa}
+                onChange={(e) => setMotivoMassa(e.target.value)}
+                className="rounded-[8px] border border-line-strong bg-surface px-2.5 py-1.5 text-[13px] text-ink"
+              >
+                {MOTIVOS.map(([mv, ml]) => <option key={mv} value={mv}>{ml}</option>)}
+              </select>
+              <button
+                onClick={rejeitarEmMassa}
+                disabled={acaoMassa}
+                className="rounded-[8px] bg-barro px-3.5 py-1.5 text-[13px] font-bold text-white hover:opacity-90 disabled:opacity-60"
+              >
+                {acaoMassa ? "Rejeitando…" : `Rejeitar ${selecionadas.size}`}
+              </button>
+              <button onClick={limparSel} className="text-[13px] font-bold text-ink-soft hover:text-ink">
+                limpar
+              </button>
+            </div>
+          ) : (
+            <span className="text-[12.5px] text-ink-faint">
+              marque as vagas fora do perfil e rejeite todas de uma vez
+            </span>
+          )}
         </div>
       )}
 
@@ -331,10 +443,24 @@ export function FilaVagas() {
           ].filter(Boolean) as string[];
           const dups = duplicatas?.[v.id] ?? [];
           return (
-            <div key={v.id} className="rounded-[12px] border border-line bg-surface p-4">
+            <div
+              key={v.id}
+              className={`rounded-[12px] border bg-surface p-4 ${
+                selecionadas.has(v.id) ? "border-mata ring-2 ring-mata/25" : "border-line"
+              }`}
+            >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+                    {status === "pendente" && (
+                      <input
+                        type="checkbox"
+                        aria-label="Selecionar para ação em massa"
+                        className="mr-1 h-4 w-4 shrink-0 cursor-pointer"
+                        checked={selecionadas.has(v.id)}
+                        onChange={() => toggleSel(v.id)}
+                      />
+                    )}
                     {v.ai_recomendacao && AI_RECO[v.ai_recomendacao] && (
                       <Pill cls={AI_RECO[v.ai_recomendacao].cls}>
                         {AI_RECO[v.ai_recomendacao].label}
