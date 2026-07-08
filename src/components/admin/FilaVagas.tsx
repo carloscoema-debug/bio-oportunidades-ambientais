@@ -222,6 +222,19 @@ export function FilaVagas() {
     qc.invalidateQueries({ queryKey: ["vagas_publicas"] });
   }
 
+  // Duplica a vaga (útil p/ concurso com vários cargos: 1 card por cargo). A cópia
+  // entra como PENDENTE ("Cópia — …") e o editor abre nela p/ ajustar cargo/curso/salário.
+  async function duplicar(v: VagaAdmin) {
+    setErro(null);
+    const { data, error } = await supabase.rpc("bio_duplicar_vaga", { p_id: v.id });
+    if (error) return setErro("Não foi possível duplicar a vaga: " + error.message);
+    await qc.invalidateQueries({ queryKey: ["admin_vagas"] });
+    qc.invalidateQueries({ queryKey: ["admin_dashboard"] });
+    setRejeitando(null);
+    setStatus("pendente"); // a cópia é pendente — vai p/ essa aba
+    setEditando(data as string); // abre o editor no novo card
+  }
+
   async function confirmarRejeicao(id: string) {
     setErro(null);
     const { error } = await supabase
@@ -452,6 +465,13 @@ export function FilaVagas() {
                       className="rounded-[8px] border border-line-strong px-3.5 py-2 text-[13px] font-bold text-ink-soft hover:border-mata hover:text-mata"
                     >
                       {editando === v.id ? "Fechar" : "Editar"}
+                    </button>
+                    <button
+                      onClick={() => duplicar(v)}
+                      title="Criar uma cópia editável (útil p/ concurso com vários cargos)"
+                      className="rounded-[8px] border border-line-strong px-3.5 py-2 text-[13px] font-bold text-ink-soft hover:border-ceu hover:text-ceu"
+                    >
+                      Duplicar
                     </button>
                     {status === "pendente" && (
                       <button
