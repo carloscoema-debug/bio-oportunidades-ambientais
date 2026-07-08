@@ -282,6 +282,20 @@ function Divulgar() {
           </button>
         </form>
 
+        <div className="mt-6 rounded-[16px] border border-mata-line bg-mata-tint p-5">
+          <p className="mono-caps text-[11px] text-mata-deep">Fale com a coordenação</p>
+          <p className="mt-2 text-[14.5px] leading-relaxed text-ink-soft">
+            Dúvidas sobre a vaga, sobre o curso ou quer conversar sobre parcerias e estágios?
+            A coordenação do Curso Técnico em Meio Ambiente atende pelo e-mail{" "}
+            <a
+              href="mailto:ctma@fortaleza.ifce.edu.br"
+              className="font-bold text-mata-deep underline underline-offset-2 hover:text-mata"
+            >
+              ctma@fortaleza.ifce.edu.br
+            </a>.
+          </p>
+        </div>
+
         <VoltarPortal />
       </section>
     </SiteLayout>

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { cursoLabelCurto } from "@/lib/glossario";
+import { cursoLabel } from "@/lib/glossario";
 
 interface VagaRel {
   tipo: string;
@@ -237,6 +237,18 @@ export function Relatorios() {
     const porCursoTecnico = contarCursos(publicadas, CURSOS_TECNICO);
     const vagasSuperior = vagasComCurso(publicadas, CURSOS_SUPERIOR);
     const vagasTecnico = vagasComCurso(publicadas, CURSOS_TECNICO);
+    // Detalhe POR CURSO: total (atende) + EXCLUSIVAS (destinadas apenas àquele curso).
+    const porCursoDetalhe = [
+      ...CURSOS_SUPERIOR.map((c) => [c, "superior"] as const),
+      ...CURSOS_TECNICO.map((c) => [c, "tecnico"] as const),
+    ].map(([codigo, nivel]) => ({
+      codigo,
+      nivel,
+      total: publicadas.filter((v) => (v.curso_alvo ?? []).includes(codigo)).length,
+      exclusiva: publicadas.filter(
+        (v) => (v.curso_alvo ?? []).length === 1 && v.curso_alvo![0] === codigo,
+      ).length,
+    })).sort((a, b) => b.total - a.total);
     const vagasAmbos = publicadas.filter(
       (v) =>
         (v.curso_alvo ?? []).some((c) => CURSOS_SUPERIOR.includes(c)) &&
@@ -260,6 +272,7 @@ export function Relatorios() {
       porNivel: contar(lista, (v) => v.nivel),
       porCursoSuperior,
       porCursoTecnico,
+      porCursoDetalhe,
       vagasSuperior,
       vagasTecnico,
       vagasAmbos,
@@ -426,18 +439,35 @@ export function Relatorios() {
             sub="atendem superior E técnico"
           />
         </div>
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <BarraLista
-            titulo="Por curso · Superior"
-            dados={r.porCursoSuperior}
-            rotular={(k) => cursoLabelCurto[k] ?? k}
-          />
-          <BarraLista
-            titulo="Por curso · Técnico"
-            dados={r.porCursoTecnico}
-            rotular={(k) => cursoLabelCurto[k] ?? k}
-          />
+        <div className="mt-4 overflow-x-auto rounded-[16px] border border-line bg-surface">
+          <table className="w-full text-[13.5px]">
+            <thead>
+              <tr className="mono-caps border-b border-line text-left text-[11px] text-ink-faint">
+                <th className="px-4 py-2.5">Curso</th>
+                <th className="px-3 py-2.5 text-right">Vagas</th>
+                <th className="px-3 py-2.5 text-right">Só este curso</th>
+              </tr>
+            </thead>
+            <tbody>
+              {r.porCursoDetalhe.map((c) => (
+                <tr key={c.codigo} className="border-b border-line last:border-0">
+                  <td className="px-4 py-2 text-ink">
+                    {cursoLabel[c.codigo] ?? c.codigo}
+                    <span className="mono-caps ml-2 text-[10px] text-ink-faint">
+                      {c.nivel === "superior" ? "superior" : "técnico"}
+                    </span>
+                  </td>
+                  <td className="px-3 py-2 text-right font-bold text-mata-deep">{c.total}</td>
+                  <td className="px-3 py-2 text-right text-ink-soft">{c.exclusiva}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
+        <p className="mt-2 text-[12px] text-ink-faint">
+          "Vagas" conta toda vaga que atende o curso (uma vaga pode atender mais de um);
+          "Só este curso" são as destinadas exclusivamente a ele.
+        </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">

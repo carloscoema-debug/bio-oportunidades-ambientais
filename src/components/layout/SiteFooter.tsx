@@ -41,7 +41,19 @@ export function SiteFooter() {
           </nav>
         </div>
 
-        <p className="mono-caps mt-10 text-[10.5px] text-ink-faint">Aviso institucional</p>
+        <p className="mono-caps mt-10 text-[10.5px] text-ink-faint">Contato da coordenação</p>
+        <p className="mt-2 max-w-[64ch] text-[13px] leading-relaxed text-ink-soft">
+          Empresas ou pessoas com dúvidas sobre o curso podem falar com a coordenação do
+          Curso Técnico em Meio Ambiente pelo e-mail{" "}
+          <a
+            href="mailto:ctma@fortaleza.ifce.edu.br"
+            className="font-bold text-mata-deep underline underline-offset-2 hover:text-mata"
+          >
+            ctma@fortaleza.ifce.edu.br
+          </a>.
+        </p>
+
+        <p className="mono-caps mt-8 text-[10.5px] text-ink-faint">Aviso institucional</p>
         <p className="mt-2 max-w-[64ch] text-[13px] leading-relaxed text-ink-soft">
           As oportunidades são divulgadas como serviço de informação. O IFCE não conduz,
           não endossa e não se responsabiliza pelos processos seletivos, pelas condições
