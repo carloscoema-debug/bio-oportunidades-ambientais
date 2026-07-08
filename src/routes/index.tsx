@@ -15,7 +15,28 @@ export const Route = createFileRoute("/")({
         content:
           "Curadoria de vagas de estágio e emprego em meio ambiente no Ceará, para estudantes e egressos do Curso Técnico em Meio Ambiente do IFCE Campus Fortaleza.",
       },
+      { property: "og:url", content: "https://biooportunidades.org/" },
+      {
+        property: "og:image",
+        content: "https://biooportunidades.org/og-image.jpg",
+      },
+      {
+        property: "og:image:secure_url",
+        content: "https://biooportunidades.org/og-image.jpg",
+      },
+      { property: "og:image:type", content: "image/jpeg" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      {
+        property: "og:image:alt",
+        content: "BIO — Oportunidades ambientais no Ceará",
+      },
+      {
+        name: "twitter:image",
+        content: "https://biooportunidades.org/og-image.jpg",
+      },
     ],
+    links: [{ rel: "canonical", href: "https://biooportunidades.org/" }],
   }),
   component: Home,
 });
