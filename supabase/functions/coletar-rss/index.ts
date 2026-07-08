@@ -24,6 +24,12 @@ const EXCLUIR = [
   "firmar parceria", "prestadores de servico", "prestador de servico",
   "celebrar contratos", "aquisicao de", "credenciamento de empresas",
   "tomada de preco", "licitac", "pregao",
+  // ruído NACIONAL (o BIO é regional/CE): grandes concursos e escopo fora do estado.
+  // A query do Google Alert já recorta por UF; isto é um segundo filtro no código.
+  "todo o brasil", "todos os estados", "ambito nacional", "em todo o pais",
+  "abrangencia nacional", "nivel nacional", "concurso nacional", "concurso unificado",
+  "dataprev", "correios", "banco do brasil", "caixa economica", "policia federal",
+  "receita federal", "policia rodoviaria", "ministerio publico da uniao",
 ];
 
 const norm = (s: string) =>
@@ -238,7 +244,9 @@ Deno.serve(async (req) => {
           vaga_bruta_id: bruta.id,
           fonte_id: fonte.id,
           titulo: titulo.slice(0, 300),
-          empresa_orgao: fonte.nome,
+          // não gravamos o nome da fonte como empresa (o usuário não vê a fonte no
+          // card); a empresa real é extraída depois pela IA ou na curadoria.
+          empresa_orgao: null,
           tipo: "processo_seletivo",
           nivel: "tecnico",
           curso_alvo: ["tecnico_meio_ambiente"],
