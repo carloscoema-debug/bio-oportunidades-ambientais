@@ -7,7 +7,7 @@ async function fetchVagas(): Promise<VagaPublica[]> {
   const { data, error } = await supabase
     .from("vagas_publicas")
     .select(
-      "id, titulo, empresa_orgao, tipo, regiao, modalidade, municipio, carga_horaria, remuneracao_bolsa, prazo_inscricao, sem_prazo_definido, data_publicacao, link_candidatura, forma_candidatura, score_urgencia, selo_aderencia, selo_parceiro",
+      "id, titulo, empresa_orgao, tipo, regiao, modalidade, municipio, carga_horaria, remuneracao_bolsa, curso_alvo, prazo_inscricao, sem_prazo_definido, data_publicacao, link_candidatura, forma_candidatura, score_urgencia, selo_aderencia, selo_parceiro",
     )
     // mais recentes primeiro (data de publicação no BIO); urgência desempata
     .order("data_publicacao", { ascending: false })

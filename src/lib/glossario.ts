@@ -20,6 +20,31 @@ export const nivelLabel: Record<string, string> = {
   ambos: "Técnico ou superior",
 };
 
+// Cursos do IFCE atendidos pelo BIO (curso_alvo, text[]). Código canônico → rótulos.
+// `cursoLabel` = nome completo (edição); `cursoLabelCurto` = chip no card.
+export const cursoLabel: Record<string, string> = {
+  gestao_ambiental: "Gestão Ambiental",
+  engenharia_sanitaria_ambiental: "Engenharia Sanitária e Ambiental",
+  saneamento_ambiental: "Saneamento Ambiental",
+  tecnico_meio_ambiente: "Técnico em Meio Ambiente",
+  tecnico_saneamento: "Técnico em Saneamento",
+};
+export const cursoLabelCurto: Record<string, string> = {
+  gestao_ambiental: "Gestão Ambiental",
+  engenharia_sanitaria_ambiental: "Eng. Sanitária Amb.",
+  saneamento_ambiental: "Saneamento Amb.",
+  tecnico_meio_ambiente: "Téc. Meio Ambiente",
+  tecnico_saneamento: "Téc. Saneamento",
+};
+// Opções para o multi-select de cursos (agrupadas por nível), na ordem de exibição.
+export const cursosOpcoes: { codigo: string; nivel: "superior" | "tecnico" }[] = [
+  { codigo: "gestao_ambiental", nivel: "superior" },
+  { codigo: "engenharia_sanitaria_ambiental", nivel: "superior" },
+  { codigo: "saneamento_ambiental", nivel: "superior" },
+  { codigo: "tecnico_meio_ambiente", nivel: "tecnico" },
+  { codigo: "tecnico_saneamento", nivel: "tecnico" },
+];
+
 export type SeloAderencia = "recomendado" | "relevante" | "superior";
 
 // Selo de aderência: rótulo + classes visuais (tokens BIO).

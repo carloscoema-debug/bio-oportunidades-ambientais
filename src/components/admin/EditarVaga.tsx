@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { cursoLabel, cursosOpcoes } from "@/lib/glossario";
 
 const TIPOS = [
   ["estagio", "Estágio"],
@@ -70,6 +71,7 @@ const VAZIO = {
   sem_prazo_definido: true,
   prazo_inscricao: "",
   parceiro_id: "",
+  curso_alvo: [] as string[],
 };
 
 export function EditarVaga({ id, onClose }: { id: string; onClose: () => void }) {
@@ -79,6 +81,13 @@ export function EditarVaga({ id, onClose }: { id: string; onClose: () => void })
   const [f, setF] = useState({ ...VAZIO });
   const set = (k: keyof typeof f, v: string | boolean) =>
     setF((p) => ({ ...p, [k]: v }));
+  const toggleCurso = (codigo: string) =>
+    setF((p) => ({
+      ...p,
+      curso_alvo: p.curso_alvo.includes(codigo)
+        ? p.curso_alvo.filter((c) => c !== codigo)
+        : [...p.curso_alvo, codigo],
+    }));
 
   const { data: vaga, isLoading } = useQuery({
     queryKey: ["vaga_edit", id],
@@ -86,7 +95,7 @@ export function EditarVaga({ id, onClose }: { id: string; onClose: () => void })
       const { data, error } = await supabase
         .from("vagas")
         .select(
-          "titulo, empresa_orgao, tipo, subtipo_estagio, setor, nivel, municipio, modalidade, area_tematica_id, carga_horaria, remuneracao_bolsa, requisitos, atividades, descricao, forma_candidatura, link_candidatura, sem_prazo_definido, prazo_inscricao, parceiro_id",
+          "titulo, empresa_orgao, tipo, subtipo_estagio, setor, nivel, municipio, modalidade, area_tematica_id, carga_horaria, remuneracao_bolsa, requisitos, atividades, descricao, forma_candidatura, link_candidatura, sem_prazo_definido, prazo_inscricao, parceiro_id, curso_alvo",
         )
         .eq("id", id)
         .single();
@@ -118,6 +127,7 @@ export function EditarVaga({ id, onClose }: { id: string; onClose: () => void })
       sem_prazo_definido: vaga.sem_prazo_definido ?? true,
       prazo_inscricao: vaga.prazo_inscricao ?? "",
       parceiro_id: vaga.parceiro_id ?? "",
+      curso_alvo: (vaga.curso_alvo as string[] | null) ?? [],
     });
   }, [vaga]);
 
@@ -192,6 +202,7 @@ export function EditarVaga({ id, onClose }: { id: string; onClose: () => void })
         sem_prazo_definido: f.sem_prazo_definido,
         prazo_inscricao: f.sem_prazo_definido ? null : f.prazo_inscricao || null,
         parceiro_id: f.parceiro_id || null,
+        curso_alvo: f.curso_alvo,
       })
       .eq("id", id);
     setSalvando(false);
@@ -269,6 +280,26 @@ export function EditarVaga({ id, onClose }: { id: string; onClose: () => void })
             {areas?.map((a) => <option key={a.id} value={a.id}>{a.label_display}</option>)}
           </select>
         </Campo>
+        <div className="sm:col-span-2">
+          <span className={labelCls}>Cursos atendidos (marque um ou mais)</span>
+          <div className="mt-2 grid gap-x-4 gap-y-2 sm:grid-cols-2">
+            {cursosOpcoes.map(({ codigo, nivel }) => (
+              <label key={codigo} className="flex items-center gap-2 text-[14px] text-ink">
+                <input
+                  type="checkbox"
+                  checked={f.curso_alvo.includes(codigo)}
+                  onChange={() => toggleCurso(codigo)}
+                />
+                <span>
+                  {cursoLabel[codigo]}
+                  <span className="mono-caps ml-1.5 text-[10px] text-ink-faint">
+                    {nivel === "superior" ? "superior" : "técnico"}
+                  </span>
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
         <Campo label="Parceiro (opcional — exibe o selo)">
           <select className={inputCls} value={f.parceiro_id} onChange={(e) => set("parceiro_id", e.target.value)}>
             <option value="">— nenhum —</option>

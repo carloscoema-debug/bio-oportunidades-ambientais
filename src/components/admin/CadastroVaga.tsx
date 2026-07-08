@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { cursoLabel, cursosOpcoes } from "@/lib/glossario";
 
 const TIPOS = [
   ["estagio", "Estágio"],
@@ -75,9 +76,17 @@ export function CadastroVaga() {
     sem_prazo_definido: false,
     prazo_inscricao: "",
     parceiro_id: "",
+    curso_alvo: [] as string[],
   });
   const set = (k: keyof typeof f, v: string | boolean) =>
     setF((p) => ({ ...p, [k]: v }));
+  const toggleCurso = (codigo: string) =>
+    setF((p) => ({
+      ...p,
+      curso_alvo: p.curso_alvo.includes(codigo)
+        ? p.curso_alvo.filter((c) => c !== codigo)
+        : [...p.curso_alvo, codigo],
+    }));
 
   const { data: municipios } = useQuery({
     queryKey: ["ref_municipios"],
@@ -139,7 +148,7 @@ export function CadastroVaga() {
           : "nao_aplicavel",
       setor: f.setor,
       nivel: f.nivel,
-      curso_alvo: ["tecnico_meio_ambiente"],
+      curso_alvo: f.curso_alvo.length ? f.curso_alvo : ["tecnico_meio_ambiente"],
       area_tematica_id: f.area_tematica_id || null,
       municipio: f.municipio || null,
       modalidade: f.modalidade,
@@ -179,6 +188,7 @@ export function CadastroVaga() {
       link_candidatura: "",
       prazo_inscricao: "",
       parceiro_id: "",
+      curso_alvo: [],
     }));
     qc.invalidateQueries({ queryKey: ["admin_vagas"] });
   }
@@ -297,6 +307,26 @@ export function CadastroVaga() {
             ))}
           </select>
         </Campo>
+        <div className="sm:col-span-2">
+          <span className={labelCls}>Cursos atendidos (marque um ou mais)</span>
+          <div className="mt-2 grid gap-x-4 gap-y-2 sm:grid-cols-2">
+            {cursosOpcoes.map(({ codigo, nivel }) => (
+              <label key={codigo} className="flex items-center gap-2 text-[14px] text-ink">
+                <input
+                  type="checkbox"
+                  checked={f.curso_alvo.includes(codigo)}
+                  onChange={() => toggleCurso(codigo)}
+                />
+                <span>
+                  {cursoLabel[codigo]}
+                  <span className="mono-caps ml-1.5 text-[10px] text-ink-faint">
+                    {nivel === "superior" ? "superior" : "técnico"}
+                  </span>
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
         <Campo label="Parceiro (opcional — exibe o selo)">
           <select
             className={inputCls}

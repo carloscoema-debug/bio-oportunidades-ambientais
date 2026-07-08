@@ -362,7 +362,10 @@ Deno.serve(async (req) => {
         vaga_bruta_id: bruta.id,
         fonte_id: fonte.id,
         titulo: titulo.slice(0, 300),
-        empresa_orgao: fonte.nome,
+        // NÃO gravamos o nome da fonte como empresa (o usuário não deve ver a fonte no
+        // card). A empresa real é extraída depois pela IA (ou preenchida na curadoria);
+        // a fonte fica só em `origem`/`fonte_id` (interno).
+        empresa_orgao: null,
         tipo: "processo_seletivo",
         nivel: "tecnico",
         curso_alvo: ["tecnico_meio_ambiente"],

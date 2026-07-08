@@ -6,6 +6,7 @@ import { registrarFeedback } from "@/lib/feedback";
 import {
   tipoLabel,
   modalidadeLabel,
+  cursoLabelCurto,
   seloAderenciaConfig,
   urgenciaBadge,
   feedbackOpcoes,
@@ -22,6 +23,7 @@ export interface VagaPublica {
   municipio: string | null;
   carga_horaria: string | null;
   remuneracao_bolsa: string | null;
+  curso_alvo: string[] | null;
   prazo_inscricao: string | null;
   sem_prazo_definido: boolean;
   data_publicacao: string | null;
@@ -62,6 +64,18 @@ export function VagaCard({ vaga }: { vaga: VagaPublica }) {
     vaga.link_candidatura && /^https?:\/\//i.test(vaga.link_candidatura)
       ? vaga.link_candidatura
       : undefined;
+
+  // não expõe a FONTE de origem como se fosse a empresa (o Canal B grava o nome da
+  // fonte, ex.: "Indeed Alerts", em empresa_orgao) — o usuário não precisa ver a fonte.
+  const empresa =
+    vaga.empresa_orgao && !/\balert/i.test(vaga.empresa_orgao)
+      ? vaga.empresa_orgao
+      : null;
+
+  // cursos do IFCE atendidos pela vaga (chips no card)
+  const cursos = (vaga.curso_alvo ?? [])
+    .map((c) => cursoLabelCurto[c])
+    .filter(Boolean) as string[];
 
   const metadados = [
     tipoLabel[vaga.tipo] ?? vaga.tipo,
@@ -162,9 +176,9 @@ export function VagaCard({ vaga }: { vaga: VagaPublica }) {
         )}
       </h2>
 
-      {vaga.empresa_orgao && (
+      {empresa && (
         <p className="mt-0.5 text-[14.5px] font-bold text-ink-soft">
-          {vaga.empresa_orgao}
+          {empresa}
         </p>
       )}
 
@@ -176,6 +190,20 @@ export function VagaCard({ vaga }: { vaga: VagaPublica }) {
           </span>
         ))}
       </div>
+
+      {cursos.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-1.5">
+          <span className="mono-caps text-[10.5px] text-ink-faint">Cursos:</span>
+          {cursos.map((c) => (
+            <span
+              key={c}
+              className="mono-caps rounded-full border border-mata-line bg-mata-tint px-2 py-0.5 text-[10.5px] text-mata-deep"
+            >
+              {c}
+            </span>
+          ))}
+        </div>
+      )}
 
       {prazoTexto && (
         <p className={`mt-3 text-[14px] ${prazoClasse}`}>

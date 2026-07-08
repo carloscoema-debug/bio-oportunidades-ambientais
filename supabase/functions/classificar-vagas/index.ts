@@ -18,6 +18,12 @@ const json = (b: unknown, s = 200) => Response.json(b, { status: s, headers: COR
 const norm = (s: string) =>
   s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 
+// Códigos de curso do BIO aceitos em curso_alvo (a IA só pode preencher estes).
+const CURSOS_BIO = new Set([
+  "gestao_ambiental", "engenharia_sanitaria_ambiental", "saneamento_ambiental",
+  "tecnico_meio_ambiente", "tecnico_saneamento",
+]);
+
 const PROMPT_REGRAS = `Você é o assistente de curadoria do BIO, portal do IFCE Campus Fortaleza. O BIO atende estudantes e egressos de VÁRIOS cursos do IFCE, de nível técnico E superior:
 - SUPERIOR: Gestão Ambiental, Engenharia Sanitária e Ambiental (mesma coisa que Engenharia Ambiental e Sanitária), Saneamento Ambiental.
 - TÉCNICO: Técnico em Meio Ambiente, Técnico em Saneamento.
@@ -41,13 +47,23 @@ ADERÊNCIA — checar ÁREA e FORMAÇÃO exigida (não o nível):
 
 PRIORIDADE: estas REGRAS valem mais que os exemplos abaixo (o histórico pode ter decisões antigas ou baseadas só no título).
 
+CURSOS DO BIO — devolva os CÓDIGOS dos cursos que a vaga atende (pela formação exigida/área), em "cursos":
+- "gestao_ambiental" (superior — Gestão Ambiental)
+- "engenharia_sanitaria_ambiental" (superior — Engenharia Sanitária e Ambiental / Eng. Ambiental e Sanitária)
+- "saneamento_ambiental" (superior — Saneamento Ambiental)
+- "tecnico_meio_ambiente" (técnico — Meio Ambiente)
+- "tecnico_saneamento" (técnico — Saneamento)
+Regra: inclua TODOS os cursos plausíveis (pode ser mais de um). Ex.: Engenheiro(a) Ambiental/Sanitário → ["engenharia_sanitaria_ambiental","gestao_ambiental"]; Analista/Gestor Ambiental → ["gestao_ambiental"] (+ técnico se aceitar técnico); Técnico em Meio Ambiente → ["tecnico_meio_ambiente"]; ETE/saneamento/tratamento de água/esgoto → +"saneamento_ambiental"/"tecnico_saneamento". Se a vaga NÃO for aderente (descartar), devolva cursos: [].
+
 Para CADA vaga devolva um objeto com:
 - titulo_limpo (string curta e legível)
+- empresa (nome REAL do empregador extraído do texto/página; null se só aparecer o site/agregador de origem, ex.: "Indeed", "Catho")
 - municipio (cidade da vaga extraída do texto, ou null)
 - uf (sigla de 2 letras como "CE" ou "MS"; null se não souber)
 - modalidade ("presencial" | "remoto" | "hibrido" | "indefinido")
 - nivel ("tecnico" | "superior" | "ambos" | "operacional" | "indefinido")
 - formacao_exigida (curso/área exigido no texto, ou null)
+- cursos (array de códigos do BIO atendidos; [] se não aderente)
 - faixa_salarial (ex.: "R$ 3.000" ou "R$ 2.000 a R$ 4.000"; null se não aparecer)
 - score (0-100)
 - recomendacao ("aprovar" | "revisar" | "descartar")
@@ -56,10 +72,11 @@ Para CADA vaga devolva um objeto com:
 Responda SOMENTE com JSON: {"resultados": [ um objeto por vaga, na MESMA ordem ]}.`;
 
 type Classif = {
-  titulo_limpo?: string; municipio?: string | null; uf?: string | null;
+  titulo_limpo?: string; empresa?: string | null; municipio?: string | null; uf?: string | null;
   modalidade?: string; nivel?: string; score?: number;
   recomendacao?: string; justificativa?: string;
   formacao_exigida?: string | null; faixa_salarial?: string | null;
+  cursos?: string[] | null;
 };
 
 // Busca o texto da página da vaga (o corpo tem a verdade: local, formação, salário).
@@ -254,6 +271,20 @@ Deno.serve(async (req) => {
       // preenche a faixa salarial (quando a IA achou e a vaga ainda não tinha)
       if (!v.remuneracao_bolsa && c.faixa_salarial && /R\$|\d/.test(c.faixa_salarial)) {
         patch.remuneracao_bolsa = String(c.faixa_salarial).slice(0, 120);
+      }
+      // preenche a EMPRESA real quando a atual está vazia ou é o nome da fonte ("… Alerts").
+      // Nunca grava um agregador (Indeed/Catho/…) como se fosse a empresa.
+      const empAtual = (v.empresa_orgao ?? "").trim();
+      const ehFonte = empAtual === "" || /\balerts?\b/i.test(empAtual);
+      if (ehFonte && c.empresa && String(c.empresa).trim() &&
+          !/\b(indeed|catho|linkedin|infojobs|gupy|vagas\.?com|trabalha\s*brasil)\b/i.test(String(c.empresa))) {
+        patch.empresa_orgao = String(c.empresa).trim().slice(0, 200);
+      }
+      // preenche os CURSOS atendidos (só códigos válidos do BIO), quando a IA achou aderência
+      if (Array.isArray(c.cursos)) {
+        const cursos = [...new Set(c.cursos.map((x) => String(x).trim().toLowerCase()))]
+          .filter((x) => CURSOS_BIO.has(x));
+        if (cursos.length > 0) patch.curso_alvo = cursos;
       }
 
       const { error } = await svc.from("vagas").update(patch).eq("id", v.id);
