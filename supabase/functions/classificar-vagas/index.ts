@@ -24,6 +24,13 @@ const CURSOS_BIO = new Set([
   "tecnico_meio_ambiente", "tecnico_saneamento",
 ]);
 
+// Interstício de anti-bot/CAPTCHA (Cloudflare etc.). Se a "página" for isso, NÃO
+// serve como conteúdo da vaga — devolvemos null p/ a IA não ler o bloqueio como vaga.
+// O corte por tamanho (<1500) evita falso-positivo em página real que cite "cloudflare".
+const RE_BLOQUEIO =
+  /(additional verification required|verify you are human|are you a robot|just a moment|enable javascript and cookies|checking your browser|attention required|ray id|captcha|acesso negado|access denied)/i;
+const ehBloqueio = (t: string) => t.length < 1500 && RE_BLOQUEIO.test(t);
+
 const PROMPT_REGRAS = `Você é o assistente de curadoria do BIO, portal do IFCE Campus Fortaleza. O BIO atende estudantes e egressos de VÁRIOS cursos do IFCE, de nível técnico E superior:
 - SUPERIOR: Gestão Ambiental, Engenharia Sanitária e Ambiental (mesma coisa que Engenharia Ambiental e Sanitária), Saneamento Ambiental.
 - TÉCNICO: Técnico em Meio Ambiente, Técnico em Saneamento.
@@ -80,9 +87,11 @@ type Classif = {
 };
 
 // Busca o texto da página da vaga (o corpo tem a verdade: local, formação, salário).
-// Best-effort: muitos links são redirects/anti-bot (Indeed/LinkedIn/Catho) e podem
-// falhar ou vir vazios — nesse caso a IA usa só o título + descrição do e-mail.
-async function buscarPagina(url: string): Promise<string | null> {
+// Estratégia: (1) fetch DIRETO, rápido, cobre a maioria dos sites; (2) se vier
+// bloqueado/vazio (Indeed/LinkedIn/Catho respondem 403 Cloudflare), fallback pelo
+// proxy de leitura r.jina.ai, que renderiza a página e devolve texto já limpo.
+// Best-effort: se ainda assim falhar, a IA usa só o título + descrição do e-mail.
+async function fetchDireto(url: string): Promise<string | null> {
   try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), 7000);
@@ -109,10 +118,40 @@ async function buscarPagina(url: string): Promise<string | null> {
       .replace(/&lt;/g, "<").replace(/&gt;/g, ">")
       .replace(/\s+/g, " ")
       .trim();
+    if (ehBloqueio(texto)) return null;
     return texto.length > 80 ? texto.slice(0, 3500) : null;
   } catch {
     return null;
   }
+}
+
+// Leitura via r.jina.ai — proxy gratuito que acessa a URL, renderiza e devolve o
+// texto principal (contorna anti-bot simples do Indeed/LinkedIn/Catho). Se houver
+// app_config.jina_api_key, envia como Bearer (limites de taxa maiores).
+async function fetchJina(url: string, key: string | null): Promise<string | null> {
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 12000);
+    const headers: Record<string, string> = {
+      "Accept": "text/plain",
+      "X-Return-Format": "text",
+    };
+    if (key) headers["Authorization"] = `Bearer ${key}`;
+    const resp = await fetch(`https://r.jina.ai/${url}`, { signal: ctrl.signal, headers });
+    clearTimeout(t);
+    if (!resp.ok) return null;
+    const texto = (await resp.text()).replace(/\s+/g, " ").trim();
+    if (ehBloqueio(texto)) return null;
+    return texto.length > 120 ? texto.slice(0, 3500) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function buscarPagina(url: string, jinaKey: string | null): Promise<string | null> {
+  const direto = await fetchDireto(url);
+  if (direto) return direto;
+  return await fetchJina(url, jinaKey);
 }
 
 async function chamarGemini(cfg: (k: string) => Promise<string | null>, prompt: string): Promise<Classif[]> {
@@ -210,6 +249,7 @@ Deno.serve(async (req) => {
       (rejeitadas.data ?? []).map((r) => `- ${cortar(r.titulo)} — motivo: ${r.motivo_rejeicao_categoria ?? "?"}${r.motivo_rejeicao_detalhe ? ` (${cortar(r.motivo_rejeicao_detalhe)})` : ""}`).join("\n")
     : "";
 
+  const jinaKey = await cfg("jina_api_key"); // opcional (limites maiores); funciona sem
   const LOTE = 8;
   let classificadas = 0, erros = 0;
   const resumo: Record<string, number> = { aprovar: 0, revisar: 0, descartar: 0 };
@@ -219,7 +259,7 @@ Deno.serve(async (req) => {
     // busca o conteúdo real da página de cada vaga (em paralelo) — a verdade
     // (local, formação, salário) costuma estar só no corpo, não no título.
     const paginas = await Promise.all(
-      lote.map((v) => (v.link_candidatura ? buscarPagina(v.link_candidatura) : Promise.resolve(null))),
+      lote.map((v) => (v.link_candidatura ? buscarPagina(v.link_candidatura, jinaKey) : Promise.resolve(null))),
     );
     const payload = lote.map((v, idx) => ({
       n: idx,
