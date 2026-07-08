@@ -52,8 +52,10 @@ export const seloAderenciaConfig: Record<
   SeloAderencia,
   { label: string; className: string; trilho: string }
 > = {
+  // Rótulo = FORÇA da aderência (não nomeia curso; os chips "Cursos" já dizem quais).
+  // Antes dizia "Técnico em MA" fixo, o que carimbava errado vagas de nível superior.
   recomendado: {
-    label: "Recomendado · Técnico em MA",
+    label: "Recomendado",
     className: "bg-mata-tint text-mata-deep border-mata-line",
     trilho: "linear-gradient(180deg, var(--mata), #4FA372)",
   },
@@ -63,7 +65,7 @@ export const seloAderenciaConfig: Record<
     trilho: "linear-gradient(180deg, #7C9B84, #B3C4B4)",
   },
   superior: {
-    label: "Nível superior / afins",
+    label: "Área correlata",
     className: "bg-ceu-tint text-ceu border-[#C4D4E2]",
     trilho: "var(--line-strong)",
   },

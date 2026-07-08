@@ -308,6 +308,11 @@ Deno.serve(async (req) => {
       if (!v.modalidade && ["presencial", "remoto", "hibrido"].includes(c.modalidade ?? "")) {
         patch.modalidade = c.modalidade;
       }
+      // persiste o NÍVEL lido pela IA (tecnico/superior/ambos) — sem isso a vaga fica
+      // no default "tecnico" da ingestão, mesmo sendo superior (ex.: Gestão Ambiental).
+      if (["tecnico", "superior", "ambos"].includes(c.nivel ?? "")) {
+        patch.nivel = c.nivel;
+      }
       // preenche a faixa salarial (quando a IA achou e a vaga ainda não tinha)
       if (!v.remuneracao_bolsa && c.faixa_salarial && /R\$|\d/.test(c.faixa_salarial)) {
         patch.remuneracao_bolsa = String(c.faixa_salarial).slice(0, 120);
