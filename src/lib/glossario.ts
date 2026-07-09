@@ -1,6 +1,8 @@
 // Glossário institucional (F0-06): mapeia valores de ENUM para rótulos amigáveis.
 // Regra do projeto: o estudante nunca vê o valor cru do ENUM.
 
+import { differenceInCalendarDays } from "date-fns";
+
 export const tipoLabel: Record<string, string> = {
   estagio: "Estágio",
   emprego: "Emprego",
@@ -92,12 +94,37 @@ export const feedbackOpcoes = [
   },
 ] as const;
 
+// Nível de urgência (para destaque do CARD inteiro, não só o badge) — espelha os
+// mesmos limiares de bio_score_urgencia (banco): >=90 = falta menos de 3 dias,
+// >=60 = falta entre 3 e 7 dias. null = sem destaque (inclui "sem prazo").
+export type NivelUrgencia = "urgente" | "breve" | null;
+export function nivelUrgencia(score: number): NivelUrgencia {
+  if (score >= 90) return "urgente";
+  if (score >= 60) return "breve";
+  return null;
+}
+
 // Badge de urgência derivado de score_urgencia (separado do selo de aderência).
+// Quando a data exata (prazoISO) está disponível, o rótulo vira uma contagem
+// regressiva precisa ("Encerra amanhã") em vez de um aviso genérico — mais claro
+// para o estudante decidir se corre ou não. Os limiares vêm de bio_score_urgencia.
 export function urgenciaBadge(
   score: number,
+  prazoISO?: string | null,
 ): { label: string; className: string } | null {
-  if (score >= 90) return { label: "Urgente", className: "bg-barro text-white border-barro" };
-  if (score >= 60) return { label: "Vence em breve", className: "bg-sol-tint text-sol border-[#EBD5A8]" };
+  const dias = prazoISO
+    ? differenceInCalendarDays(new Date(`${prazoISO}T00:00:00`), new Date())
+    : null;
+
+  if (score >= 90) {
+    const label =
+      dias == null ? "Urgente" : dias <= 0 ? "Encerra hoje" : dias === 1 ? "Encerra amanhã" : `Encerra em ${dias} dias`;
+    return { label, className: "bg-barro text-white border-barro" };
+  }
+  if (score >= 60) {
+    const label = dias != null && dias > 0 ? `Encerra em ${dias} dias` : "Vence em breve";
+    return { label, className: "bg-sol-tint text-sol border-[#EBD5A8]" };
+  }
   if (score === 40) return { label: "Sem prazo definido", className: "bg-ceu-tint text-ceu border-[#C4D4E2]" };
   return null;
 }

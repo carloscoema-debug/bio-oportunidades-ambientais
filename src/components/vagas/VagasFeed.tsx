@@ -7,29 +7,48 @@ async function fetchVagas(): Promise<VagaPublica[]> {
   const { data, error } = await supabase
     .from("vagas_publicas")
     .select(
-      "id, titulo, empresa_orgao, tipo, regiao, modalidade, municipio, carga_horaria, remuneracao_bolsa, curso_alvo, prazo_inscricao, sem_prazo_definido, data_publicacao, link_candidatura, forma_candidatura, score_urgencia, selo_aderencia, selo_parceiro",
+      "id, titulo, empresa_orgao, tipo, nivel, regiao, modalidade, municipio, carga_horaria, remuneracao_bolsa, curso_alvo, prazo_inscricao, sem_prazo_definido, data_publicacao, link_candidatura, forma_candidatura, score_urgencia, selo_aderencia, selo_parceiro",
     )
-    // mais recentes primeiro (data de publicação no BIO); urgência desempata
+    // ordem final é decidida no cliente (o estudante pode inverter); isto é só o baseline
     .order("data_publicacao", { ascending: false })
     .order("score_urgencia", { ascending: false });
   if (error) throw error;
   return (data ?? []) as VagaPublica[];
 }
 
-type Filtro = { key: string; label: string; test: (v: VagaPublica) => boolean };
+// Grupo 1 — TIPO: sempre exatamente uma opção ativa ("Todas" é o catch-all).
+const TIPOS = [
+  { key: "todas", label: "Todas" },
+  { key: "estagio", label: "Estágio" },
+  { key: "emprego", label: "Emprego" },
+  { key: "processo_seletivo", label: "Seleção pública" },
+] as const;
 
-const FILTROS: Filtro[] = [
-  { key: "todas", label: "Todas", test: () => true },
-  { key: "estagio", label: "Estágio", test: (v) => v.tipo === "estagio" },
-  { key: "emprego", label: "Emprego", test: (v) => v.tipo === "emprego" },
-  { key: "selecao", label: "Seleção pública", test: (v) => v.tipo === "processo_seletivo" },
-  { key: "rmf", label: "Fortaleza + RMF", test: (v) => v.regiao === "rmf" },
-  { key: "interior", label: "Interior", test: (v) => v.regiao === "interior_ceara" },
-  { key: "recomendadas", label: "Recomendadas p/ mim", test: (v) => v.selo_aderencia === "recomendado" },
-];
+// Grupo 2 — REFINAR: cada chip liga/desliga sozinha (nenhuma ativa = sem recorte
+// naquela dimensão). São facetas independentes do Tipo, por isso ficam numa
+// linha separada, com rótulo próprio — evita o estudante achar que são o mesmo
+// grupo exclusivo (clicar em "Técnico" não desliga "Estágio", por exemplo).
+const NIVEIS = [
+  { key: "tecnico", label: "Nível Técnico" },
+  { key: "superior", label: "Nível Superior" },
+] as const;
+const REGIOES = [
+  { key: "rmf", label: "Fortaleza + RMF" },
+  { key: "interior_ceara", label: "Interior" },
+] as const;
+
+type Ordenacao = "recentes" | "antigas";
 
 const norm = (s: string) =>
   s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
+
+// Estilo de chip compartilhado pelos dois grupos (idêntico ao já usado no BIO).
+const chipCls = (ativo: boolean) =>
+  `mono-caps cursor-pointer rounded-full border-[1.5px] px-3.5 py-2 text-[12.5px] tracking-normal transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mata/40 focus-visible:ring-offset-2 focus-visible:ring-offset-paper ${
+    ativo
+      ? "border-ink bg-ink text-paper shadow-[0_2px_10px_-3px_rgba(27,42,33,0.5)]"
+      : "border-line-strong bg-surface text-ink-soft hover:-translate-y-px hover:border-mata hover:text-mata-deep hover:shadow-[var(--shadow-card)]"
+  }`;
 
 function SkeletonCard() {
   return (
@@ -45,30 +64,44 @@ function SkeletonCard() {
 
 export function VagasFeed() {
   const [busca, setBusca] = useState("");
-  const [filtroKey, setFiltroKey] = useState("todas");
+  const [tipo, setTipo] = useState<string>("todas");
+  const [nivel, setNivel] = useState<string | null>(null);
+  const [regiao, setRegiao] = useState<string | null>(null);
+  const [recomendadas, setRecomendadas] = useState(false);
+  const [ordenacao, setOrdenacao] = useState<Ordenacao>("recentes");
 
   const { data: vagas, isLoading, isError } = useQuery({
     queryKey: ["vagas_publicas"],
     queryFn: fetchVagas,
   });
 
-  const filtrando = busca.trim() !== "" || filtroKey !== "todas";
+  const filtrando =
+    busca.trim() !== "" || tipo !== "todas" || nivel !== null || regiao !== null || recomendadas;
 
   const vagasFiltradas = useMemo(() => {
     const q = norm(busca.trim());
-    const filtro = FILTROS.find((f) => f.key === filtroKey) ?? FILTROS[0];
-    return (vagas ?? []).filter(
-      (v) =>
-        filtro.test(v) &&
-        (q === "" ||
-          norm(v.titulo).includes(q) ||
-          norm(v.empresa_orgao ?? "").includes(q)),
-    );
-  }, [vagas, busca, filtroKey]);
+    const lista = (vagas ?? []).filter((v) => {
+      if (tipo !== "todas" && v.tipo !== tipo) return false;
+      if (nivel && v.nivel !== nivel && v.nivel !== "ambos") return false;
+      if (regiao && v.regiao !== regiao) return false;
+      if (recomendadas && v.selo_aderencia !== "recomendado") return false;
+      if (q && !(norm(v.titulo).includes(q) || norm(v.empresa_orgao ?? "").includes(q))) return false;
+      return true;
+    });
+    return [...lista].sort((a, b) => {
+      const da = a.data_publicacao ? new Date(a.data_publicacao).getTime() : 0;
+      const db = b.data_publicacao ? new Date(b.data_publicacao).getTime() : 0;
+      return ordenacao === "recentes" ? db - da : da - db;
+    });
+  }, [vagas, busca, tipo, nivel, regiao, recomendadas, ordenacao]);
 
   function limpar() {
     setBusca("");
-    setFiltroKey("todas");
+    setTipo("todas");
+    setNivel(null);
+    setRegiao(null);
+    setRecomendadas(false);
+    setOrdenacao("recentes");
   }
 
   return (
@@ -94,35 +127,67 @@ export function VagasFeed() {
         />
       </div>
 
-      {/* Chips de filtro — quebram em linha (sem scroll oculto que corta filtros) */}
-      <div
-        role="group"
-        aria-label="Filtros"
-        className="mt-3 flex flex-wrap gap-2"
-      >
-        {FILTROS.map((f) => {
-          const ativo = f.key === filtroKey;
+      {/* Grupo TIPO — sempre uma opção ativa; "Todas" é o catch-all */}
+      <div role="group" aria-label="Filtrar por tipo" className="mt-4 flex flex-wrap gap-2">
+        {TIPOS.map((t) => {
+          const ativo = tipo === t.key;
           return (
             <button
-              key={f.key}
+              key={t.key}
               type="button"
               aria-pressed={ativo}
-              onClick={() => setFiltroKey(f.key)}
-              className={`mono-caps cursor-pointer rounded-full border-[1.5px] px-3.5 py-2 text-[12.5px] tracking-normal transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mata/40 focus-visible:ring-offset-2 focus-visible:ring-offset-paper ${
-                ativo
-                  ? "border-ink bg-ink text-paper shadow-[0_2px_10px_-3px_rgba(27,42,33,0.5)]"
-                  : "border-line-strong bg-surface text-ink-soft hover:-translate-y-px hover:border-mata hover:text-mata-deep hover:shadow-[var(--shadow-card)]"
-              }`}
+              onClick={() => setTipo(t.key)}
+              className={chipCls(ativo)}
             >
-              {f.label}
+              {t.label}
             </button>
           );
         })}
       </div>
 
-      {/* Contador / pulso */}
+      {/* Grupo REFINAR — facetas independentes (nível, região, recomendadas);
+          cada chip liga/desliga sozinha, por isso fica separada do grupo Tipo. */}
+      <div className="mt-3">
+        <p className="mono-caps mb-2 text-[10px] text-ink-faint">Refinar</p>
+        <div role="group" aria-label="Refinar resultados" className="flex flex-wrap items-center gap-2">
+          {NIVEIS.map((n) => (
+            <button
+              key={n.key}
+              type="button"
+              aria-pressed={nivel === n.key}
+              onClick={() => setNivel((v) => (v === n.key ? null : n.key))}
+              className={chipCls(nivel === n.key)}
+            >
+              {n.label}
+            </button>
+          ))}
+          <span aria-hidden className="mx-0.5 hidden text-line-strong sm:inline">·</span>
+          {REGIOES.map((r) => (
+            <button
+              key={r.key}
+              type="button"
+              aria-pressed={regiao === r.key}
+              onClick={() => setRegiao((v) => (v === r.key ? null : r.key))}
+              className={chipCls(regiao === r.key)}
+            >
+              {r.label}
+            </button>
+          ))}
+          <span aria-hidden className="mx-0.5 hidden text-line-strong sm:inline">·</span>
+          <button
+            type="button"
+            aria-pressed={recomendadas}
+            onClick={() => setRecomendadas((v) => !v)}
+            className={chipCls(recomendadas)}
+          >
+            Recomendadas p/ mim
+          </button>
+        </div>
+      </div>
+
+      {/* Contador / pulso + ordenação */}
       {!isLoading && !isError && vagas && (
-        <div className="mb-5 mt-4">
+        <div className="mb-5 mt-4 flex flex-wrap items-center justify-between gap-3">
           {filtrando ? (
             <span className="mono-caps text-[12px] text-ink-faint">
               {vagasFiltradas.length}{" "}
@@ -146,6 +211,19 @@ export function VagasFeed() {
               </span>
             </span>
           )}
+
+          <label className="mono-caps flex items-center gap-2 text-[10.5px] text-ink-faint">
+            Ordenar
+            <select
+              value={ordenacao}
+              onChange={(e) => setOrdenacao(e.target.value as Ordenacao)}
+              aria-label="Ordenar vagas"
+              className="mono-caps cursor-pointer rounded-full border-[1.5px] border-line-strong bg-surface py-1.5 pl-3 pr-2.5 text-[11.5px] tracking-normal text-ink-soft focus:border-mata focus:outline-none"
+            >
+              <option value="recentes">Mais recentes</option>
+              <option value="antigas">Mais antigas</option>
+            </select>
+          </label>
         </div>
       )}
 

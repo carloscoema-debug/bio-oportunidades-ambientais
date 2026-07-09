@@ -9,6 +9,7 @@ import {
   cursoLabelCurto,
   seloAderenciaConfig,
   urgenciaBadge,
+  nivelUrgencia,
   feedbackOpcoes,
   type SeloAderencia,
 } from "@/lib/glossario";
@@ -18,6 +19,7 @@ export interface VagaPublica {
   titulo: string;
   empresa_orgao: string | null;
   tipo: string;
+  nivel: string;
   regiao: string;
   modalidade: string | null;
   municipio: string | null;
@@ -58,7 +60,8 @@ export function VagaCard({ vaga }: { vaga: VagaPublica }) {
   const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
   const [menuAberto, setMenuAberto] = useState(false);
   const selo = seloAderenciaConfig[vaga.selo_aderencia];
-  const badge = urgenciaBadge(vaga.score_urgencia);
+  const badge = urgenciaBadge(vaga.score_urgencia, vaga.prazo_inscricao);
+  const urgencia = nivelUrgencia(vaga.score_urgencia);
   // só aceita link http(s) — proteção final contra javascript:/data: na renderização
   const link =
     vaga.link_candidatura && /^https?:\/\//i.test(vaga.link_candidatura)
@@ -140,8 +143,20 @@ export function VagaCard({ vaga }: { vaga: VagaPublica }) {
     await registrarFeedback(vaga.id, "me_candidatei");
   }
 
+  // Destaque de PRAZO no card inteiro (não só o badge) — some sozinho quando não
+  // há prazo definido ou faltam mais de 7 dias; some espontaneamente quando o
+  // cron de expiração remove a vaga (não precisa de lógica extra aqui).
+  const tomPrazo =
+    urgencia === "urgente"
+      ? "border-barro/45 bg-barro-tint/35 hover:border-barro/65"
+      : urgencia === "breve"
+        ? "border-sol/50 bg-sol-tint/35 hover:border-sol/70"
+        : "border-line bg-surface hover:border-mata-line";
+
   return (
-    <article className="group relative overflow-hidden rounded-[18px] border border-line bg-surface p-5 pb-4 shadow-[var(--shadow-card)] transition-[transform,box-shadow,border-color] duration-300 ease-out hover:-translate-y-1 hover:border-mata-line hover:shadow-[var(--shadow-card-hover)] sm:p-6 sm:pb-5">
+    <article
+      className={`group relative overflow-hidden rounded-[18px] border p-5 pb-4 shadow-[var(--shadow-card)] transition-[transform,box-shadow,border-color,background-color] duration-300 ease-out hover:-translate-y-1 hover:shadow-[var(--shadow-card-hover)] sm:p-6 sm:pb-5 ${tomPrazo}`}
+    >
       {/* trilho de aderência */}
       <span
         className="absolute inset-y-0 left-0 w-[5px] transition-[width] duration-300 group-hover:w-[7px]"
@@ -152,7 +167,17 @@ export function VagaCard({ vaga }: { vaga: VagaPublica }) {
       {/* selos + badge */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <Pill className={selo.className}>{selo.label}</Pill>
-        {badge && <Pill className={badge.className}>{badge.label}</Pill>}
+        {badge && (
+          <Pill className={badge.className}>
+            {urgencia === "urgente" && (
+              <span className="relative flex h-[6px] w-[6px]" aria-hidden>
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-70 motion-reduce:hidden" />
+                <span className="relative inline-flex h-[6px] w-[6px] rounded-full bg-white" />
+              </span>
+            )}
+            {badge.label}
+          </Pill>
+        )}
         {vaga.selo_parceiro && (
           <Pill className="border-dashed border-line-strong bg-surface text-ink-soft">
             Parceiro do curso
