@@ -45,6 +45,11 @@ const BOILERPLATE = [
   "aproveite", "assine ja", "assine agora", "seja premium", "conta premium", "ganhe ",
   "melhore seu perfil", "adicione um cargo", "complete seu perfil", "atualize seu curriculo",
   "responder", "conectar", "adicionar", "ver perfil", "ver todos os empregos",
+  // cabeçalho/CTA/rodapé do digest "teaser" do InfoJobs (ALERTA_BOTON): o e-mail só
+  // traz um link p/ a LISTAGEM de vagas (não vagas individuais) + um link de busca
+  // vazia — nenhum dos dois é uma vaga específica.
+  "empresas destacadas acabam de publicar", "interessantes para voce",
+  "faca uma nova pesquisa", "nova pesquisa", "ver novas vagas",
 ];
 
 // Título que é só filtro de data/tempo (Indeed): "desde ontem", "nos últimos 7 dias",
@@ -57,7 +62,7 @@ const RE_DATA_RUIDO =
 // agora", "Modifique os critérios do alerta" etc. entrarem como vaga. É um filtro
 // NEGATIVO (bloqueia o que claramente não é vaga) para não perder vaga de verdade.
 const RE_NAO_VAGA_URL =
-  /(wa\.me|api\.whatsapp|web\.whatsapp|\/whatsapp|t\.me\/|\/conta|\/account|\/settings|\/configurac|criterios|\/alertas?\b|\/notificac|\/ajuda|\/help|\/faq|\/suporte|\/support|\/jogo|\/game|\/games\/|play\.google|apps\.apple|itunes\.apple|\/premium|\/planos?\b|\/assinatura|\/upgrade|\/pricing|\/jobs\/search|\/jobs\/collections|\/jobs\/?(\?|$)|linkedin\.com\/(help|games|learning|feed|comm\/feed|mynetwork|notifications|posts|pulse|company)|facebook\.com|instagram\.com|twitter\.com|x\.com\/|youtube\.com)/i;
+  /(wa\.me|api\.whatsapp|web\.whatsapp|\/whatsapp|t\.me\/|\/conta|\/account|\/settings|\/configurac|criterios|\/alertas?\b|\/notificac|\/ajuda|\/help|\/faq|\/suporte|\/support|\/jogo|\/game|\/games\/|play\.google|apps\.apple|itunes\.apple|\/premium|\/planos?\b|\/assinatura|\/upgrade|\/pricing|\/jobs\/search|\/jobs\/collections|\/jobs\/?(\?|$)|linkedin\.com\/(help|games|learning|feed|comm\/feed|mynetwork|notifications|posts|pulse|company)|facebook\.com|instagram\.com|twitter\.com|x\.com\/|youtube\.com|\/vagas-de-.*\.aspx|[?&]ij=\d+(%2c|,)\d+)/i;
 
 // E-mails que NÃO trazem vagas — pular por completo (registra com 0 vagas, não extrai):
 // (a) CONFIRMAÇÃO de alerta recém-criado; (b) MARKETING/promoção (mesmo remetente que
@@ -166,8 +171,15 @@ function extrairVagas(
     if (vistos.has(chave)) continue;
     vistos.add(chave);
 
-    // bloco após a âncora = contexto da vaga (empresa/local/salário/formação)
-    const bloco = limparTexto(html.slice(m.index, m.index + 1800));
+    // bloco após a âncora = contexto da vaga (empresa/local/salário/formação).
+    // Começa DEPOIS que a tag <a ...> abrir (não em m.index): o LinkedIn usa hrefs
+    // de rastreio gigantes (trackingId/otpToken podem passar de 2000 caracteres) —
+    // se a janela começasse em m.index, ela se esgotava lendo atributos do link e
+    // nunca chegava ao texto visível (empresa/local), fazendo duas vagas distintas
+    // do mesmo e-mail caírem no mesmo trecho de fallback (aparência de duplicidade).
+    const fimTagAbertura = m[0].indexOf(">");
+    const inicioConteudo = fimTagAbertura >= 0 ? m.index + fimTagAbertura + 1 : m.index;
+    const bloco = limparTexto(html.slice(inicioConteudo, inicioConteudo + 1800));
     let trecho = bloco.toLowerCase().startsWith(titulo.toLowerCase())
       ? bloco.slice(titulo.length).trim()
       : bloco;
