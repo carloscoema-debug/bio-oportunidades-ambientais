@@ -20,7 +20,7 @@ export function SiteHeader() {
       <div className="mx-auto flex min-h-[64px] max-w-[680px] items-center gap-2.5 px-4 py-3">
         <Link
           to="/"
-          className="inline-flex items-baseline rounded-sm"
+          className="inline-flex items-center gap-2 rounded-sm"
           aria-label="BIO — ir para o início do portal"
         >
           <span
@@ -28,6 +28,12 @@ export function SiteHeader() {
             style={{ fontWeight: 800, letterSpacing: "-0.02em" }}
           >
             BIO<span className="text-mata">.</span>
+          </span>
+          <span
+            title="O BIO está em período de validação — encontrou algo estranho? Avise a coordenação."
+            className="mono-caps inline-flex items-center rounded-full border border-[#C4D4E2] bg-ceu-tint px-2 py-0.5 text-[10px] leading-none text-ceu"
+          >
+            Beta
           </span>
         </Link>
 
