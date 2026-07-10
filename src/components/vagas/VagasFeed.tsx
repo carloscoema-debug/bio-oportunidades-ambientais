@@ -1,13 +1,14 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { tipoLabel, modalidadeLabel, cursoLabel } from "@/lib/glossario";
 import { VagaCard, type VagaPublica } from "./VagaCard";
 
 async function fetchVagas(): Promise<VagaPublica[]> {
   const { data, error } = await supabase
     .from("vagas_publicas")
     .select(
-      "id, titulo, empresa_orgao, tipo, nivel, regiao, modalidade, municipio, carga_horaria, remuneracao_bolsa, curso_alvo, prazo_inscricao, sem_prazo_definido, data_publicacao, link_candidatura, forma_candidatura, score_urgencia, selo_aderencia, selo_parceiro",
+      "id, titulo, empresa_orgao, tipo, nivel, regiao, modalidade, municipio, carga_horaria, remuneracao_bolsa, curso_alvo, area_tematica, prazo_inscricao, sem_prazo_definido, data_publicacao, link_candidatura, forma_candidatura, score_urgencia, selo_aderencia, selo_parceiro",
     )
     // ordem final é decidida no cliente (o estudante pode inverter); isto é só o baseline
     .order("data_publicacao", { ascending: false })
@@ -42,6 +43,27 @@ type Ordenacao = "recentes" | "antigas";
 const norm = (s: string) =>
   s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase();
 
+// Índice de busca por vaga: além de título/empresa, inclui os termos que só
+// aparecem como CHIP no card (cursos por extenso, área temática, tipo,
+// modalidade, município) — sem isto, buscar "gestão ambiental" não achava
+// nada, porque essas palavras nunca apareciam no título ou na empresa.
+function buscaBlob(v: VagaPublica): string {
+  const cursos = (v.curso_alvo ?? []).map((c) => cursoLabel[c] ?? c).join(" ");
+  return norm(
+    [
+      v.titulo,
+      v.empresa_orgao,
+      v.municipio,
+      tipoLabel[v.tipo] ?? v.tipo,
+      v.modalidade ? modalidadeLabel[v.modalidade] : "",
+      v.area_tematica,
+      cursos,
+    ]
+      .filter(Boolean)
+      .join(" "),
+  );
+}
+
 // Estilo de chip compartilhado pelos dois grupos (idêntico ao já usado no BIO).
 const chipCls = (ativo: boolean) =>
   `mono-caps cursor-pointer rounded-full border-[1.5px] px-3.5 py-2 text-[12.5px] tracking-normal transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mata/40 focus-visible:ring-offset-2 focus-visible:ring-offset-paper ${
@@ -67,7 +89,6 @@ export function VagasFeed() {
   const [tipo, setTipo] = useState<string>("todas");
   const [nivel, setNivel] = useState<string | null>(null);
   const [regiao, setRegiao] = useState<string | null>(null);
-  const [recomendadas, setRecomendadas] = useState(false);
   const [ordenacao, setOrdenacao] = useState<Ordenacao>("recentes");
 
   const { data: vagas, isLoading, isError } = useQuery({
@@ -75,17 +96,21 @@ export function VagasFeed() {
     queryFn: fetchVagas,
   });
 
-  const filtrando =
-    busca.trim() !== "" || tipo !== "todas" || nivel !== null || regiao !== null || recomendadas;
+  const filtrando = busca.trim() !== "" || tipo !== "todas" || nivel !== null || regiao !== null;
 
   const vagasFiltradas = useMemo(() => {
-    const q = norm(busca.trim());
+    // termos separados = busca por TODOS eles (em qualquer ordem, em qualquer
+    // campo do índice) — "gestão ambiental" acha vagas com os dois termos,
+    // mesmo que não apareçam juntos como frase.
+    const termos = norm(busca.trim()).split(/\s+/).filter(Boolean);
     const lista = (vagas ?? []).filter((v) => {
       if (tipo !== "todas" && v.tipo !== tipo) return false;
       if (nivel && v.nivel !== nivel && v.nivel !== "ambos") return false;
       if (regiao && v.regiao !== regiao) return false;
-      if (recomendadas && v.selo_aderencia !== "recomendado") return false;
-      if (q && !(norm(v.titulo).includes(q) || norm(v.empresa_orgao ?? "").includes(q))) return false;
+      if (termos.length > 0) {
+        const blob = buscaBlob(v);
+        if (!termos.every((t) => blob.includes(t))) return false;
+      }
       return true;
     });
     return [...lista].sort((a, b) => {
@@ -93,14 +118,13 @@ export function VagasFeed() {
       const db = b.data_publicacao ? new Date(b.data_publicacao).getTime() : 0;
       return ordenacao === "recentes" ? db - da : da - db;
     });
-  }, [vagas, busca, tipo, nivel, regiao, recomendadas, ordenacao]);
+  }, [vagas, busca, tipo, nivel, regiao, ordenacao]);
 
   function limpar() {
     setBusca("");
     setTipo("todas");
     setNivel(null);
     setRegiao(null);
-    setRecomendadas(false);
     setOrdenacao("recentes");
   }
 
@@ -145,8 +169,8 @@ export function VagasFeed() {
         })}
       </div>
 
-      {/* Grupo REFINAR — facetas independentes (nível, região, recomendadas);
-          cada chip liga/desliga sozinha, por isso fica separada do grupo Tipo. */}
+      {/* Grupo REFINAR — facetas independentes (nível, região); cada chip
+          liga/desliga sozinha, por isso fica separada do grupo Tipo. */}
       <div className="mt-3">
         <p className="mono-caps mb-2 text-[10px] text-ink-faint">Refinar</p>
         <div role="group" aria-label="Refinar resultados" className="flex flex-wrap items-center gap-2">
@@ -173,15 +197,6 @@ export function VagasFeed() {
               {r.label}
             </button>
           ))}
-          <span aria-hidden className="mx-0.5 hidden text-line-strong sm:inline">·</span>
-          <button
-            type="button"
-            aria-pressed={recomendadas}
-            onClick={() => setRecomendadas((v) => !v)}
-            className={chipCls(recomendadas)}
-          >
-            Recomendadas p/ mim
-          </button>
         </div>
       </div>
 

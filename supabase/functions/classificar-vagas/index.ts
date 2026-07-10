@@ -57,6 +57,12 @@ PÁGINA DE BUSCA/LISTAGEM (não é vaga individual): se o campo "pagina" for cla
 
 DISPONIBILIDADE (checar SEMPRE que houver "pagina" ou descrição): se o texto indicar que a vaga NÃO aceita mais candidaturas / está encerrada / expirada — ex.: "não aceita mais candidaturas", "no longer accepting applications", "vaga encerrada", "candidaturas encerradas", "processo encerrado", "vaga expirada", "inscrições encerradas", "esta vaga não está mais disponível" — recomende "descartar" com justificativa começando por "Encerrada: " (ex.: "Encerrada: não aceita mais candidaturas"), MESMO que seja aderente ao curso. Uma vaga fechada não serve ao estudante. (Se não houver "pagina" nem sinal de encerramento no texto, não presuma que está aberta nem fechada — siga a aderência normal.)
 
+TIPO — "processo_seletivo" É SÓ PARA SETOR PÚBLICO (rígido; causa comum de erro):
+- "processo_seletivo" (aparece no card como "Seleção pública") só quando o EMPREGADOR é um órgão/entidade PÚBLICA — concurso público, seleção simplificada de prefeitura/secretaria/autarquia/estatal, edital de órgão público (SEMACE, IBAMA, IFCE, prefeituras, câmaras etc.).
+- MUITAS empresas PRIVADAS usam a expressão "processo seletivo" no texto só como sinônimo comum de "processo de contratação" — isso NÃO torna a vaga pública. Se o empregador é empresa privada (Ltda, S.A., ME, indústria, consultoria, comércio, agro…), o tipo é "emprego" (ou "estagio" se for estágio), MESMO que a página diga literalmente "processo seletivo" ou "seleção".
+- Exemplos: "Processo Seletivo — Vale S.A." → emprego (empresa privada, apesar do nome). "Seleção Pública Simplificada — Prefeitura de Sobral" → processo_seletivo (órgão público). "Consultor Ambiental — CMGB Consultoria" → emprego (privada), mesmo sem a palavra "seleção" no texto.
+- Na dúvida sobre o empregador ser público ou privado, use "emprego" — é o tipo mais comum e o erro sai mais barato de corrigir depois.
+
 PRIORIDADE: estas REGRAS valem mais que os exemplos abaixo (o histórico pode ter decisões antigas ou baseadas só no título).
 
 CURSOS DO BIO — devolva os CÓDIGOS dos cursos que a vaga atende (pela formação exigida/área), em "cursos":
@@ -308,10 +314,17 @@ Deno.serve(async (req) => {
 
   if (!vagas || vagas.length === 0) return json({ ok: true, classificadas: 0, motivo: "nada_pendente" });
 
-  // APRENDIZADO (few-shot): decisões recentes da coordenação viram exemplos no
-  // prompt. Sem retreinar — a IA calibra ao gosto real de quem cura.
+  // APRENDIZADO CONTÍNUO (few-shot): decisões recentes da coordenação viram
+  // exemplos no prompt — sem retreinar, a IA calibra ao gosto real de quem cura.
+  // Inclui TIPO nas aprovadas de propósito: quando a curadoria corrige o tipo de
+  // uma vaga (ex.: "processo_seletivo" errado → "emprego"), essa correção fica
+  // salva em `vagas.tipo` e passa a valer como exemplo nas próximas classificações
+  // — o sistema aprende com toda edição manual, não só com aprovar/rejeitar.
+  const TIPO_ROTULO: Record<string, string> = {
+    estagio: "estágio", emprego: "emprego", processo_seletivo: "seleção pública (órgão público)", bolsa: "bolsa",
+  };
   const [aprovadas, rejeitadas] = await Promise.all([
-    svc.from("vagas").select("titulo, empresa_orgao")
+    svc.from("vagas").select("titulo, empresa_orgao, tipo")
       .eq("status", "aprovada").order("data_captura", { ascending: false }).limit(18),
     svc.from("vagas").select("titulo, motivo_rejeicao_categoria, motivo_rejeicao_detalhe")
       .eq("status", "rejeitada").order("data_captura", { ascending: false }).limit(18),
@@ -319,8 +332,8 @@ Deno.serve(async (req) => {
   const cortar = (s: string | null) => (s ?? "").slice(0, 90);
   const fewshot = (aprovadas.data?.length || rejeitadas.data?.length)
     ? `\n\nDECISÕES RECENTES DA COORDENAÇÃO (aprenda com o gosto real dela; case novas vagas por analogia):\n` +
-      `APROVADAS (aceitas — bons exemplos):\n` +
-      (aprovadas.data ?? []).map((a) => `- ${cortar(a.titulo)}${a.empresa_orgao ? ` (${cortar(a.empresa_orgao)})` : ""}`).join("\n") +
+      `APROVADAS (aceitas — tipo já revisado e corrigido manualmente quando preciso; use como referência de público x privado):\n` +
+      (aprovadas.data ?? []).map((a) => `- ${cortar(a.titulo)}${a.empresa_orgao ? ` (${cortar(a.empresa_orgao)})` : ""} → tipo: ${TIPO_ROTULO[a.tipo] ?? a.tipo}`).join("\n") +
       `\nREJEITADAS (recusadas — NÃO recomende aprovar coisas parecidas):\n` +
       (rejeitadas.data ?? []).map((r) => `- ${cortar(r.titulo)} — motivo: ${r.motivo_rejeicao_categoria ?? "?"}${r.motivo_rejeicao_detalhe ? ` (${cortar(r.motivo_rejeicao_detalhe)})` : ""}`).join("\n")
     : "";

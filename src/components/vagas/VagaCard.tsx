@@ -26,6 +26,7 @@ export interface VagaPublica {
   carga_horaria: string | null;
   remuneracao_bolsa: string | null;
   curso_alvo: string[] | null;
+  area_tematica: string | null;
   prazo_inscricao: string | null;
   sem_prazo_definido: boolean;
   data_publicacao: string | null;
