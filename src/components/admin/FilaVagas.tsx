@@ -48,6 +48,7 @@ interface VagaAdmin {
   mensagem_verificacao_link: string | null;
   data_ultima_verificacao_link: string | null;
   link_candidatura: string | null;
+  imagem_fonte_url: string | null;
   forma_candidatura: string | null;
   remuneracao_bolsa: string | null;
   carga_horaria: string | null;
@@ -178,6 +179,20 @@ export function FilaVagas() {
   const [motivoMassa, setMotivoMassa] = useState("fora_do_perfil");
   const [acaoMassa, setAcaoMassa] = useState(false);
   const [classificando, setClassificando] = useState(false);
+  const [abrindoImagem, setAbrindoImagem] = useState<string | null>(null);
+
+  // Canal D (print/PDF): gera uma URL assinada sob demanda — o bucket é privado,
+  // então não guardamos link público, só o caminho do arquivo.
+  async function verImagemOriginal(caminho: string) {
+    setAbrindoImagem(caminho);
+    const { data, error } = await supabase.storage.from("capturas-vagas").createSignedUrl(caminho, 3600);
+    setAbrindoImagem(null);
+    if (error || !data?.signedUrl) {
+      setErro("Não foi possível abrir a imagem original.");
+      return;
+    }
+    window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+  }
 
   const { data: vagas, isLoading } = useQuery({
     queryKey: ["admin_vagas", status],
@@ -185,7 +200,7 @@ export function FilaVagas() {
       let q = supabase
         .from("vagas")
         .select(
-          "id, titulo, empresa_orgao, tipo, nivel, municipio, regiao, score_aderencia, score_urgencia, flags_incompatibilidade, status, origem, origem_externa_nao_verificada, contato_submissao, status_link, mensagem_verificacao_link, data_ultima_verificacao_link, link_candidatura, forma_candidatura, remuneracao_bolsa, carga_horaria, modalidade, prazo_inscricao, sem_prazo_definido, descricao, uf, ai_recomendacao, ai_score, ai_justificativa, ai_modalidade",
+          "id, titulo, empresa_orgao, tipo, nivel, municipio, regiao, score_aderencia, score_urgencia, flags_incompatibilidade, status, origem, origem_externa_nao_verificada, contato_submissao, status_link, mensagem_verificacao_link, data_ultima_verificacao_link, link_candidatura, imagem_fonte_url, forma_candidatura, remuneracao_bolsa, carga_horaria, modalidade, prazo_inscricao, sem_prazo_definido, descricao, uf, ai_recomendacao, ai_score, ai_justificativa, ai_modalidade",
         );
       if (status === "link_inativo") {
         // vagas aprovadas cujo link caiu (tiradas do ar) — a "área de alerta"
@@ -570,6 +585,18 @@ export function FilaVagas() {
                         {v.forma_candidatura}
                       </p>
                     )
+                  )}
+                  {v.imagem_fonte_url && (
+                    <p className="mt-1.5 text-[12px]">
+                      <button
+                        type="button"
+                        onClick={() => verImagemOriginal(v.imagem_fonte_url!)}
+                        disabled={abrindoImagem === v.imagem_fonte_url}
+                        className="mono-caps text-ceu underline underline-offset-2 hover:text-ceu disabled:opacity-60"
+                      >
+                        {abrindoImagem === v.imagem_fonte_url ? "Abrindo…" : "Ver print/PDF original ↗"}
+                      </button>
+                    </p>
                   )}
                   {detalhes.length > 0 && (
                     <p className="mt-1.5 flex flex-wrap gap-x-2 text-[12.5px] text-ink">

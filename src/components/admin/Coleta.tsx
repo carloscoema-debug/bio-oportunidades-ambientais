@@ -38,6 +38,96 @@ export function Coleta() {
   const [classificando, setClassificando] = useState(false);
   const [msgIa, setMsgIa] = useState<string | null>(null);
 
+  // Canal D — print/PDF assistido por IA
+  const [arquivo, setArquivo] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
+  const [enviandoImagem, setEnviandoImagem] = useState(false);
+  const [msgUpload, setMsgUpload] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
+
+  const TIPOS_ACEITOS = ["image/png", "image/jpeg", "image/webp", "image/heic", "application/pdf"];
+
+  function validarArquivo(f: File | null | undefined): f is File {
+    if (!f) return false;
+    if (!TIPOS_ACEITOS.includes(f.type)) {
+      setMsgUpload({ tipo: "erro", texto: "Formato não aceito — use PNG, JPG, WEBP, HEIC ou PDF." });
+      return false;
+    }
+    if (f.size > 8 * 1024 * 1024) {
+      setMsgUpload({ tipo: "erro", texto: "Arquivo maior que 8MB — reduza o tamanho e tente de novo." });
+      return false;
+    }
+    return true;
+  }
+
+  function definirArquivo(f: File) {
+    setMsgUpload(null);
+    setArquivo(f);
+    setPreview(f.type.startsWith("image/") ? URL.createObjectURL(f) : null);
+  }
+
+  function onSelecionarArquivo(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (validarArquivo(f)) definirArquivo(f);
+    e.target.value = "";
+  }
+  function onDropArquivo(e: React.DragEvent) {
+    e.preventDefault();
+    const f = e.dataTransfer.files?.[0];
+    if (validarArquivo(f)) definirArquivo(f);
+  }
+  function onPasteArquivo(e: React.ClipboardEvent) {
+    const item = [...e.clipboardData.items].find((i) => i.type.startsWith("image/"));
+    const f = item?.getAsFile();
+    if (validarArquivo(f)) definirArquivo(f);
+  }
+  function limparArquivo() {
+    setArquivo(null);
+    setPreview(null);
+    setMsgUpload(null);
+  }
+
+  function arquivoParaBase64(f: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result).split(",")[1] ?? "");
+      reader.onerror = reject;
+      reader.readAsDataURL(f);
+    });
+  }
+
+  async function enviarImagem() {
+    if (!arquivo) return;
+    setEnviandoImagem(true);
+    setMsgUpload(null);
+    try {
+      const imagem_base64 = await arquivoParaBase64(arquivo);
+      const { data, error } = await supabase.functions.invoke("extrair-vaga-imagem", {
+        body: { imagem_base64, mime_type: arquivo.type },
+      });
+      const r = data as
+        | { ok?: boolean; titulo?: string; recomendacao?: string; motivo?: string; detalhe?: string; erro?: string }
+        | null;
+      if (error || !r?.ok) {
+        const texto =
+          r?.motivo === "nao_e_vaga"
+            ? (r.detalhe ?? "Isso não parece ser uma vaga.")
+            : (r?.erro ?? "Não foi possível ler a imagem agora. Tente novamente.");
+        setMsgUpload({ tipo: "erro", texto });
+        return;
+      }
+      setMsgUpload({
+        tipo: "ok",
+        texto: `Vaga extraída: "${r.titulo}" — já está na fila de curadoria (IA: ${r.recomendacao}). Confira na aba "Fila de curadoria".`,
+      });
+      setArquivo(null);
+      setPreview(null);
+      qc.invalidateQueries({ queryKey: ["admin_vagas"] });
+      qc.invalidateQueries({ queryKey: ["admin_dashboard"] });
+    } finally {
+      setEnviandoImagem(false);
+    }
+  }
+
   const { data: fontes } = useQuery({
     queryKey: ["coleta_fontes"],
     queryFn: async () => {
@@ -169,6 +259,85 @@ export function Coleta() {
           {msgIa}
         </p>
       )}
+
+      {/* Canal D — print/PDF assistido por IA */}
+      <div className="rounded-[16px] border border-mata-line bg-mata-tint/30 p-4 sm:p-5">
+        <p className="mono-caps text-[11px] text-mata-deep">Canal D · print / PDF</p>
+        <h3 className="mt-1 font-display text-[17px] font-bold text-ink">
+          Enviar print ou PDF de uma vaga
+        </h3>
+        <p className="mt-1 max-w-[64ch] text-[13.5px] leading-relaxed text-ink-soft">
+          Cole (Ctrl/Cmd+V), arraste ou selecione um flyer de empresa, captura de tela
+          de site, ou PDF recebido por grupo/e-mail. A IA lê a imagem inteira e já
+          cria a vaga pendente na fila — a curadoria segue no controle, como nos
+          outros canais.
+        </p>
+
+        <div
+          onPaste={onPasteArquivo}
+          onDrop={onDropArquivo}
+          onDragOver={(e) => e.preventDefault()}
+          tabIndex={0}
+          aria-label="Área para colar ou soltar o print/PDF da vaga"
+          className="mt-3 flex min-h-[130px] flex-col items-center justify-center gap-2.5 rounded-[12px] border-2 border-dashed border-mata-line bg-surface px-4 py-6 text-center focus:outline-none focus:ring-2 focus:ring-mata/30"
+        >
+          {preview ? (
+            <img
+              src={preview}
+              alt="Pré-visualização do print enviado"
+              className="max-h-[170px] rounded-[8px] border border-line object-contain"
+            />
+          ) : arquivo ? (
+            <p className="text-[13.5px] font-bold text-ink">📄 {arquivo.name}</p>
+          ) : (
+            <>
+              <p className="text-[13.5px] text-ink-soft">
+                Cole aqui (Ctrl/Cmd+V) ou arraste a imagem/PDF
+              </p>
+              <label className="mono-caps cursor-pointer rounded-full border-[1.5px] border-line-strong bg-surface px-3.5 py-1.5 text-[11px] text-ink-soft hover:border-mata hover:text-mata-deep">
+                ou selecionar arquivo
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/heic,application/pdf"
+                  className="hidden"
+                  onChange={onSelecionarArquivo}
+                />
+              </label>
+            </>
+          )}
+        </div>
+
+        {msgUpload && (
+          <p
+            className={`mt-3 rounded-[9px] border px-3 py-2.5 text-[13.5px] ${
+              msgUpload.tipo === "ok"
+                ? "border-mata-line bg-mata-tint text-mata-deep"
+                : "border-[#EBC7BE] bg-barro-tint text-barro"
+            }`}
+          >
+            {msgUpload.texto}
+          </p>
+        )}
+
+        {arquivo && (
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              onClick={enviarImagem}
+              disabled={enviandoImagem}
+              className="rounded-[9px] bg-mata px-5 py-2.5 text-[14px] font-bold text-white hover:bg-mata-deep disabled:opacity-60"
+            >
+              {enviandoImagem ? "Lendo com IA…" : "Extrair vaga com IA"}
+            </button>
+            <button
+              onClick={limparArquivo}
+              disabled={enviandoImagem}
+              className="rounded-[9px] border border-line-strong px-4 py-2.5 text-[14px] font-bold text-ink-soft hover:border-barro hover:text-barro disabled:opacity-60"
+            >
+              Cancelar
+            </button>
+          </div>
+        )}
+      </div>
 
       {erro && (
         <p className="rounded-[9px] border border-[#EBC7BE] bg-barro-tint px-3 py-2.5 text-[14px] text-barro">
