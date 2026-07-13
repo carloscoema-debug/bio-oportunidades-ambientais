@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { tipoLabel, modalidadeLabel, cursoLabel } from "@/lib/glossario";
@@ -72,6 +72,82 @@ const chipCls = (ativo: boolean) =>
       : "border-line-strong bg-surface text-ink-soft hover:-translate-y-px hover:border-mata hover:text-mata-deep hover:shadow-[var(--shadow-card)]"
   }`;
 
+const VAGAS_POR_PAGINA = 10;
+
+// Monta a lista de páginas a exibir (estilo Google): sempre 1ª e última,
+// uma janela ao redor da atual, e "…" quando há salto. Ex.: [1, "…", 4, 5, 6, "…", 12]
+function paginasVisiveis(atual: number, total: number): (number | "…")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const pags = new Set<number>([1, total, atual, atual - 1, atual + 1]);
+  const ordenadas = [...pags].filter((p) => p >= 1 && p <= total).sort((a, b) => a - b);
+  const out: (number | "…")[] = [];
+  ordenadas.forEach((p, i) => {
+    if (i > 0 && p - ordenadas[i - 1] > 1) out.push("…");
+    out.push(p);
+  });
+  return out;
+}
+
+function Paginacao({
+  pagina,
+  totalPaginas,
+  onMudar,
+}: {
+  pagina: number;
+  totalPaginas: number;
+  onMudar: (p: number) => void;
+}) {
+  if (totalPaginas <= 1) return null;
+  const btnBase =
+    "mono-caps inline-flex h-9 min-w-9 items-center justify-center rounded-full border-[1.5px] px-2.5 text-[12.5px] tracking-normal transition-colors";
+  const btnInativo = `${btnBase} border-line-strong bg-surface text-ink-soft hover:border-mata hover:text-mata-deep`;
+  const btnAtivo = `${btnBase} border-ink bg-ink text-paper cursor-default`;
+  const btnDesabilitado = `${btnBase} border-line bg-surface text-ink-faint/50 cursor-not-allowed`;
+
+  return (
+    <nav
+      aria-label="Navegação de páginas de vagas"
+      className="flex flex-wrap items-center justify-center gap-1.5"
+    >
+      <button
+        type="button"
+        onClick={() => onMudar(pagina - 1)}
+        disabled={pagina === 1}
+        aria-label="Página anterior"
+        className={pagina === 1 ? btnDesabilitado : btnInativo}
+      >
+        ‹
+      </button>
+      {paginasVisiveis(pagina, totalPaginas).map((p, i) =>
+        p === "…" ? (
+          <span key={`e${i}`} className="mono-caps px-1 text-[12px] text-ink-faint">
+            …
+          </span>
+        ) : (
+          <button
+            key={p}
+            type="button"
+            onClick={() => onMudar(p)}
+            aria-current={p === pagina ? "page" : undefined}
+            className={p === pagina ? btnAtivo : btnInativo}
+          >
+            {p}
+          </button>
+        ),
+      )}
+      <button
+        type="button"
+        onClick={() => onMudar(pagina + 1)}
+        disabled={pagina === totalPaginas}
+        aria-label="Próxima página"
+        className={pagina === totalPaginas ? btnDesabilitado : btnInativo}
+      >
+        ›
+      </button>
+    </nav>
+  );
+}
+
 function SkeletonCard() {
   return (
     <div className="relative overflow-hidden rounded-[16px] border border-line bg-surface p-5">
@@ -90,6 +166,8 @@ export function VagasFeed() {
   const [nivel, setNivel] = useState<string | null>(null);
   const [regiao, setRegiao] = useState<string | null>(null);
   const [ordenacao, setOrdenacao] = useState<Ordenacao>("recentes");
+  const [pagina, setPagina] = useState(1);
+  const topoListaRef = useRef<HTMLDivElement>(null);
 
   const { data: vagas, isLoading, isError } = useQuery({
     queryKey: ["vagas_publicas"],
@@ -120,12 +198,35 @@ export function VagasFeed() {
     });
   }, [vagas, busca, tipo, nivel, regiao, ordenacao]);
 
+  // filtro/busca/ordenação mudou o conjunto — volta pra 1ª página, senão o
+  // usuário pode ficar "preso" numa página que não existe mais no resultado novo
+  useEffect(() => {
+    setPagina(1);
+  }, [busca, tipo, nivel, regiao, ordenacao]);
+
+  const totalPaginas = Math.max(1, Math.ceil(vagasFiltradas.length / VAGAS_POR_PAGINA));
+  const paginaAtual = Math.min(pagina, totalPaginas);
+  const vagasPagina = useMemo(
+    () =>
+      vagasFiltradas.slice(
+        (paginaAtual - 1) * VAGAS_POR_PAGINA,
+        paginaAtual * VAGAS_POR_PAGINA,
+      ),
+    [vagasFiltradas, paginaAtual],
+  );
+
+  function irParaPagina(p: number) {
+    setPagina(p);
+    topoListaRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   function limpar() {
     setBusca("");
     setTipo("todas");
     setNivel(null);
     setRegiao(null);
     setOrdenacao("recentes");
+    setPagina(1);
   }
 
   return (
@@ -242,6 +343,16 @@ export function VagasFeed() {
         </div>
       )}
 
+      {/* Paginação (topo) — só aparece quando há mais de 1 página */}
+      {!isLoading && !isError && totalPaginas > 1 && (
+        <div ref={topoListaRef} className="mb-4 flex flex-col items-center gap-2 scroll-mt-6">
+          <Paginacao pagina={paginaAtual} totalPaginas={totalPaginas} onMudar={irParaPagina} />
+          <p className="mono-caps text-[10.5px] text-ink-faint">
+            Página {paginaAtual} de {totalPaginas}
+          </p>
+        </div>
+      )}
+
       <div className="grid gap-4">
         {isLoading && [0, 1, 2].map((i) => <SkeletonCard key={i} />)}
 
@@ -291,7 +402,7 @@ export function VagasFeed() {
 
         {!isLoading &&
           !isError &&
-          vagasFiltradas.map((vaga, i) => (
+          vagasPagina.map((vaga, i) => (
             <div
               key={vaga.id}
               className="motion-safe:animate-[surgir_0.5s_cubic-bezier(0.2,0.7,0.3,1)_both]"
@@ -301,6 +412,17 @@ export function VagasFeed() {
             </div>
           ))}
       </div>
+
+      {/* Paginação (rodapé da lista) */}
+      {!isLoading && !isError && totalPaginas > 1 && (
+        <div className="mt-6 flex flex-col items-center gap-2">
+          <Paginacao pagina={paginaAtual} totalPaginas={totalPaginas} onMudar={irParaPagina} />
+          <p className="mono-caps text-[10.5px] text-ink-faint">
+            Página {paginaAtual} de {totalPaginas} · {vagasFiltradas.length}{" "}
+            {vagasFiltradas.length === 1 ? "vaga" : "vagas"} no total
+          </p>
+        </div>
+      )}
     </section>
   );
 }
