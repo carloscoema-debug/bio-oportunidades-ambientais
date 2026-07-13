@@ -1,4 +1,5 @@
 {
+  "id": "/",
   "name": "BIO — Oportunidades Ambientais",
   "short_name": "BIO",
   "description": "Vagas de estágio e emprego na área ambiental no Ceará, com curadoria do Curso Técnico em Meio Ambiente do IFCE Campus Fortaleza.",
@@ -10,6 +11,25 @@
   "background_color": "#F6F3EB",
   "theme_color": "#0D6B44",
   "icons": [
-    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/home-narrow.png",
+      "sizes": "1000x1454",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Oportunidades ambientais no Ceará, selecionadas para você"
+    },
+    {
+      "src": "/screenshots/candidatar-narrow.png",
+      "sizes": "1000x1454",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Guia de como se candidatar às vagas"
+    }
   ]
 }
