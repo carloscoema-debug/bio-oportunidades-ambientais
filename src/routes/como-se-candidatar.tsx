@@ -142,6 +142,15 @@ function ComoSeCandidatar() {
           abrir o currículo enviado. Um perfil incompleto ou desatualizado pode pesar
           contra você — mesmo sem ninguém falar isso diretamente.
         </p>
+        <a
+          href="https://www.linkedin.com/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mono-caps mt-4 inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-mata-line bg-mata-tint px-4 py-2 text-[11px] text-mata-deep transition-colors hover:border-mata hover:bg-mata hover:text-white"
+        >
+          Criar ou atualizar meu perfil no LinkedIn
+          <span aria-hidden>↗</span>
+        </a>
         <ul className="mt-4 max-w-[62ch] space-y-3 text-[15px] leading-relaxed text-ink-soft">
           <li>
             <strong className="text-ink">Foto e título claros.</strong> Uma foto de
@@ -264,31 +273,6 @@ function ComoSeCandidatar() {
             e ajuda toda a turma.
           </li>
         </ul>
-
-        <H2>Estágio obrigatório e o TCE</H2>
-        <p className="mt-4 max-w-[62ch] text-[15px] leading-relaxed text-ink-soft">
-          O estágio curricular <strong className="text-ink">obrigatório</strong> faz
-          parte da sua formação e precisa ser formalizado. Antes de começar a
-          estagiar, é necessário assinar o{" "}
-          <strong className="text-ink">Termo de Compromisso de Estágio (TCE)</strong>{" "}
-          entre você, a empresa/órgão e o IFCE, com um plano de atividades e um
-          professor orientador. <strong className="text-ink">Não inicie um estágio
-          sem o TCE assinado</strong> — sem ele, o estágio pode não ser reconhecido
-          pelo curso.
-        </p>
-        <p className="mt-3 max-w-[62ch] text-[15px] leading-relaxed text-ink-soft">
-          Cada card indica se a vaga é de{" "}
-          <em>estágio curricular obrigatório</em>, <em>não obrigatório</em> ou{" "}
-          <em>emprego</em>. Em caso de dúvida sobre o enquadramento, fale com a
-          coordenação antes de assinar qualquer documento.
-        </p>
-
-        <H2>Ficou com dúvida?</H2>
-        <p className="mt-4 max-w-[62ch] text-[15px] leading-relaxed text-ink-soft">
-          A coordenação do Curso Técnico em Meio Ambiente pode orientar você sobre
-          estágio, TCE e documentação. Procure os canais oficiais do curso no
-          Campus Fortaleza.
-        </p>
 
         <VoltarPortal />
       </article>
