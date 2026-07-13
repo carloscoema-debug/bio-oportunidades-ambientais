@@ -1,16 +1,12 @@
 import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { assinarPwaInstall, ehIos, estaInstalado, getPromptDisponivel, instalarAgora } from "../lib/pwaInstall";
 
 // BIO — PWA: registro do service worker, convite à instalação e aviso de
-// atualização. Android (Chrome/Edge) dispara `beforeinstallprompt` → botão de
-// 1 toque; iOS nunca dispara → instrução manual (Compartilhar → Adicionar à
-// Tela de Início). Quando um novo deploy assume (controllerchange), mostra o
-// aviso "Nova versão" para o usuário recarregar — assim a versão instalada no
-// celular nunca fica para trás.
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-}
+// atualização. O evento de instalação em si é capturado em ../lib/pwaInstall
+// (escopo de módulo) — este componente só reage a ele. Se o usuário fechar o
+// banner, ainda dá para instalar depois pela página /instalar-app (link sempre
+// visível no rodapé), sem depender do navegador disparar o prompt de novo.
 
 const DISMISS_KEY = "bio-pwa-install-dismissed";
 const DISMISS_DIAS = 30;
@@ -25,43 +21,27 @@ function dispensadoRecentemente(): boolean {
 }
 
 export function PwaManager() {
-  const [installEvt, setInstallEvt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [temPrompt, setTemPrompt] = useState(false);
   const [mostrarIos, setMostrarIos] = useState(false);
   const [temAtualizacao, setTemAtualizacao] = useState(false);
 
   useEffect(() => {
-    // service worker só em produção — em dev o cache atrapalha o HMR
     if (import.meta.env.PROD && "serviceWorker" in navigator) {
       const jaControlado = !!navigator.serviceWorker.controller;
       navigator.serviceWorker.register("/sw.js").catch(() => {});
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        // primeiro registro também dispara — só avisa se já havia um SW antes
         if (jaControlado) setTemAtualizacao(true);
       });
     }
 
-    const instalado =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (navigator as { standalone?: boolean }).standalone === true;
-    if (instalado || dispensadoRecentemente()) return;
+    if (estaInstalado() || dispensadoRecentemente()) return;
 
-    const aoPrompt = (e: Event) => {
-      e.preventDefault();
-      setInstallEvt(e as BeforeInstallPromptEvent);
-    };
-    const aoInstalar = () => setInstallEvt(null);
-    window.addEventListener("beforeinstallprompt", aoPrompt);
-    window.addEventListener("appinstalled", aoInstalar);
+    setTemPrompt(!!getPromptDisponivel());
+    if (ehIos()) setMostrarIos(true);
 
-    const ua = navigator.userAgent;
-    const ehIos =
-      /iphone|ipad|ipod/i.test(ua) || (ua.includes("Mac") && navigator.maxTouchPoints > 1);
-    if (ehIos) setMostrarIos(true);
-
-    return () => {
-      window.removeEventListener("beforeinstallprompt", aoPrompt);
-      window.removeEventListener("appinstalled", aoInstalar);
-    };
+    return assinarPwaInstall(() => {
+      setTemPrompt(!!getPromptDisponivel());
+    });
   }, []);
 
   function dispensar() {
@@ -70,16 +50,8 @@ export function PwaManager() {
     } catch {
       /* modo privado sem storage — só fecha nesta sessão */
     }
-    setInstallEvt(null);
+    setTemPrompt(false);
     setMostrarIos(false);
-  }
-
-  async function instalar() {
-    if (!installEvt) return;
-    await installEvt.prompt();
-    const { outcome } = await installEvt.userChoice;
-    if (outcome === "accepted") setInstallEvt(null);
-    else dispensar();
   }
 
   if (temAtualizacao) {
@@ -99,7 +71,7 @@ export function PwaManager() {
     );
   }
 
-  if (installEvt) {
+  if (temPrompt) {
     return (
       <div className="fixed inset-x-4 bottom-4 z-50 mx-auto max-w-[420px] rounded-[12px] border border-line bg-surface p-4 shadow-lg">
         <p className="font-display text-[15px] font-bold text-ink">Instale o BIO no seu celular</p>
@@ -108,7 +80,10 @@ export function PwaManager() {
         </p>
         <div className="mt-3 flex gap-2">
           <button
-            onClick={instalar}
+            onClick={async () => {
+              const aceitou = await instalarAgora();
+              if (!aceitou) dispensar();
+            }}
             className="flex-1 rounded-[9px] bg-mata px-4 py-2.5 text-[13.5px] font-bold text-white hover:bg-mata-deep"
           >
             Instalar
@@ -120,6 +95,13 @@ export function PwaManager() {
             Agora não
           </button>
         </div>
+        <p className="mt-2.5 text-[11.5px] text-ink-faint">
+          Mudou de ideia depois? Instale quando quiser em{" "}
+          <Link to="/instalar-app" className="underline underline-offset-2 hover:text-mata-deep">
+            biooportunidades.org/instalar-app
+          </Link>
+          .
+        </p>
       </div>
     );
   }
@@ -134,12 +116,21 @@ export function PwaManager() {
           No Safari, toque em <strong className="text-ink">Compartilhar</strong> (quadrado com
           seta) e depois em <strong className="text-ink">“Adicionar à Tela de Início”</strong>.
         </p>
-        <button
-          onClick={dispensar}
-          className="mt-3 w-full rounded-[9px] border border-line-strong px-4 py-2.5 text-[13.5px] font-bold text-ink-soft hover:border-mata hover:text-mata"
-        >
-          Entendi
-        </button>
+        <div className="mt-3 flex gap-2">
+          <Link
+            to="/instalar-app"
+            onClick={dispensar}
+            className="flex-1 rounded-[9px] bg-mata px-4 py-2.5 text-center text-[13.5px] font-bold text-white hover:bg-mata-deep"
+          >
+            Ver passo a passo
+          </Link>
+          <button
+            onClick={dispensar}
+            className="rounded-[9px] border border-line-strong px-4 py-2.5 text-[13.5px] font-bold text-ink-soft hover:border-mata hover:text-mata"
+          >
+            Entendi
+          </button>
+        </div>
       </div>
     );
   }

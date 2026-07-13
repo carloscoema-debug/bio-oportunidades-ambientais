@@ -37,6 +37,7 @@ export function SiteFooter() {
           <nav aria-label="Links institucionais" className="flex flex-col gap-2.5">
             <Link to="/como-se-candidatar" className={linkCls} activeProps={activeProps}>Como se candidatar</Link>
             <Link to="/divulgar" className={linkCls} activeProps={activeProps}>Divulgue uma oportunidade</Link>
+            <Link to="/instalar-app" className={linkCls} activeProps={activeProps}>Instalar o app no celular</Link>
             <Link to="/politica-de-privacidade" className={linkCls} activeProps={activeProps}>Política de privacidade</Link>
           </nav>
         </div>
