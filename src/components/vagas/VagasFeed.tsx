@@ -168,6 +168,7 @@ export function VagasFeed() {
   const [ordenacao, setOrdenacao] = useState<Ordenacao>("recentes");
   const [pagina, setPagina] = useState(1);
   const topoListaRef = useRef<HTMLDivElement>(null);
+  const primeiraRenderizacao = useRef(true);
 
   const { data: vagas, isLoading, isError } = useQuery({
     queryKey: ["vagas_publicas"],
@@ -215,9 +216,20 @@ export function VagasFeed() {
     [vagasFiltradas, paginaAtual],
   );
 
+  // Rola pro topo dos cards sempre que a página mudar — roda depois que o
+  // React já comitou o DOM da página nova (efeito, não callback de clique),
+  // então o ref sempre existe e já está na posição certa. Pula a 1ª
+  // renderização pra não rolar a tela sozinho quando o feed carrega.
+  useEffect(() => {
+    if (primeiraRenderizacao.current) {
+      primeiraRenderizacao.current = false;
+      return;
+    }
+    topoListaRef.current?.scrollIntoView({ behavior: "instant", block: "start" });
+  }, [paginaAtual]);
+
   function irParaPagina(p: number) {
     setPagina(p);
-    topoListaRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   function limpar() {
