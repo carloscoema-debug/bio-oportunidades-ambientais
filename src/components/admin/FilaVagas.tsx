@@ -268,6 +268,27 @@ export function FilaVagas() {
     qc.invalidateQueries({ queryKey: ["vagas_publicas"] });
   }
 
+  // Marca o link como ativo de novo (falso positivo do checker automático —
+  // comum em sites com bloqueio anti-bot, ex.: Catho devolve 404 fake pra
+  // requisição sem navegador). O coordenador confirmou manualmente que abre.
+  async function republicar(v: VagaAdmin) {
+    setErro(null);
+    const { error } = await supabase
+      .from("vagas")
+      .update({
+        status_link: "ativo",
+        link_falhas_consecutivas: 0,
+        mensagem_verificacao_link: null,
+        data_ultima_verificacao_link: new Date().toISOString(),
+      })
+      .eq("id", v.id);
+    if (error) return setErro(`Erro ao republicar: ${error.message}`);
+    qc.invalidateQueries({ queryKey: ["admin_vagas"] });
+    qc.invalidateQueries({ queryKey: ["admin_link_inativo_count"] });
+    qc.invalidateQueries({ queryKey: ["admin_dashboard"] });
+    qc.invalidateQueries({ queryKey: ["vagas_publicas"] });
+  }
+
   // Duplica a vaga (útil p/ concurso com vários cargos: 1 card por cargo). A cópia
   // entra como PENDENTE ("Cópia — …") e o editor abre nela p/ ajustar cargo/curso/salário.
   async function duplicar(v: VagaAdmin) {
@@ -645,6 +666,15 @@ export function FilaVagas() {
                         className="rounded-[8px] bg-mata px-3.5 py-2 text-[13px] font-bold text-white hover:bg-mata-deep"
                       >
                         Aprovar
+                      </button>
+                    )}
+                    {status === "link_inativo" && (
+                      <button
+                        onClick={() => republicar(v)}
+                        title="Use quando conferir manualmente que o link abre normal (falso positivo do checker automático)"
+                        className="rounded-[8px] bg-mata px-3.5 py-2 text-[13px] font-bold text-white hover:bg-mata-deep"
+                      >
+                        Republicar (verifiquei, está ativo)
                       </button>
                     )}
                     <button
