@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 
 const desde = (iso: string | null) =>
   iso ? `há ${formatDistanceToNow(new Date(iso), { locale: ptBR })}` : "—";
+const dataEnvio = (iso: string | null) =>
+  iso ? format(new Date(iso), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : "—";
 
 export function Newsletter() {
   const qc = useQueryClient();
@@ -259,7 +261,7 @@ export function Newsletter() {
             >
               <span className="text-[13.5px] text-ink">{e.assunto}</span>
               <span className="mono-caps text-[11.5px] text-ink-soft">
-                {e.total_destinatarios ?? 0} envios · {e.status_envio} · {desde(e.data_envio)}
+                {e.total_destinatarios ?? 0} envios · {e.status_envio} · {dataEnvio(e.data_envio)} · {desde(e.data_envio)}
               </span>
             </div>
           ))}
