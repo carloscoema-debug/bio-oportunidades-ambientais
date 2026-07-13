@@ -120,6 +120,7 @@ Deno.serve(async (req) => {
       from: remetente, to: [body.teste_para],
       subject: `[TESTE] ${assunto}`,
       html: montarHtml(vagas as Vaga[], portalBase, optout),
+      headers: { "List-Unsubscribe": `<${optout}>` },
     }]);
     return json({ ok, teste: true, para: body.teste_para, vagas: vagas.length });
   }
@@ -134,12 +135,16 @@ Deno.serve(async (req) => {
   let enviados = 0, falhas = 0;
   for (let i = 0; i < lista.length; i += 100) {
     const chunk = lista.slice(i, i + 100);
-    const emails = chunk.map((a) => ({
-      from: remetente,
-      to: [a.email],
-      subject: assunto,
-      html: montarHtml(vagas as Vaga[], portalBase, `${portalBase}/descadastrar?token=${a.token_optout}`),
-    }));
+    const emails = chunk.map((a) => {
+      const optout = `${portalBase}/descadastrar?token=${a.token_optout}`;
+      return {
+        from: remetente,
+        to: [a.email],
+        subject: assunto,
+        html: montarHtml(vagas as Vaga[], portalBase, optout),
+        headers: { "List-Unsubscribe": `<${optout}>` },
+      };
+    });
     const ok = await enviarLote(emails);
     if (ok) enviados += chunk.length; else falhas += chunk.length;
   }
