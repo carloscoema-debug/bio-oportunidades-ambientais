@@ -17,6 +17,9 @@ interface VagaRel {
   origem: string | null;
   curso_alvo: string[] | null;
   area_tematica_id: string | null;
+  remuneracao_bolsa: string | null;
+  empresa_orgao: string | null;
+  status_link: string | null;
 }
 
 const TIPOS_ORDEM = ["estagio", "emprego", "processo_seletivo", "bolsa"];
@@ -48,6 +51,13 @@ const TIPO_LABEL: Record<string, string> = {
   bolsa: "Bolsa",
 };
 const SETOR_LABEL: Record<string, string> = { publico: "Público", privado: "Privado" };
+const STATUS_LINK_LABEL: Record<string, string> = {
+  ativo: "Ativo",
+  redirecionado: "Redirecionado",
+  inacessivel: "Inacessível",
+  nao_verificado: "Ainda não verificado",
+};
+const MESES_ABREV = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 const NIVEL_LABEL: Record<string, string> = {
   tecnico: "Técnico",
   superior: "Superior",
@@ -68,6 +78,61 @@ function contar(lista: VagaRel[], chave: (v: VagaRel) => string | null) {
     m.set(k, (m.get(k) ?? 0) + 1);
   }
   return [...m.entries()].sort((a, b) => b[1] - a[1]);
+}
+
+// Extrai valor(es) numérico(s) de um texto livre de remuneração (ex.: "R$ 2.500",
+// "R$ 4.750,00", "R$ 1.500 a R$ 2.000"). Só tenta parsear se houver "R$" explícito —
+// evita interpretar "A combinar", carga horária ou outro texto como valor.
+// Formato BR: "." separa milhar, "," separa decimal (ex.: "2.182,34" → 2182.34).
+function parseValorMonetario(s: string | null): number | null {
+  if (!s || !/r\$/i.test(s)) return null;
+  const brutos = s.match(/\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?|\d+(?:,\d{1,2})?/g) ?? [];
+  const parseOne = (n: string): number => {
+    let limpo = n;
+    if (limpo.includes(",")) limpo = limpo.replace(/\./g, "").replace(",", ".");
+    else if (/^\d{1,3}(\.\d{3})+$/.test(limpo)) limpo = limpo.replace(/\./g, "");
+    return parseFloat(limpo);
+  };
+  // faixa ("R$ 1.500 a R$ 2.000") vira a média dos valores encontrados no texto
+  const valores = brutos.map(parseOne).filter((v) => Number.isFinite(v) && v >= 50 && v <= 100000);
+  if (valores.length === 0) return null;
+  return valores.reduce((a, b) => a + b, 0) / valores.length;
+}
+
+interface RemStats {
+  media: number | null;
+  min: number | null;
+  max: number | null;
+  n: number;
+}
+function remuneracaoStats(lista: VagaRel[]): RemStats {
+  const valores = lista
+    .map((v) => parseValorMonetario(v.remuneracao_bolsa))
+    .filter((v): v is number => v != null);
+  if (valores.length === 0) return { media: null, min: null, max: null, n: 0 };
+  return {
+    media: valores.reduce((a, b) => a + b, 0) / valores.length,
+    min: Math.min(...valores),
+    max: Math.max(...valores),
+    n: valores.length,
+  };
+}
+const fmtReais = (v: number) =>
+  v.toLocaleString("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 });
+
+function porMes(lista: VagaRel[]): [string, number][] {
+  const m = new Map<string, number>();
+  for (const v of lista) {
+    if (!v.data_publicacao) continue;
+    const d = new Date(v.data_publicacao);
+    const chave = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    m.set(chave, (m.get(chave) ?? 0) + 1);
+  }
+  return [...m.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+}
+function rotularMes(chave: string): string {
+  const [ano, mes] = chave.split("-");
+  return `${MESES_ABREV[Number(mes) - 1]}/${ano}`;
 }
 
 function KPI({ rotulo, valor, sub }: { rotulo: string; valor: string; sub?: string }) {
@@ -160,7 +225,7 @@ export function Relatorios() {
       const { data, error } = await supabase
         .from("vagas")
         .select(
-          "tipo, setor, nivel, regiao, status, score_aderencia, data_captura, data_publicacao, contagem_cliques, count_me_candidatei, origem, curso_alvo, area_tematica_id",
+          "tipo, setor, nivel, regiao, status, score_aderencia, data_captura, data_publicacao, contagem_cliques, count_me_candidatei, origem, curso_alvo, area_tematica_id, remuneracao_bolsa, empresa_orgao, status_link",
         );
       if (error) throw error;
       return (data ?? []) as VagaRel[];
@@ -251,18 +316,23 @@ export function Relatorios() {
     const porCursoTecnico = contarCursos(publicadas, CURSOS_TECNICO);
     const vagasSuperior = vagasComCurso(publicadas, CURSOS_SUPERIOR);
     const vagasTecnico = vagasComCurso(publicadas, CURSOS_TECNICO);
-    // Detalhe POR CURSO: total (atende) + EXCLUSIVAS (destinadas apenas àquele curso).
+    // Detalhe POR CURSO: total (atende) + EXCLUSIVAS (destinadas apenas àquele curso)
+    // + remuneração média (só das vagas do curso que informaram valor em R$).
     const porCursoDetalhe = [
       ...CURSOS_SUPERIOR.map((c) => [c, "superior"] as const),
       ...CURSOS_TECNICO.map((c) => [c, "tecnico"] as const),
-    ].map(([codigo, nivel]) => ({
-      codigo,
-      nivel,
-      total: publicadas.filter((v) => (v.curso_alvo ?? []).includes(codigo)).length,
-      exclusiva: publicadas.filter(
-        (v) => (v.curso_alvo ?? []).length === 1 && v.curso_alvo![0] === codigo,
-      ).length,
-    })).sort((a, b) => b.total - a.total);
+    ].map(([codigo, nivel]) => {
+      const doCurso = publicadas.filter((v) => (v.curso_alvo ?? []).includes(codigo));
+      return {
+        codigo,
+        nivel,
+        total: doCurso.length,
+        exclusiva: publicadas.filter(
+          (v) => (v.curso_alvo ?? []).length === 1 && v.curso_alvo![0] === codigo,
+        ).length,
+        rem: remuneracaoStats(doCurso),
+      };
+    }).sort((a, b) => b.total - a.total);
 
     // CURSO × TIPO (publicadas): p/ cada curso, quantas são estágio, emprego, etc.
     const cursoXtipo = [
@@ -284,6 +354,28 @@ export function Relatorios() {
         (v.curso_alvo ?? []).some((c) => CURSOS_TECNICO.includes(c)),
     ).length;
 
+    // Remuneração geral (só publicadas com valor em R$ informado — a maioria não informa).
+    const rem = remuneracaoStats(publicadas);
+    const remPorTipo = TIPOS_ORDEM.map((t) => ({
+      tipo: t,
+      ...remuneracaoStats(publicadas.filter((v) => v.tipo === t)),
+    })).filter((e) => e.n > 0);
+
+    // Principais empregadores (publicadas) — concentração de demanda; exclui
+    // identificações genéricas que não representam um empregador real.
+    const SEM_NOME = new Set(["não informado", "empresa confidencial", "confidencial", "—", ""]);
+    const porEmpregador = contar(
+      publicadas,
+      (v) => (v.empresa_orgao && !SEM_NOME.has(v.empresa_orgao.trim().toLowerCase()) ? v.empresa_orgao.trim() : null),
+    ).slice(0, 10);
+
+    // Evolução mensal de vagas aprovadas — tendência/sazonalidade pra leitura estratégica.
+    const evolucaoMensal = porMes(publicadas);
+
+    // Saúde dos links das vagas aprovadas — quantas ainda respondem, quantas nunca
+    // foram checadas, quantas já caíram (indicador operacional de curadoria).
+    const porStatusLink = contar(publicadas, (v) => v.status_link ?? "nao_verificado");
+
     return {
       totalCliques,
       totalCandidaturas,
@@ -295,10 +387,13 @@ export function Relatorios() {
       scoreMedio,
       tempoMedio,
       propTecnica,
-      porTipo: contar(lista, (v) => v.tipo),
-      porRegiao: contar(lista, (v) => v.regiao),
-      porSetor: contar(lista, (v) => v.setor),
-      porNivel: contar(lista, (v) => v.nivel),
+      // Corrigido: essas quatro contagens refletem só vagas APROVADAS — antes usavam
+      // `lista` (todo o período, incluindo rejeitadas), inflando os números muito
+      // acima da realidade (ex.: 219 rejeitadas somadas às 22 aprovadas).
+      porTipo: contar(publicadas, (v) => v.tipo),
+      porRegiao: contar(publicadas, (v) => v.regiao),
+      porSetor: contar(publicadas, (v) => v.setor),
+      porNivel: contar(publicadas, (v) => v.nivel),
       porCursoSuperior,
       porCursoTecnico,
       porCursoDetalhe,
@@ -308,6 +403,11 @@ export function Relatorios() {
       vagasSuperior,
       vagasTecnico,
       vagasAmbos,
+      rem,
+      remPorTipo,
+      porEmpregador,
+      evolucaoMensal,
+      porStatusLink,
     };
   }, [todas, periodo]);
 
@@ -356,6 +456,14 @@ export function Relatorios() {
         </div>
       </div>
 
+      <p className="rounded-[10px] border border-line bg-surface-dim/40 px-4 py-2.5 text-[12.5px] leading-relaxed text-ink-soft">
+        Salvo indicação em contrário, todos os números abaixo contam apenas{" "}
+        <strong className="text-ink">vagas com status "Aprovada"</strong> — vagas
+        pendentes, rejeitadas, suspensas ou expiradas não entram nessas contagens.
+        A única exceção é "Aproveitamento por fonte", que compara de propósito o total
+        captado (todos os status) com o que foi aprovado.
+      </p>
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KPI
           rotulo="Vagas publicadas"
@@ -391,6 +499,71 @@ export function Relatorios() {
         </p>
       </div>
 
+      {/* Remuneração — a maioria das vagas não informa valor, então isto reflete só
+          a fatia que informou; o "n" em cada card mostra o tamanho real da amostra. */}
+      <div className="rounded-[16px] border border-line bg-surface p-5">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <p className="mono-caps text-[11px] text-ink-faint">
+            Remuneração informada · vagas aprovadas
+          </p>
+          <p className="mono-caps text-[10.5px] text-ink-faint">
+            {r.rem.n} de {r.publicadas} vaga(s) informaram valor em R$
+          </p>
+        </div>
+        {r.rem.n === 0 ? (
+          <p className="mt-3 text-[13.5px] text-ink-soft">
+            Nenhuma vaga aprovada no período informou remuneração em R$.
+          </p>
+        ) : (
+          <>
+            <div className="mt-3 grid grid-cols-3 gap-3 text-center">
+              <div className="rounded-[12px] bg-surface-dim/50 p-3.5">
+                <p className="font-display text-[24px] font-bold leading-none text-ink">
+                  {fmtReais(r.rem.media!)}
+                </p>
+                <p className="mono-caps mt-1.5 text-[10.5px] text-ink-faint">Média</p>
+              </div>
+              <div className="rounded-[12px] bg-surface-dim/50 p-3.5">
+                <p className="font-display text-[24px] font-bold leading-none text-ink">
+                  {fmtReais(r.rem.min!)}
+                </p>
+                <p className="mono-caps mt-1.5 text-[10.5px] text-ink-faint">Mínima observada</p>
+              </div>
+              <div className="rounded-[12px] bg-surface-dim/50 p-3.5">
+                <p className="font-display text-[24px] font-bold leading-none text-ink">
+                  {fmtReais(r.rem.max!)}
+                </p>
+                <p className="mono-caps mt-1.5 text-[10.5px] text-ink-faint">Máxima observada</p>
+              </div>
+            </div>
+            {r.remPorTipo.length > 0 && (
+              <div className="mt-4 overflow-x-auto rounded-[10px] border border-line">
+                <table className="w-full border-collapse text-[13px]">
+                  <thead className="bg-surface-dim/60 text-left">
+                    <tr className="mono-caps text-[10.5px] text-ink-soft">
+                      <th className="px-3 py-2 font-semibold">Por tipo</th>
+                      <th className="px-3 py-2 text-right font-semibold">Média</th>
+                      <th className="px-3 py-2 text-right font-semibold">n</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {r.remPorTipo.map((e) => (
+                      <tr key={e.tipo} className="border-t border-line">
+                        <td className="px-3 py-2 text-ink">{TIPO_LABEL[e.tipo] ?? e.tipo}</td>
+                        <td className="px-3 py-2 text-right font-bold text-mata-deep">
+                          {fmtReais(e.media!)}
+                        </td>
+                        <td className="px-3 py-2 text-right text-ink-soft">{e.n}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
       {/* Funil de engajamento */}
       <div className="rounded-[16px] border border-line bg-surface p-5">
         <p className="mono-caps text-[11px] text-ink-faint">
@@ -418,9 +591,14 @@ export function Relatorios() {
         </div>
       </div>
 
-      {/* Aproveitamento por fonte */}
+      {/* Aproveitamento por fonte — única seção que soma TODOS os status de propósito,
+          pra comparar o que cada fonte trouxe com o que de fato foi aprovado. */}
       <div className="rounded-[16px] border border-line bg-surface p-5">
         <p className="mono-caps text-[11px] text-ink-faint">Aproveitamento por fonte</p>
+        <p className="mt-1 text-[12px] text-ink-faint">
+          "Captadas" conta todos os status (inclui rejeitadas); "Aprovadas" e "Aproveit."
+          mostram o quanto disso virou vaga publicada.
+        </p>
         <div className="mt-3 overflow-hidden rounded-[10px] border border-line">
           <table className="w-full border-collapse text-[13.5px]">
             <thead className="bg-surface-dim/60 text-left">
@@ -478,6 +656,7 @@ export function Relatorios() {
                 <th className="px-4 py-2.5">Curso</th>
                 <th className="px-3 py-2.5 text-right">Vagas</th>
                 <th className="px-3 py-2.5 text-right">Só este curso</th>
+                <th className="px-3 py-2.5 text-right">Remun. média</th>
               </tr>
             </thead>
             <tbody>
@@ -491,6 +670,9 @@ export function Relatorios() {
                   </td>
                   <td className="px-3 py-2 text-right font-bold text-mata-deep">{c.total}</td>
                   <td className="px-3 py-2 text-right text-ink-soft">{c.exclusiva}</td>
+                  <td className="px-3 py-2 text-right text-ink-soft">
+                    {c.rem.n === 0 ? "—" : `${fmtReais(c.rem.media!)} (n=${c.rem.n})`}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -498,7 +680,8 @@ export function Relatorios() {
         </div>
         <p className="mt-2 text-[12px] text-ink-faint">
           "Vagas" conta toda vaga que atende o curso (uma vaga pode atender mais de um);
-          "Só este curso" são as destinadas exclusivamente a ele.
+          "Só este curso" são as destinadas exclusivamente a ele. "Remun. média" só conta
+          vagas do curso que informaram valor em R$ — amostra pequena (n), leia com cautela.
         </p>
 
         {/* Curso × tipo: que tipo de oportunidade (estágio/emprego/…) o mercado
@@ -559,21 +742,63 @@ export function Relatorios() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <BarraLista titulo="Por tipo" dados={r.porTipo} rotular={(k) => TIPO_LABEL[k] ?? k} />
+        <BarraLista titulo="Por tipo · vagas aprovadas" dados={r.porTipo} rotular={(k) => TIPO_LABEL[k] ?? k} />
         <BarraLista
-          titulo="Por região"
+          titulo="Por região · vagas aprovadas"
           dados={r.porRegiao}
           rotular={(k) => REGIAO_LABEL[k] ?? k}
         />
         <BarraLista
-          titulo="Por setor"
+          titulo="Por setor · vagas aprovadas"
           dados={r.porSetor}
           rotular={(k) => SETOR_LABEL[k] ?? k}
         />
         <BarraLista
-          titulo="Por nível"
+          titulo="Por nível · vagas aprovadas"
           dados={r.porNivel}
           rotular={(k) => NIVEL_LABEL[k] ?? k}
+        />
+      </div>
+
+      {/* Principais empregadores — concentração de demanda; útil pra mapear
+          parcerias e empresas que já contratam do perfil do curso. */}
+      <div>
+        <h3 className="mono-caps mb-3 text-[12px] text-ink-faint">
+          Principais empregadores · vagas aprovadas
+        </h3>
+        <BarraLista
+          titulo="Quem mais publicou vaga aderente ao perfil do curso"
+          dados={r.porEmpregador}
+          rotular={(k) => k}
+        />
+        <p className="mt-2 text-[12px] text-ink-faint">
+          Exclui identificações genéricas ("Empresa Confidencial", "Não Informado").
+        </p>
+      </div>
+
+      {/* Evolução mensal — tendência/sazonalidade de aprovação, útil pra planejar
+          picos de curadoria e comparar semestres. */}
+      <div>
+        <h3 className="mono-caps mb-3 text-[12px] text-ink-faint">
+          Evolução mensal · vagas aprovadas
+        </h3>
+        <BarraLista
+          titulo="Vagas publicadas por mês"
+          dados={r.evolucaoMensal}
+          rotular={rotularMes}
+        />
+      </div>
+
+      {/* Saúde dos links — indicador operacional: quantas vagas aprovadas ainda
+          respondem, quantas nunca foram checadas pelo verificador automático. */}
+      <div>
+        <h3 className="mono-caps mb-3 text-[12px] text-ink-faint">
+          Saúde dos links · vagas aprovadas
+        </h3>
+        <BarraLista
+          titulo="Status do link de candidatura"
+          dados={r.porStatusLink}
+          rotular={(k) => STATUS_LINK_LABEL[k] ?? k}
         />
       </div>
     </div>

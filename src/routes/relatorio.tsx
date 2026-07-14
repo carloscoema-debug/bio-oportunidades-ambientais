@@ -111,7 +111,9 @@ function RelatorioSemestral() {
     return {
       total: lista.length, publicadas: publicadas.length, taxaAprov, scoreMedio, propTecnica,
       cliques, candidaturas, insercoes: insercoesN,
-      porTipo: conta(lista, (v) => v.tipo), porRegiao: conta(lista, (v) => v.regiao), aproveitamento,
+      // Só vagas aprovadas — mesmo ajuste feito no painel de Relatórios (antes contava
+      // `lista`, ou seja, todo o período incluindo rejeitadas).
+      porTipo: conta(publicadas, (v) => v.tipo), porRegiao: conta(publicadas, (v) => v.regiao), aproveitamento,
     };
   }, [vagas, insercoes, semestre, per]);
 
@@ -210,8 +212,8 @@ function RelatorioSemestral() {
         </section>
 
         <section className="mb-6 grid grid-cols-2 gap-8">
-          <Secao titulo="Por tipo" dados={r.porTipo} rot={(k) => TIPO_LABEL[k] ?? k} />
-          <Secao titulo="Por região" dados={r.porRegiao} rot={(k) => REGIAO_LABEL[k] ?? k} />
+          <Secao titulo="Por tipo (aprovadas)" dados={r.porTipo} rot={(k) => TIPO_LABEL[k] ?? k} />
+          <Secao titulo="Por região (aprovadas)" dados={r.porRegiao} rot={(k) => REGIAO_LABEL[k] ?? k} />
         </section>
 
         <section className="mb-2">
