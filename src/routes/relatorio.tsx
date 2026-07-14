@@ -85,23 +85,28 @@ function RelatorioSemestral() {
       return d >= per.inicio && d < per.fim;
     };
     const lista = (vagas ?? []).filter((v) => dentro(v.data_captura));
-    const publicadas = lista.filter((v) => v.status === "aprovada");
+    // "Validadas" = passou pela curadoria (aprovada, suspensa ou expirada) — conta
+    // como aprovação do semestre mesmo que a vaga já tenha saído do ar depois.
+    // Mesmo critério usado no painel de Relatórios: preserva o histórico de mercado
+    // ao longo do tempo em vez de encolher conforme vagas antigas vão expirando.
+    const STATUS_VALIDADO = new Set(["aprovada", "suspensa", "expirada"]);
+    const validas = lista.filter((v) => STATUS_VALIDADO.has(v.status));
     const rejeitadas = lista.filter((v) => v.status === "rejeitada");
-    const decididas = publicadas.length + rejeitadas.length;
-    const taxaAprov = decididas ? Math.round((publicadas.length / decididas) * 100) : 0;
-    const scoreMedio = publicadas.length
-      ? Math.round(publicadas.reduce((s, v) => s + v.score_aderencia, 0) / publicadas.length) : 0;
-    const tecnicas = publicadas.filter((v) => v.nivel === "tecnico" || v.nivel === "ambos").length;
-    const propTecnica = publicadas.length ? Math.round((tecnicas / publicadas.length) * 100) : 0;
-    const cliques = publicadas.reduce((s, v) => s + (v.contagem_cliques ?? 0), 0);
-    const candidaturas = publicadas.reduce((s, v) => s + (v.count_me_candidatei ?? 0), 0);
+    const decididas = validas.length + rejeitadas.length;
+    const taxaAprov = decididas ? Math.round((validas.length / decididas) * 100) : 0;
+    const scoreMedio = validas.length
+      ? Math.round(validas.reduce((s, v) => s + v.score_aderencia, 0) / validas.length) : 0;
+    const tecnicas = validas.filter((v) => v.nivel === "tecnico" || v.nivel === "ambos").length;
+    const propTecnica = validas.length ? Math.round((tecnicas / validas.length) * 100) : 0;
+    const cliques = validas.reduce((s, v) => s + (v.contagem_cliques ?? 0), 0);
+    const candidaturas = validas.reduce((s, v) => s + (v.count_me_candidatei ?? 0), 0);
     const insercoesN = (insercoes ?? []).filter((i) => dentro(i.created_at)).length;
 
     const om = new Map<string, { total: number; aprov: number }>();
     for (const v of lista) {
       const o = v.origem ?? "—";
       const e = om.get(o) ?? { total: 0, aprov: 0 };
-      e.total++; if (v.status === "aprovada") e.aprov++;
+      e.total++; if (STATUS_VALIDADO.has(v.status)) e.aprov++;
       om.set(o, e);
     }
     const aproveitamento = [...om.entries()]
@@ -109,11 +114,9 @@ function RelatorioSemestral() {
       .sort((a, b) => b.total - a.total);
 
     return {
-      total: lista.length, publicadas: publicadas.length, taxaAprov, scoreMedio, propTecnica,
+      total: lista.length, publicadas: validas.length, taxaAprov, scoreMedio, propTecnica,
       cliques, candidaturas, insercoes: insercoesN,
-      // Só vagas aprovadas — mesmo ajuste feito no painel de Relatórios (antes contava
-      // `lista`, ou seja, todo o período incluindo rejeitadas).
-      porTipo: conta(publicadas, (v) => v.tipo), porRegiao: conta(publicadas, (v) => v.regiao), aproveitamento,
+      porTipo: conta(validas, (v) => v.tipo), porRegiao: conta(validas, (v) => v.regiao), aproveitamento,
     };
   }, [vagas, insercoes, semestre, per]);
 
@@ -183,7 +186,7 @@ function RelatorioSemestral() {
           <h3 className="mb-2 text-[13px] font-bold uppercase tracking-wide text-[#0D6B44]">Indicadores</h3>
           <div className="grid grid-cols-4 gap-3 text-center">
             {[
-              { n: r.publicadas, l: "Vagas publicadas" },
+              { n: r.publicadas, l: "Vagas validadas" },
               { n: `${r.taxaAprov}%`, l: "Taxa de aprovação" },
               { n: r.scoreMedio, l: "Score médio" },
               { n: `${r.propTecnica}%`, l: "Nível técnico" },
@@ -200,7 +203,7 @@ function RelatorioSemestral() {
           <h3 className="mb-2 text-[13px] font-bold uppercase tracking-wide text-[#0D6B44]">Funil de engajamento</h3>
           <div className="grid grid-cols-4 gap-3 text-center">
             {[
-              { n: r.publicadas, l: "Publicadas" }, { n: r.cliques, l: "Cliques" },
+              { n: r.publicadas, l: "Validadas" }, { n: r.cliques, l: "Cliques" },
               { n: r.candidaturas, l: "Candidaturas" }, { n: r.insercoes, l: "Inserções" },
             ].map((e, i) => (
               <div key={i} className="rounded-[8px] bg-[#EAF3EE] p-3">
@@ -212,8 +215,8 @@ function RelatorioSemestral() {
         </section>
 
         <section className="mb-6 grid grid-cols-2 gap-8">
-          <Secao titulo="Por tipo (aprovadas)" dados={r.porTipo} rot={(k) => TIPO_LABEL[k] ?? k} />
-          <Secao titulo="Por região (aprovadas)" dados={r.porRegiao} rot={(k) => REGIAO_LABEL[k] ?? k} />
+          <Secao titulo="Por tipo (validadas)" dados={r.porTipo} rot={(k) => TIPO_LABEL[k] ?? k} />
+          <Secao titulo="Por região (validadas)" dados={r.porRegiao} rot={(k) => REGIAO_LABEL[k] ?? k} />
         </section>
 
         <section className="mb-2">
@@ -223,7 +226,7 @@ function RelatorioSemestral() {
               <tr className="border-b-2 border-[#E7E1D3] text-left text-[#5B6B60]">
                 <th className="py-1.5 font-semibold">Fonte / origem</th>
                 <th className="py-1.5 text-right font-semibold">Captadas</th>
-                <th className="py-1.5 text-right font-semibold">Aprovadas</th>
+                <th className="py-1.5 text-right font-semibold">Validadas</th>
                 <th className="py-1.5 text-right font-semibold">%</th>
               </tr>
             </thead>

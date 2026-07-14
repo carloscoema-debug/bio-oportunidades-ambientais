@@ -24,6 +24,12 @@ interface VagaRel {
 
 const TIPOS_ORDEM = ["estagio", "emprego", "processo_seletivo", "bolsa"];
 
+// Status que representam uma vaga real, aderente, que passou pela curadoria — mesmo
+// que já tenha saído do ar. É a base de toda a análise de mercado/perfil deste
+// relatório: o objetivo é acumular histórico ao longo do tempo, não só retratar o
+// que está publicado neste exato momento (que encolhe conforme vagas expiram).
+const STATUS_VALIDADO = new Set(["aprovada", "suspensa", "expirada"]);
+
 // Cursos do BIO por nível (para a leitura de mercado por formação).
 const CURSOS_SUPERIOR = ["gestao_ambiental", "engenharia_sanitaria_ambiental", "saneamento_ambiental"];
 const CURSOS_TECNICO = ["tecnico_meio_ambiente", "tecnico_saneamento"];
@@ -260,18 +266,23 @@ export function Relatorios() {
       return dias <= Number(periodo);
     });
 
-    const publicadas = lista.filter((v) => v.status === "aprovada");
+    // "Validadas" = passou pela curadoria como vaga real e aderente ao perfil dos
+    // cursos — inclui as que já saíram do ar (suspensa/expirada). É a base de TODA
+    // a análise de mercado/perfil abaixo, pra não perder histórico conforme vagas
+    // vão expirando naturalmente com o tempo.
+    const validas = lista.filter((v) => STATUS_VALIDADO.has(v.status));
+    // "Ao vivo" = só o que está aprovada e no ar AGORA — usado só onde o "agora"
+    // importa de verdade (KPI do topo e saúde dos links de candidatura).
+    const aoVivo = lista.filter((v) => v.status === "aprovada");
     const rejeitadas = lista.filter((v) => v.status === "rejeitada");
-    const decididas = publicadas.length + rejeitadas.length;
-    const taxaAprov = decididas ? Math.round((publicadas.length / decididas) * 100) : 0;
+    const decididas = validas.length + rejeitadas.length;
+    const taxaAprov = decididas ? Math.round((validas.length / decididas) * 100) : 0;
 
-    const scoreMedio = publicadas.length
-      ? Math.round(
-          publicadas.reduce((s, v) => s + v.score_aderencia, 0) / publicadas.length,
-        )
+    const scoreMedio = validas.length
+      ? Math.round(validas.reduce((s, v) => s + v.score_aderencia, 0) / validas.length)
       : 0;
 
-    const comPub = publicadas.filter((v) => v.data_publicacao);
+    const comPub = validas.filter((v) => v.data_publicacao);
     const tempoMedio = comPub.length
       ? comPub.reduce(
           (s, v) =>
@@ -283,24 +294,25 @@ export function Relatorios() {
         ) / comPub.length
       : null;
 
-    const tecnicas = publicadas.filter(
+    const tecnicas = validas.filter(
       (v) => v.nivel === "tecnico" || v.nivel === "ambos",
     ).length;
-    const propTecnica = publicadas.length
-      ? Math.round((tecnicas / publicadas.length) * 100)
+    const propTecnica = validas.length
+      ? Math.round((tecnicas / validas.length) * 100)
       : 0;
 
-    // funil: publicadas → cliques → candidaturas marcadas
-    const totalCliques = publicadas.reduce((s, v) => s + (v.contagem_cliques ?? 0), 0);
-    const totalCandidaturas = publicadas.reduce((s, v) => s + (v.count_me_candidatei ?? 0), 0);
+    // funil: vagas validadas → cliques → candidaturas marcadas (soma histórica,
+    // inclui cliques recebidos antes de a vaga expirar/ser suspensa).
+    const totalCliques = validas.reduce((s, v) => s + (v.contagem_cliques ?? 0), 0);
+    const totalCandidaturas = validas.reduce((s, v) => s + (v.count_me_candidatei ?? 0), 0);
 
-    // aproveitamento por origem/fonte (aprovadas ÷ total captado)
+    // aproveitamento por origem/fonte (validadas ÷ total captado)
     const om = new Map<string, { total: number; aprovadas: number }>();
     for (const v of lista) {
       const o = v.origem ?? "—";
       const e = om.get(o) ?? { total: 0, aprovadas: 0 };
       e.total++;
-      if (v.status === "aprovada") e.aprovadas++;
+      if (STATUS_VALIDADO.has(v.status)) e.aprovadas++;
       om.set(o, e);
     }
     const aproveitamento = [...om.entries()]
@@ -310,90 +322,90 @@ export function Relatorios() {
       }))
       .sort((a, b) => b.total - a.total);
 
-    // Leitura de mercado por FORMAÇÃO (só publicadas): quantas vagas por curso e
+    // Leitura de mercado por FORMAÇÃO (validadas): quantas vagas por curso e
     // como se dividem entre superior e técnico.
-    const porCursoSuperior = contarCursos(publicadas, CURSOS_SUPERIOR);
-    const porCursoTecnico = contarCursos(publicadas, CURSOS_TECNICO);
-    const vagasSuperior = vagasComCurso(publicadas, CURSOS_SUPERIOR);
-    const vagasTecnico = vagasComCurso(publicadas, CURSOS_TECNICO);
+    const porCursoSuperior = contarCursos(validas, CURSOS_SUPERIOR);
+    const porCursoTecnico = contarCursos(validas, CURSOS_TECNICO);
+    const vagasSuperior = vagasComCurso(validas, CURSOS_SUPERIOR);
+    const vagasTecnico = vagasComCurso(validas, CURSOS_TECNICO);
     // Detalhe POR CURSO: total (atende) + EXCLUSIVAS (destinadas apenas àquele curso)
     // + remuneração média (só das vagas do curso que informaram valor em R$).
     const porCursoDetalhe = [
       ...CURSOS_SUPERIOR.map((c) => [c, "superior"] as const),
       ...CURSOS_TECNICO.map((c) => [c, "tecnico"] as const),
     ].map(([codigo, nivel]) => {
-      const doCurso = publicadas.filter((v) => (v.curso_alvo ?? []).includes(codigo));
+      const doCurso = validas.filter((v) => (v.curso_alvo ?? []).includes(codigo));
       return {
         codigo,
         nivel,
         total: doCurso.length,
-        exclusiva: publicadas.filter(
+        exclusiva: validas.filter(
           (v) => (v.curso_alvo ?? []).length === 1 && v.curso_alvo![0] === codigo,
         ).length,
         rem: remuneracaoStats(doCurso),
       };
     }).sort((a, b) => b.total - a.total);
 
-    // CURSO × TIPO (publicadas): p/ cada curso, quantas são estágio, emprego, etc.
+    // CURSO × TIPO (validadas): p/ cada curso, quantas são estágio, emprego, etc.
     const cursoXtipo = [
       ...CURSOS_SUPERIOR.map((c) => [c, "superior"] as const),
       ...CURSOS_TECNICO.map((c) => [c, "tecnico"] as const),
     ].map(([codigo, nivel]) => {
-      const doCurso = publicadas.filter((v) => (v.curso_alvo ?? []).includes(codigo));
+      const doCurso = validas.filter((v) => (v.curso_alvo ?? []).includes(codigo));
       const porTipo: Record<string, number> = {};
       for (const t of TIPOS_ORDEM) porTipo[t] = doCurso.filter((v) => v.tipo === t).length;
       return { codigo, nivel, total: doCurso.length, porTipo };
     });
 
-    // DEMANDA POR ÁREA TEMÁTICA ambiental (publicadas) — leitura de mercado por área.
-    const porArea = contar(publicadas, (v) => v.area_tematica_id ?? "__sem__");
-    const semArea = publicadas.filter((v) => !v.area_tematica_id).length;
-    const vagasAmbos = publicadas.filter(
+    // DEMANDA POR ÁREA TEMÁTICA ambiental (validadas) — leitura de mercado por área.
+    const porArea = contar(validas, (v) => v.area_tematica_id ?? "__sem__");
+    const semArea = validas.filter((v) => !v.area_tematica_id).length;
+    const vagasAmbos = validas.filter(
       (v) =>
         (v.curso_alvo ?? []).some((c) => CURSOS_SUPERIOR.includes(c)) &&
         (v.curso_alvo ?? []).some((c) => CURSOS_TECNICO.includes(c)),
     ).length;
 
-    // Remuneração geral (só publicadas com valor em R$ informado — a maioria não informa).
-    const rem = remuneracaoStats(publicadas);
+    // Remuneração geral (validadas com valor em R$ informado — a maioria não informa).
+    const rem = remuneracaoStats(validas);
     const remPorTipo = TIPOS_ORDEM.map((t) => ({
       tipo: t,
-      ...remuneracaoStats(publicadas.filter((v) => v.tipo === t)),
+      ...remuneracaoStats(validas.filter((v) => v.tipo === t)),
     })).filter((e) => e.n > 0);
 
-    // Principais empregadores (publicadas) — concentração de demanda; exclui
-    // identificações genéricas que não representam um empregador real.
+    // Principais empregadores (validadas) — concentração de demanda histórica;
+    // exclui identificações genéricas que não representam um empregador real.
     const SEM_NOME = new Set(["não informado", "empresa confidencial", "confidencial", "—", ""]);
     const porEmpregador = contar(
-      publicadas,
+      validas,
       (v) => (v.empresa_orgao && !SEM_NOME.has(v.empresa_orgao.trim().toLowerCase()) ? v.empresa_orgao.trim() : null),
     ).slice(0, 10);
 
-    // Evolução mensal de vagas aprovadas — tendência/sazonalidade pra leitura estratégica.
-    const evolucaoMensal = porMes(publicadas);
+    // Evolução mensal de vagas validadas — tendência/sazonalidade pra leitura
+    // estratégica; usar `validas` (não só `aoVivo`) é o que garante que meses
+    // antigos não "encolham" conforme as vagas daquele mês forem expirando.
+    const evolucaoMensal = porMes(validas);
 
-    // Saúde dos links das vagas aprovadas — quantas ainda respondem, quantas nunca
-    // foram checadas, quantas já caíram (indicador operacional de curadoria).
-    const porStatusLink = contar(publicadas, (v) => v.status_link ?? "nao_verificado");
+    // Saúde dos links — só faz sentido operacional para o que está NO AR agora
+    // (não há por que checar link de vaga já expirada/suspensa).
+    const porStatusLink = contar(aoVivo, (v) => v.status_link ?? "nao_verificado");
 
     return {
       totalCliques,
       totalCandidaturas,
       aproveitamento,
       total: lista.length,
-      publicadas: publicadas.length,
+      validadas: validas.length,
+      aoVivo: aoVivo.length,
       pendentes: lista.filter((v) => v.status === "pendente").length,
       taxaAprov,
       scoreMedio,
       tempoMedio,
       propTecnica,
-      // Corrigido: essas quatro contagens refletem só vagas APROVADAS — antes usavam
-      // `lista` (todo o período, incluindo rejeitadas), inflando os números muito
-      // acima da realidade (ex.: 219 rejeitadas somadas às 22 aprovadas).
-      porTipo: contar(publicadas, (v) => v.tipo),
-      porRegiao: contar(publicadas, (v) => v.regiao),
-      porSetor: contar(publicadas, (v) => v.setor),
-      porNivel: contar(publicadas, (v) => v.nivel),
+      porTipo: contar(validas, (v) => v.tipo),
+      porRegiao: contar(validas, (v) => v.regiao),
+      porSetor: contar(validas, (v) => v.setor),
+      porNivel: contar(validas, (v) => v.nivel),
       porCursoSuperior,
       porCursoTecnico,
       porCursoDetalhe,
@@ -457,26 +469,30 @@ export function Relatorios() {
       </div>
 
       <p className="rounded-[10px] border border-line bg-surface-dim/40 px-4 py-2.5 text-[12.5px] leading-relaxed text-ink-soft">
-        Salvo indicação em contrário, todos os números abaixo contam apenas{" "}
-        <strong className="text-ink">vagas com status "Aprovada"</strong> — vagas
-        pendentes, rejeitadas, suspensas ou expiradas não entram nessas contagens.
-        A única exceção é "Aproveitamento por fonte", que compara de propósito o total
-        captado (todos os status) com o que foi aprovado.
+        Salvo indicação em contrário, os números abaixo contam vagas{" "}
+        <strong className="text-ink">validadas pela curadoria</strong> — status
+        "Aprovada", "Suspensa" ou "Expirada". Vagas pendentes e rejeitadas não
+        entram: as primeiras ainda não foram decididas, e as rejeitadas nunca
+        representaram demanda real do mercado. Suspensas/expiradas continuam
+        contando de propósito — são histórico de mercado válido, mesmo fora do ar.
+        Duas exceções usam só o que está publicado agora mesmo: o card "Vagas ao
+        vivo" e "Saúde dos links". "Aproveitamento por fonte" soma todos os status
+        de propósito, pra comparar captação com aprovação.
       </p>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KPI
-          rotulo="Vagas publicadas"
-          valor={String(r.publicadas)}
-          sub={`${r.total} no total · ${r.pendentes} pendentes`}
+          rotulo="Vagas validadas (histórico)"
+          valor={String(r.validadas)}
+          sub={`${r.aoVivo} ao vivo agora · ${r.total} captadas no total · ${r.pendentes} pendentes`}
         />
         <KPI
           rotulo="Taxa de aprovação"
           valor={`${r.taxaAprov}%`}
-          sub="das vagas decididas (aprovadas + rejeitadas)"
+          sub="das vagas decididas (validadas + rejeitadas)"
         />
         <KPI
-          rotulo="Score médio (publicadas)"
+          rotulo="Score médio (validadas)"
           valor={String(r.scoreMedio)}
           sub="aderência ao Técnico em MA"
         />
@@ -489,13 +505,13 @@ export function Relatorios() {
 
       <div className="rounded-[16px] border border-mata-line bg-mata-tint p-5">
         <p className="mono-caps text-[11px] text-mata-deep">
-          Proporção de vagas de nível técnico (publicadas)
+          Proporção de vagas de nível técnico (validadas)
         </p>
         <p className="mt-2 font-display text-[30px] font-bold text-mata-deep">
           {r.propTecnica}%
         </p>
         <p className="mt-1 text-[12.5px] text-mata-deep/80">
-          Meta institucional: ≥ 50% do total publicado.
+          Meta institucional: ≥ 50% do total validado.
         </p>
       </div>
 
@@ -504,15 +520,15 @@ export function Relatorios() {
       <div className="rounded-[16px] border border-line bg-surface p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <p className="mono-caps text-[11px] text-ink-faint">
-            Remuneração informada · vagas aprovadas
+            Remuneração informada · vagas validadas
           </p>
           <p className="mono-caps text-[10.5px] text-ink-faint">
-            {r.rem.n} de {r.publicadas} vaga(s) informaram valor em R$
+            {r.rem.n} de {r.validadas} vaga(s) informaram valor em R$
           </p>
         </div>
         {r.rem.n === 0 ? (
           <p className="mt-3 text-[13.5px] text-ink-soft">
-            Nenhuma vaga aprovada no período informou remuneração em R$.
+            Nenhuma vaga validada no período informou remuneração em R$.
           </p>
         ) : (
           <>
@@ -567,14 +583,14 @@ export function Relatorios() {
       {/* Funil de engajamento */}
       <div className="rounded-[16px] border border-line bg-surface p-5">
         <p className="mono-caps text-[11px] text-ink-faint">
-          Funil de engajamento (vagas publicadas no período)
+          Funil de engajamento (vagas validadas no período — soma histórica)
         </p>
         <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
-            { n: r.publicadas, l: "Vagas publicadas", sub: "no portal" },
+            { n: r.validadas, l: "Vagas validadas", sub: "aprovadas, suspensas ou expiradas" },
             {
               n: r.totalCliques, l: "Cliques em candidatar",
-              sub: r.publicadas ? `${(r.totalCliques / r.publicadas).toFixed(1)} por vaga` : "—",
+              sub: r.validadas ? `${(r.totalCliques / r.validadas).toFixed(1)} por vaga` : "—",
             },
             {
               n: r.totalCandidaturas, l: "“Me candidatei”",
@@ -592,12 +608,12 @@ export function Relatorios() {
       </div>
 
       {/* Aproveitamento por fonte — única seção que soma TODOS os status de propósito,
-          pra comparar o que cada fonte trouxe com o que de fato foi aprovado. */}
+          pra comparar o que cada fonte trouxe com o que de fato foi validado. */}
       <div className="rounded-[16px] border border-line bg-surface p-5">
         <p className="mono-caps text-[11px] text-ink-faint">Aproveitamento por fonte</p>
         <p className="mt-1 text-[12px] text-ink-faint">
-          "Captadas" conta todos os status (inclui rejeitadas); "Aprovadas" e "Aproveit."
-          mostram o quanto disso virou vaga publicada.
+          "Captadas" conta todos os status (inclui rejeitadas); "Aprovadas" conta as
+          validadas (aprovada, suspensa ou expirada) — "Aproveit." é a razão entre as duas.
         </p>
         <div className="mt-3 overflow-hidden rounded-[10px] border border-line">
           <table className="w-full border-collapse text-[13.5px]">
@@ -630,18 +646,18 @@ export function Relatorios() {
           cursos do BIO e entre nível superior e técnico (visão estratégica). */}
       <div>
         <h3 className="mono-caps mb-3 text-[12px] text-ink-faint">
-          Perfil de mercado por formação · vagas publicadas
+          Perfil de mercado por formação · vagas validadas
         </h3>
         <div className="grid gap-4 sm:grid-cols-3">
           <KPI
             rotulo="Vagas p/ nível superior"
             valor={String(r.vagasSuperior)}
-            sub={r.publicadas ? `${Math.round((r.vagasSuperior / r.publicadas) * 100)}% das publicadas` : "—"}
+            sub={r.validadas ? `${Math.round((r.vagasSuperior / r.validadas) * 100)}% das validadas` : "—"}
           />
           <KPI
             rotulo="Vagas p/ nível técnico"
             valor={String(r.vagasTecnico)}
-            sub={r.publicadas ? `${Math.round((r.vagasTecnico / r.publicadas) * 100)}% das publicadas` : "—"}
+            sub={r.validadas ? `${Math.round((r.vagasTecnico / r.validadas) * 100)}% das validadas` : "—"}
           />
           <KPI
             rotulo="Servem aos dois níveis"
@@ -726,7 +742,7 @@ export function Relatorios() {
           (leitura estratégica p/ ajustes nos cursos). A IA classifica a área. */}
       <div>
         <h3 className="mono-caps mb-3 text-[12px] text-ink-faint">
-          Demanda por área temática · vagas publicadas
+          Demanda por área temática · vagas validadas
         </h3>
         <BarraLista
           titulo="Áreas ambientais que estão contratando"
@@ -742,29 +758,29 @@ export function Relatorios() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <BarraLista titulo="Por tipo · vagas aprovadas" dados={r.porTipo} rotular={(k) => TIPO_LABEL[k] ?? k} />
+        <BarraLista titulo="Por tipo · vagas validadas" dados={r.porTipo} rotular={(k) => TIPO_LABEL[k] ?? k} />
         <BarraLista
-          titulo="Por região · vagas aprovadas"
+          titulo="Por região · vagas validadas"
           dados={r.porRegiao}
           rotular={(k) => REGIAO_LABEL[k] ?? k}
         />
         <BarraLista
-          titulo="Por setor · vagas aprovadas"
+          titulo="Por setor · vagas validadas"
           dados={r.porSetor}
           rotular={(k) => SETOR_LABEL[k] ?? k}
         />
         <BarraLista
-          titulo="Por nível · vagas aprovadas"
+          titulo="Por nível · vagas validadas"
           dados={r.porNivel}
           rotular={(k) => NIVEL_LABEL[k] ?? k}
         />
       </div>
 
-      {/* Principais empregadores — concentração de demanda; útil pra mapear
-          parcerias e empresas que já contratam do perfil do curso. */}
+      {/* Principais empregadores — concentração de demanda histórica; útil pra mapear
+          parcerias e empresas que já contrataram do perfil do curso. */}
       <div>
         <h3 className="mono-caps mb-3 text-[12px] text-ink-faint">
-          Principais empregadores · vagas aprovadas
+          Principais empregadores · vagas validadas
         </h3>
         <BarraLista
           titulo="Quem mais publicou vaga aderente ao perfil do curso"
@@ -776,24 +792,25 @@ export function Relatorios() {
         </p>
       </div>
 
-      {/* Evolução mensal — tendência/sazonalidade de aprovação, útil pra planejar
-          picos de curadoria e comparar semestres. */}
+      {/* Evolução mensal — tendência/sazonalidade, útil pra planejar picos de
+          curadoria e comparar semestres. Usa vagas validadas (não só ao vivo), então
+          meses antigos não encolhem conforme as vagas daquele mês forem expirando. */}
       <div>
         <h3 className="mono-caps mb-3 text-[12px] text-ink-faint">
-          Evolução mensal · vagas aprovadas
+          Evolução mensal · vagas validadas
         </h3>
         <BarraLista
-          titulo="Vagas publicadas por mês"
+          titulo="Vagas validadas por mês (histórico acumulado)"
           dados={r.evolucaoMensal}
           rotular={rotularMes}
         />
       </div>
 
-      {/* Saúde dos links — indicador operacional: quantas vagas aprovadas ainda
-          respondem, quantas nunca foram checadas pelo verificador automático. */}
+      {/* Saúde dos links — indicador operacional: só faz sentido pro que está NO AR
+          agora (não há por que checar link de vaga já expirada/suspensa). */}
       <div>
         <h3 className="mono-caps mb-3 text-[12px] text-ink-faint">
-          Saúde dos links · vagas aprovadas
+          Saúde dos links · vagas ao vivo agora ({r.aoVivo})
         </h3>
         <BarraLista
           titulo="Status do link de candidatura"
