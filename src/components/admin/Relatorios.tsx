@@ -105,22 +105,53 @@ function parseValorMonetario(s: string | null): number | null {
   return valores.reduce((a, b) => a + b, 0) / valores.length;
 }
 
+interface RemDetalhe {
+  empresa: string;
+  valor: number;
+  tipo: string;
+  curso: string[];
+  data: string | null;
+}
 interface RemStats {
   media: number | null;
+  mediana: number | null;
   min: number | null;
   max: number | null;
+  empresaMin: string | null;
+  empresaMax: string | null;
   n: number;
+  detalhes: RemDetalhe[];
 }
 function remuneracaoStats(lista: VagaRel[]): RemStats {
-  const valores = lista
-    .map((v) => parseValorMonetario(v.remuneracao_bolsa))
-    .filter((v): v is number => v != null);
-  if (valores.length === 0) return { media: null, min: null, max: null, n: 0 };
+  // ordenado do maior pro menor — dá o "ranking" completo, não só as pontas
+  const itens = lista
+    .map((v) => ({ v, valor: parseValorMonetario(v.remuneracao_bolsa) }))
+    .filter((x): x is { v: VagaRel; valor: number } => x.valor != null)
+    .sort((a, b) => b.valor - a.valor);
+  if (itens.length === 0) {
+    return { media: null, mediana: null, min: null, max: null, empresaMin: null, empresaMax: null, n: 0, detalhes: [] };
+  }
+  const valores = itens.map((i) => i.valor);
+  const asc = [...valores].sort((a, b) => a - b);
+  const meio = asc.length / 2;
+  const mediana = asc.length % 2 === 1 ? asc[Math.floor(meio)] : (asc[meio - 1] + asc[meio]) / 2;
+  const maior = itens[0];
+  const menor = itens[itens.length - 1];
   return {
     media: valores.reduce((a, b) => a + b, 0) / valores.length,
-    min: Math.min(...valores),
-    max: Math.max(...valores),
-    n: valores.length,
+    mediana,
+    min: menor.valor,
+    max: maior.valor,
+    empresaMin: menor.v.empresa_orgao?.trim() || "Não informado",
+    empresaMax: maior.v.empresa_orgao?.trim() || "Não informado",
+    n: itens.length,
+    detalhes: itens.map(({ v, valor }) => ({
+      empresa: v.empresa_orgao?.trim() || "Não informado",
+      valor,
+      tipo: v.tipo,
+      curso: v.curso_alvo ?? [],
+      data: v.data_publicacao,
+    })),
   };
 }
 const fmtReais = (v: number) =>
@@ -532,7 +563,7 @@ export function Relatorios() {
           </p>
         ) : (
           <>
-            <div className="mt-3 grid grid-cols-3 gap-3 text-center">
+            <div className="mt-3 grid grid-cols-2 gap-3 text-center sm:grid-cols-4">
               <div className="rounded-[12px] bg-surface-dim/50 p-3.5">
                 <p className="font-display text-[24px] font-bold leading-none text-ink">
                   {fmtReais(r.rem.media!)}
@@ -541,17 +572,34 @@ export function Relatorios() {
               </div>
               <div className="rounded-[12px] bg-surface-dim/50 p-3.5">
                 <p className="font-display text-[24px] font-bold leading-none text-ink">
+                  {fmtReais(r.rem.mediana!)}
+                </p>
+                <p className="mono-caps mt-1.5 text-[10.5px] text-ink-faint">Mediana</p>
+              </div>
+              <div className="rounded-[12px] bg-surface-dim/50 p-3.5">
+                <p className="font-display text-[24px] font-bold leading-none text-ink">
                   {fmtReais(r.rem.min!)}
                 </p>
                 <p className="mono-caps mt-1.5 text-[10.5px] text-ink-faint">Mínima observada</p>
+                <p className="mt-1 truncate text-[11.5px] font-semibold text-mata-deep" title={r.rem.empresaMin!}>
+                  {r.rem.empresaMin}
+                </p>
               </div>
               <div className="rounded-[12px] bg-surface-dim/50 p-3.5">
                 <p className="font-display text-[24px] font-bold leading-none text-ink">
                   {fmtReais(r.rem.max!)}
                 </p>
                 <p className="mono-caps mt-1.5 text-[10.5px] text-ink-faint">Máxima observada</p>
+                <p className="mt-1 truncate text-[11.5px] font-semibold text-mata-deep" title={r.rem.empresaMax!}>
+                  {r.rem.empresaMax}
+                </p>
               </div>
             </div>
+            <p className="mt-2 text-[11.5px] text-ink-faint">
+              Mediana resiste melhor a valores fora da curva do que a média — com
+              poucas vagas informando remuneração, prefira a mediana pra "valor típico".
+            </p>
+
             {r.remPorTipo.length > 0 && (
               <div className="mt-4 overflow-x-auto rounded-[10px] border border-line">
                 <table className="w-full border-collapse text-[13px]">
@@ -576,6 +624,44 @@ export function Relatorios() {
                 </table>
               </div>
             )}
+
+            {/* Ranking completo — não só as pontas: dá pra coordenação ver toda a
+                distribuição (quem paga o quê) e cruzar com curso/tipo/data. */}
+            <p className="mono-caps mt-5 mb-2 text-[11px] text-ink-faint">
+              Detalhamento · todas as vagas com remuneração informada
+            </p>
+            <div className="overflow-x-auto rounded-[10px] border border-line">
+              <table className="w-full border-collapse text-[13px]">
+                <thead className="bg-surface-dim/60 text-left">
+                  <tr className="mono-caps text-[10.5px] text-ink-soft">
+                    <th className="px-3 py-2 font-semibold">Empregador</th>
+                    <th className="px-3 py-2 font-semibold">Tipo</th>
+                    <th className="px-3 py-2 font-semibold">Curso(s)</th>
+                    <th className="px-3 py-2 font-semibold">Publicada em</th>
+                    <th className="px-3 py-2 text-right font-semibold">Valor</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {r.rem.detalhes.map((d, i) => (
+                    <tr key={i} className="border-t border-line">
+                      <td className="px-3 py-2 text-ink">{d.empresa}</td>
+                      <td className="px-3 py-2 text-ink-soft">{TIPO_LABEL[d.tipo] ?? d.tipo}</td>
+                      <td className="px-3 py-2 text-ink-soft">
+                        {d.curso.length
+                          ? d.curso.map((c) => cursoLabel[c] ?? c).join(", ")
+                          : "—"}
+                      </td>
+                      <td className="px-3 py-2 text-ink-soft">
+                        {d.data ? new Date(d.data).toLocaleDateString("pt-BR") : "—"}
+                      </td>
+                      <td className="px-3 py-2 text-right font-bold text-mata-deep">
+                        {fmtReais(d.valor)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </>
         )}
       </div>
