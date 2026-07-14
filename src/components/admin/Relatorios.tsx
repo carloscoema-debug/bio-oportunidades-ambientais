@@ -172,6 +172,40 @@ function rotularMes(chave: string): string {
   return `${MESES_ABREV[Number(mes) - 1]}/${ano}`;
 }
 
+function CardRem({ titulo, rem, destaque }: { titulo: string; rem: RemStats; destaque?: boolean }) {
+  return (
+    <div
+      className={`rounded-[14px] border p-4 ${
+        destaque ? "border-mata-line bg-mata-tint" : "border-line bg-surface"
+      }`}
+    >
+      <p className={`mono-caps text-[11px] ${destaque ? "text-mata-deep" : "text-ink-faint"}`}>{titulo}</p>
+      {rem.n === 0 ? (
+        <p className="mt-2 text-[13px] text-ink-soft">Nenhuma vaga informou valor.</p>
+      ) : (
+        <>
+          <p
+            className={`mt-1.5 font-display text-[22px] font-bold leading-none ${
+              destaque ? "text-mata-deep" : "text-ink"
+            }`}
+          >
+            {fmtReais(rem.media!)}
+          </p>
+          <p className="mono-caps mt-1 text-[10px] text-ink-faint">média · n={rem.n}</p>
+          <div className="mt-2.5 flex justify-between gap-2 text-[12px]">
+            <span className="text-ink-soft">
+              Mín: <strong className="text-ink">{fmtReais(rem.min!)}</strong>
+            </span>
+            <span className="text-ink-soft">
+              Máx: <strong className="text-ink">{fmtReais(rem.max!)}</strong>
+            </span>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function KPI({ rotulo, valor, sub }: { rotulo: string; valor: string; sub?: string }) {
   return (
     <div className="rounded-[16px] border border-line bg-surface p-5">
@@ -404,6 +438,32 @@ export function Relatorios() {
       ...remuneracaoStats(validas.filter((v) => v.tipo === t)),
     })).filter((e) => e.n > 0);
 
+    // Comparativo salarial TÉCNICO × SUPERIOR — a mesma vaga pode contar nos dois
+    // grupos quando o curso_alvo cobre ambos (ex.: estágio aberto pra técnico E
+    // superior); é exatamente por isso que existe o grupo "serve os dois níveis",
+    // pra deixar essa sobreposição explícita em vez de escondida.
+    const remTecnico = remuneracaoStats(validas.filter((v) => (v.curso_alvo ?? []).some((c) => CURSOS_TECNICO.includes(c))));
+    const remSuperior = remuneracaoStats(validas.filter((v) => (v.curso_alvo ?? []).some((c) => CURSOS_SUPERIOR.includes(c))));
+    const remAmbosNiveis = remuneracaoStats(
+      validas.filter(
+        (v) =>
+          (v.curso_alvo ?? []).some((c) => CURSOS_TECNICO.includes(c)) &&
+          (v.curso_alvo ?? []).some((c) => CURSOS_SUPERIOR.includes(c)),
+      ),
+    );
+
+    // Dentro do superior: Gestão Ambiental × Engenharia Sanitária e Ambiental —
+    // com destaque pra quando a MESMA vaga/salário atende os dois cursos.
+    const remGestao = remuneracaoStats(validas.filter((v) => (v.curso_alvo ?? []).includes("gestao_ambiental")));
+    const remEngenharia = remuneracaoStats(validas.filter((v) => (v.curso_alvo ?? []).includes("engenharia_sanitaria_ambiental")));
+    const remAmbosSuperior = remuneracaoStats(
+      validas.filter(
+        (v) =>
+          (v.curso_alvo ?? []).includes("gestao_ambiental") &&
+          (v.curso_alvo ?? []).includes("engenharia_sanitaria_ambiental"),
+      ),
+    );
+
     // Principais empregadores (validadas) — concentração de demanda histórica;
     // exclui identificações genéricas que não representam um empregador real.
     const SEM_NOME = new Set(["não informado", "empresa confidencial", "confidencial", "—", ""]);
@@ -448,6 +508,12 @@ export function Relatorios() {
       vagasAmbos,
       rem,
       remPorTipo,
+      remTecnico,
+      remSuperior,
+      remAmbosNiveis,
+      remGestao,
+      remEngenharia,
+      remAmbosSuperior,
       porEmpregador,
       evolucaoMensal,
       porStatusLink,
@@ -624,6 +690,34 @@ export function Relatorios() {
                 </table>
               </div>
             )}
+
+            {/* Comparativo TÉCNICO × SUPERIOR — visão estratégica pedida pela
+                coordenação: quanto paga cada nível, e quando a mesma vaga/salário
+                atende os dois ao mesmo tempo (fica destacado em verde). */}
+            <p className="mono-caps mt-6 mb-2 text-[11px] text-ink-faint">
+              Comparativo salarial · técnico × superior
+            </p>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <CardRem titulo="Nível técnico" rem={r.remTecnico} />
+              <CardRem titulo="Nível superior" rem={r.remSuperior} />
+              {r.remAmbosNiveis.n > 0 && (
+                <CardRem titulo="Mesma vaga serve os dois níveis" rem={r.remAmbosNiveis} destaque />
+              )}
+            </div>
+
+            {/* Dentro do superior: os dois cursos citados pela coordenação — Gestão
+                Ambiental e Engenharia Sanitária e Ambiental — com destaque pra
+                quando a MESMA vaga/salário atende os dois cursos. */}
+            <p className="mono-caps mt-5 mb-2 text-[11px] text-ink-faint">
+              Dentro do superior · Gestão Ambiental × Engenharia Sanitária e Ambiental
+            </p>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <CardRem titulo="Gestão Ambiental" rem={r.remGestao} />
+              <CardRem titulo="Engenharia Sanitária e Ambiental" rem={r.remEngenharia} />
+              {r.remAmbosSuperior.n > 0 && (
+                <CardRem titulo="Mesma vaga atende os dois cursos" rem={r.remAmbosSuperior} destaque />
+              )}
+            </div>
 
             {/* Ranking completo — não só as pontas: dá pra coordenação ver toda a
                 distribuição (quem paga o quê) e cruzar com curso/tipo/data. */}
