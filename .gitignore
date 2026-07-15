@@ -20,6 +20,13 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Variáveis de ambiente locais — nunca versionar (mesmo que hoje só tenha
+# chaves públicas, evita que um segredo real seja commitado no futuro).
+# Use .env.example como referência do que precisa preencher.
+.env
+.env.*
+!.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
