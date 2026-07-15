@@ -15,13 +15,7 @@
 // Body: { imagem_base64: string, mime_type: string }
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-const json = (b: unknown, s = 200) => Response.json(b, { status: s, headers: CORS });
+import { corsHeaders } from "../_shared/cors.ts";
 
 const norm = (s: string) =>
   s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
@@ -127,6 +121,8 @@ function extensaoDe(mimeType: string): string {
 }
 
 Deno.serve(async (req) => {
+  const CORS = corsHeaders(req);
+  const json = (b: unknown, s = 200) => Response.json(b, { status: s, headers: CORS });
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ ok: false, erro: "use POST" }, 405);
 

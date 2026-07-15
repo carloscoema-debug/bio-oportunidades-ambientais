@@ -7,6 +7,7 @@
 // (é um coletor interno; protegido por ser acionado só pelo cron/coordenação)
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders } from "../_shared/cors.ts";
 
 const PALAVRAS_CHAVE = [
   "estagio", "estágio", "selecao", "seleção", "edital", "processo seletivo",
@@ -118,21 +119,12 @@ async function sha256(s: string): Promise<string> {
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-// Permite acionar do navegador (botão "Coletar agora" no painel).
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-};
-
-// TODA resposta precisa dos headers de CORS — senão o navegador bloqueia a
-// resposta (mesmo 200) e o functions.invoke do painel acusa erro.
-function json(body: unknown, status = 200) {
-  return Response.json(body, { status, headers: CORS });
-}
-
 Deno.serve(async (req) => {
+  // Permite acionar do navegador (botão "Coletar agora" no painel).
+  const CORS = corsHeaders(req);
+  // TODA resposta precisa dos headers de CORS — senão o navegador bloqueia a
+  // resposta (mesmo 200) e o functions.invoke do painel acusa erro.
+  const json = (body: unknown, status = 200) => Response.json(body, { status, headers: CORS });
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
 
   const supabase = createClient(

@@ -7,13 +7,7 @@
 // Auth: x-bio-secret (cron) OU bio_is_admin (botão do painel). verify_jwt=false.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
-};
-const json = (b: unknown, s = 200) => Response.json(b, { status: s, headers: CORS });
+import { corsHeaders } from "../_shared/cors.ts";
 
 const norm = (s: string) =>
   s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
@@ -271,6 +265,8 @@ async function chamarGroq(cfg: (k: string) => Promise<string | null>, prompt: st
 }
 
 Deno.serve(async (req) => {
+  const CORS = corsHeaders(req);
+  const json = (b: unknown, s = 200) => Response.json(b, { status: s, headers: CORS });
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
 
   const svc = createClient(

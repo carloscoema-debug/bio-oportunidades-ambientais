@@ -5,13 +5,7 @@
 // por IP (3/h). Chamado do navegador (verify_jwt=false).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-const json = (b: unknown, s = 200) => Response.json(b, { status: s, headers: CORS });
+import { corsHeaders } from "../_shared/cors.ts";
 
 const TIPOS = ["estagio", "emprego", "processo_seletivo", "bolsa"];
 const REGIOES = ["rmf", "interior_ceara", "fora_ceara", "indefinido"];
@@ -26,6 +20,8 @@ async function sha256(s: string): Promise<string> {
 }
 
 Deno.serve(async (req) => {
+  const CORS = corsHeaders(req);
+  const json = (b: unknown, s = 200) => Response.json(b, { status: s, headers: CORS });
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ ok: false, erro: "use POST" }, 405);
 

@@ -8,13 +8,8 @@
 //   teste_para → envia só um e-mail de teste para esse endereço (não registra, não usa a lista).
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders } from "../_shared/cors.ts";
 
-const CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-const json = (b: unknown, s = 200) => Response.json(b, { status: s, headers: CORS });
 const esc = (s: string) =>
   String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
@@ -69,6 +64,8 @@ function montarHtml(vagas: Vaga[], portalBase: string, optoutUrl: string): strin
 }
 
 Deno.serve(async (req) => {
+  const CORS = corsHeaders(req);
+  const json = (b: unknown, s = 200) => Response.json(b, { status: s, headers: CORS });
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ ok: false, erro: "use POST" }, 405);
 
