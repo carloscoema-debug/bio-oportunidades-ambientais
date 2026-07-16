@@ -47,6 +47,11 @@ ADERÊNCIA — checar ÁREA e FORMAÇÃO exigida (não o nível):
 - "revisar" só quando houver dúvida REAL (dados insuficientes, área/formação ambígua). Prefira "revisar" a "descartar" quando faltar informação e a vaga PUDER ser ambiental.
 - CARGOS COMERCIAIS/VENDAS EM EMPRESA DO SETOR AMBIENTAL (ex.: "Consultor(a) Comercial Ambiental", "Vendas Técnicas", "Executivo de Contas" em consultoria/gestão de resíduos/saneamento/licenciamento): SÃO ADERENTES a Gestão Ambiental/Engenharia Ambiental quando o que se vende é um SERVIÇO OU SOLUÇÃO AMBIENTAL (estudos/licenciamento, gestão de resíduos, tratamento de efluentes, consultoria ambiental) — nesses casos a formação ambiental é o diferencial técnico do vendedor, não um detalhe irrelevante. NÃO aprove vendas genéricas (cursos, seguros, imóveis, planos) só porque a razão social da empresa contém "ambiental" — o que importa é O QUE está sendo vendido.
 
+ARMADILHAS DE ÁREA ADJACENTE (erros recorrentes — o cargo apenas TANGENCIA meio ambiente, mas a FORMAÇÃO real exigida é de OUTRA área. Nesses casos prefira "descartar"; use "revisar" só se o texto citar escopo ambiental EXPLÍCITO. O score alto NÃO é motivo para aprovar aqui):
+- SEGURANÇA DO TRABALHO (Técnico/Engenheiro de Segurança do Trabalho, SST, CIPA, NR): é SEGURANÇA ocupacional, NÃO meio ambiente. Só é aderente quando o cargo é explicitamente SMS/HSE/QSMS/SGI COM meio ambiente no escopo. "Técnico de Segurança do Trabalho" puro => "descartar".
+- ENERGIA SOLAR / FOTOVOLTAICA / eletrotécnica (Técnico Solar, instalador, montador FV, eletricista): exige formação ELÉTRICA/eletrotécnica, não ambiental. Energia renovável só é aderente quando o cargo é de GESTÃO/LICENCIAMENTO/ESTUDO ambiental do empreendimento — nunca instalação/manutenção elétrica. Na dúvida => "descartar".
+- QUALIDADE PURA (Controle de Qualidade, CQ, analista/coordenador de qualidade) SEM meio ambiente explícito: "qualidade" sozinha não é ambiental. Só aderente se o texto citar gestão ambiental, SGI (qualidade+meio ambiente+segurança) ou meio ambiente no escopo. Caso contrário => "descartar".
+
 PÁGINA DE BUSCA/LISTAGEM (não é vaga individual): se o campo "pagina" for claramente uma página de RESULTADOS DE BUSCA (lista vários cargos/empresas diferentes, tem texto como "vagas encontradas", "resultados", paginação, ou não descreve UM cargo específico), a vaga NÃO tem uma página real — trate como se "pagina" não existisse e julgue só por título/descrição; se título/descrição também forem genéricos (ex.: mencionam "empresas destacadas", "N vagas para você", sem citar UM cargo/empresa específicos), recomende "descartar" com justificativa "Página de busca — não é vaga específica."
 
 DISPONIBILIDADE (checar SEMPRE que houver "pagina" ou descrição): se o texto indicar que a vaga NÃO aceita mais candidaturas / está encerrada / expirada — ex.: "não aceita mais candidaturas", "no longer accepting applications", "vaga encerrada", "candidaturas encerradas", "processo encerrado", "vaga expirada", "inscrições encerradas", "esta vaga não está mais disponível" — recomende "descartar" com justificativa começando por "Encerrada: " (ex.: "Encerrada: não aceita mais candidaturas"), MESMO que seja aderente ao curso. Uma vaga fechada não serve ao estudante. (Se não houver "pagina" nem sinal de encerramento no texto, não presuma que está aberta nem fechada — siga a aderência normal.)
@@ -319,19 +324,64 @@ Deno.serve(async (req) => {
   const TIPO_ROTULO: Record<string, string> = {
     estagio: "estágio", emprego: "emprego", processo_seletivo: "seleção pública (órgão público)", bolsa: "bolsa",
   };
-  const [aprovadas, rejeitadas] = await Promise.all([
-    svc.from("vagas").select("titulo, empresa_orgao, tipo")
+  const CURSO_ROTULO: Record<string, string> = {
+    gestao_ambiental: "Gestão Amb.", engenharia_sanitaria_ambiental: "Eng. Sanit./Amb.",
+    saneamento_ambiental: "Saneamento", tecnico_meio_ambiente: "Téc. Meio Amb.", tecnico_saneamento: "Téc. Saneamento",
+  };
+  const MOTIVO_ROTULO: Record<string, string> = {
+    fora_do_perfil: "fora do perfil", fonte_duvidosa: "fonte duvidosa", suspeita_fraude: "suspeita de fraude",
+    duplicata: "duplicata", prazo_expirado: "prazo expirado", incompativel_tecnico: "incompatível c/ técnico", outros: "outros",
+  };
+  const areaLabelPorId = new Map<string, string>((areas ?? []).map((a) => [a.id, a.label_display]));
+  const nivelRotulo = (n: string | null) =>
+    n === "tecnico" ? "técnico" : n === "superior" ? "superior" : n === "ambos" ? "téc+sup" : (n ?? "?");
+  const cursosRotulo = (arr: string[] | null) =>
+    Array.isArray(arr) && arr.length ? arr.map((x) => CURSO_ROTULO[x] ?? x).join("/") : "—";
+
+  // APRENDIZADO CONTÍNUO (few-shot) enriquecido:
+  // - APROVADAS levam nível/cursos/área além do tipo → ensinam a FRONTEIRA fina do que
+  //   a coordenação aceita (o título sozinho não separa "meio ambiente" de área adjacente).
+  // - REJEITADAS: além das mais recentes, injetamos uma cota de rejeições com motivo
+  //   ESPECÍFICO (duplicata, prazo, incompatível técnico, fraude) — senão o "fora do perfil"
+  //   (90% dos casos) afoga as lições distintas e a IA não aprende esses cortes.
+  const [aprovadas, rejRecentes, rejEspecificas] = await Promise.all([
+    svc.from("vagas").select("titulo, empresa_orgao, tipo, nivel, curso_alvo, area_tematica_id")
       .eq("status", "aprovada").order("data_captura", { ascending: false }).limit(18),
-    svc.from("vagas").select("titulo, motivo_rejeicao_categoria, motivo_rejeicao_detalhe")
-      .eq("status", "rejeitada").order("data_captura", { ascending: false }).limit(18),
+    svc.from("vagas").select("titulo, nivel, motivo_rejeicao_categoria, motivo_rejeicao_detalhe")
+      .eq("status", "rejeitada").order("data_captura", { ascending: false }).limit(20),
+    svc.from("vagas").select("titulo, nivel, motivo_rejeicao_categoria, motivo_rejeicao_detalhe")
+      .eq("status", "rejeitada").not("motivo_rejeicao_categoria", "in", "(fora_do_perfil,outros)")
+      .order("data_captura", { ascending: false }).limit(8),
   ]);
   const cortar = (s: string | null) => (s ?? "").slice(0, 90);
-  const fewshot = (aprovadas.data?.length || rejeitadas.data?.length)
+
+  const aprovadasTxt = (aprovadas.data ?? []).map((a) => {
+    const area = a.area_tematica_id ? (areaLabelPorId.get(a.area_tematica_id) ?? "") : "";
+    return `- ${cortar(a.titulo)}${a.empresa_orgao ? ` (${cortar(a.empresa_orgao)})` : ""} → ${TIPO_ROTULO[a.tipo] ?? a.tipo}; nível: ${nivelRotulo(a.nivel)}; cursos: ${cursosRotulo(a.curso_alvo)}${area ? `; área: ${area}` : ""}`;
+  }).join("\n");
+
+  // funde específicas + recentes, dedup por título, limita a 24 exemplos
+  const vistosRej = new Set<string>();
+  const rejMerged = [...(rejEspecificas.data ?? []), ...(rejRecentes.data ?? [])]
+    .filter((r) => {
+      const k = (r.titulo ?? "").toLowerCase().trim();
+      if (!k || vistosRej.has(k)) return false;
+      vistosRej.add(k);
+      return true;
+    }).slice(0, 24);
+  const rejeitadasTxt = rejMerged.map((r) => {
+    const cat = MOTIVO_ROTULO[r.motivo_rejeicao_categoria ?? ""] ?? r.motivo_rejeicao_categoria ?? "?";
+    const det = r.motivo_rejeicao_detalhe ? ` (${cortar(r.motivo_rejeicao_detalhe)})` : "";
+    const niv = r.motivo_rejeicao_categoria === "incompativel_tecnico" && r.nivel ? ` [nível exigido: ${nivelRotulo(r.nivel)}]` : "";
+    return `- ${cortar(r.titulo)} — ${cat}${det}${niv}`;
+  }).join("\n");
+
+  const fewshot = (aprovadas.data?.length || rejMerged.length)
     ? `\n\nDECISÕES RECENTES DA COORDENAÇÃO (aprenda com o gosto real dela; case novas vagas por analogia):\n` +
-      `APROVADAS (aceitas — tipo já revisado e corrigido manualmente quando preciso; use como referência de público x privado):\n` +
-      (aprovadas.data ?? []).map((a) => `- ${cortar(a.titulo)}${a.empresa_orgao ? ` (${cortar(a.empresa_orgao)})` : ""} → tipo: ${TIPO_ROTULO[a.tipo] ?? a.tipo}`).join("\n") +
-      `\nREJEITADAS (recusadas — NÃO recomende aprovar coisas parecidas):\n` +
-      (rejeitadas.data ?? []).map((r) => `- ${cortar(r.titulo)} — motivo: ${r.motivo_rejeicao_categoria ?? "?"}${r.motivo_rejeicao_detalhe ? ` (${cortar(r.motivo_rejeicao_detalhe)})` : ""}`).join("\n")
+      `APROVADAS (aceitas — nível/cursos/área mostram a FRONTEIRA do que entra; tipo já revisado manualmente):\n` +
+      aprovadasTxt +
+      `\nREJEITADAS (recusadas — NÃO recomende aprovar coisas parecidas; o motivo diz por quê e ensina o corte):\n` +
+      rejeitadasTxt
     : "";
 
   const jinaKey = await cfg("jina_api_key"); // opcional (limites maiores); funciona sem
@@ -371,8 +421,14 @@ Deno.serve(async (req) => {
       const c = res[j];
       if (!c) { erros++; continue; }
 
-      const rec = ["aprovar", "revisar", "descartar"].includes(c.recomendacao ?? "")
+      const scoreNum = typeof c.score === "number" ? Math.round(c.score) : null;
+      let rec = ["aprovar", "revisar", "descartar"].includes(c.recomendacao ?? "")
         ? c.recomendacao! : "revisar";
+      // PISO DE CONFIANÇA: "aprovar" com score < 90 é rebaixado a "revisar". O score
+      // historicamente NÃO discrimina no topo (falsos positivos tinham score 80-100,
+      // igual aos acertos), então mandamos as aprovações de menor confiança ao olhar
+      // humano — corta reversão de aprovação sem custo (a curadoria vê tudo mesmo).
+      if (rec === "aprovar" && scoreNum !== null && scoreNum < 90) rec = "revisar";
       resumo[rec] = (resumo[rec] ?? 0) + 1;
 
       // UF só se for realmente sigla de 2 letras (a IA às vezes devolve "Não informado")
@@ -381,7 +437,7 @@ Deno.serve(async (req) => {
       const patch: Record<string, unknown> = {
         uf: ufOk,
         ai_recomendacao: rec,
-        ai_score: typeof c.score === "number" ? Math.round(c.score) : null,
+        ai_score: scoreNum,
         ai_justificativa: (c.justificativa ?? "").slice(0, 400) || null,
         ai_modalidade: c.modalidade ?? null,
         ai_classificado_em: new Date().toISOString(),
