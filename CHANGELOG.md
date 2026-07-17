@@ -8,6 +8,32 @@ não aparecem aqui — só mudanças com intenção registrada.
 Ao abrir um PR ou fazer push direto, adicione uma linha nesta seção
 correspondente à data (crie uma nova se for um dia novo).
 
+## 2026-07-17 — Aderência: IA mais precisa e selos honestos
+
+- **IA de curadoria mais precisa na indicação** (`classificar-vagas` v37). A
+  medição de 247 classificações mostrou 93% de concordância com a curadoria,
+  mas só **57% de precisão no "aprovar"** (vs. 99,5% no "descartar") — e o
+  `ai_score` não discriminava (falsos positivos tinham score 80-100, igual aos
+  acertos). Quatro correções: few-shot das aprovadas agora leva nível/cursos/
+  área (ensina a fronteira do que entra); few-shot das rejeitadas injeta cota
+  de motivos específicos (o "fora do perfil", 90% dos casos, afogava as lições);
+  regras explícitas para 3 armadilhas de área adjacente (Segurança do Trabalho,
+  energia solar/eletrotécnica, qualidade pura); e piso de confiança que rebaixa
+  "aprovar" com score < 90 para "revisar".
+- **Selo da fila parava de mentir "Alta aderência"**. Apesar do nome,
+  `score_aderencia` não mede aderência: `bio_score_aderencia` soma nível (30) +
+  região (20) + confiabilidade da fonte (15) + completude (15) + ausência de
+  flags (20), e **nunca olha o assunto da vaga**. Um aprendiz de telecom em
+  Fortaleza somava 78 e ganhava selo verde ao lado de "IA: descartar · 0". O
+  selo agora nomeia só o que mede — pré-triagem de cadastro, em cinza neutro.
+- **Selo do site público passa a sair do veredito da IA** (view
+  `vagas_publicas`), não do mesmo score cego. "Recomendado" só quando a IA
+  aprovou com score >= 90; "Relevante · área ambiental" é o padrão seguro para
+  o resto — incluindo vagas sem IA e as que a coordenação aprovou contrariando
+  a IA (o selo nunca contradiz a curadoria humana). "Área correlata" deixa de
+  ser emitido: toda vaga aprovada tem ao menos um curso_alvo, e o rótulo já era
+  inalcançável na prática.
+
 ## 2026-07-15 — Auditoria de segurança
 
 - **Corrige 4 vulnerabilidades de dependências** (`bun audit`): brace-expansion,
