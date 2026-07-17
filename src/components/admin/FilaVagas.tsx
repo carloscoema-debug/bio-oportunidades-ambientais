@@ -141,12 +141,25 @@ const estaPronta = (v: VagaAdmin) =>
   v.ai_recomendacao === "aprovar" && flagsAtivas(v).length === 0 && !municipioIndefinido(v);
 const precisaAtencao = (v: VagaAdmin) => !ehDescartar(v) && !estaPronta(v);
 
-function seloAderencia(score: number) {
+// CUIDADO com o nome da coluna: `score_aderencia` NÃO mede aderência aos cursos.
+// A função bio_score_aderencia (Postgres) soma nível (30) + região (20) +
+// confiabilidade da fonte (15) + completude da ficha (15) + ausência de flags (20)
+// — em nenhum momento olha o ASSUNTO da vaga. Por isso um "Aprendiz de Serviços de
+// Campo" numa telecom de Fortaleza somava 30+20+8+20 = 78 e recebia um selo verde
+// de "Alta aderência" bem ao lado de "IA: descartar · 0" — a contradição que a
+// coordenação flagrou. Quem lê a área é a IA (ai_recomendacao/ai_score).
+// Este selo agora nomeia só o que o número de fato mede — uma PRÉ-TRIAGEM mecânica
+// (a vaga está bem cadastrada, é do CE e veio de fonte confiável?) — em cinza
+// neutro, para nunca mais competir com o veredito de aderência da IA.
+const TITULO_PRE_TRIAGEM =
+  "Pré-triagem mecânica: nível, região, confiabilidade da fonte e completude do cadastro. " +
+  "NÃO avalia se a vaga é da área ambiental — quem faz isso é a IA (selo ao lado).";
+function seloPreTriagem(score: number) {
   if (score >= 70)
-    return { label: "Alta aderência", cls: "bg-mata-tint text-mata-deep border-mata-line" };
+    return { label: "Cadastro completo", cls: "bg-surface-dim text-ink-soft border-line-strong" };
   if (score >= 40)
-    return { label: "Relevante", cls: "bg-surface-dim text-ink-soft border-line-strong" };
-  return { label: "Baixa aderência", cls: "bg-ceu-tint text-ceu border-[#C4D4E2]" };
+    return { label: "Cadastro parcial", cls: "bg-surface-dim text-ink-soft border-line-strong" };
+  return { label: "Cadastro incompleto", cls: "bg-ceu-tint text-ceu border-[#C4D4E2]" };
 }
 function badgeUrgencia(u: number) {
   if (u >= 90) return { label: "Urgente", cls: "bg-barro text-white border-barro" };
@@ -155,9 +168,14 @@ function badgeUrgencia(u: number) {
   return null;
 }
 
-function Pill({ children, cls }: { children: React.ReactNode; cls: string }) {
+function Pill({
+  children,
+  cls,
+  title,
+}: { children: React.ReactNode; cls: string; title?: string }) {
   return (
     <span
+      title={title}
       className={`mono-caps inline-flex items-center rounded-full border px-2 py-0.5 text-[10.5px] ${cls}`}
     >
       {children}
@@ -494,7 +512,7 @@ export function FilaVagas() {
           </p>
         )}
         {visiveis.map((v) => {
-          const selo = seloAderencia(v.score_aderencia);
+          const selo = seloPreTriagem(v.score_aderencia);
           const urg = badgeUrgencia(v.score_urgencia);
           const flags = flagsAtivas(v);
           const detalhes = [
@@ -531,7 +549,9 @@ export function FilaVagas() {
                         {typeof v.ai_score === "number" ? ` · ${v.ai_score}` : ""}
                       </Pill>
                     )}
-                    <Pill cls={selo.cls}>{selo.label} · {v.score_aderencia}</Pill>
+                    <Pill cls={selo.cls} title={TITULO_PRE_TRIAGEM}>
+                      {selo.label} · {v.score_aderencia}
+                    </Pill>
                     {urg && <Pill cls={urg.cls}>{urg.label}</Pill>}
                     {municipioIndefinido(v) && (
                       <Pill cls="bg-sol-tint text-sol border-[#EBD5A8]">
