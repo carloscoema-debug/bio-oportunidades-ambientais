@@ -8,6 +8,9 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
+// Cascata de leitura da página compartilhada com verificar-links — as duas
+// precisam ler o corpo da vaga, e uma cópia em cada uma divergiria com o tempo.
+import { buscarPagina, type FcBudget } from "../_shared/pagina.ts";
 
 const norm = (s: string) =>
   s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
@@ -17,13 +20,6 @@ const CURSOS_BIO = new Set([
   "gestao_ambiental", "engenharia_sanitaria_ambiental", "saneamento_ambiental",
   "tecnico_meio_ambiente", "tecnico_saneamento",
 ]);
-
-// Interstício de anti-bot/CAPTCHA (Cloudflare etc.). Se a "página" for isso, NÃO
-// serve como conteúdo da vaga — devolvemos null p/ a IA não ler o bloqueio como vaga.
-// O corte por tamanho (<1500) evita falso-positivo em página real que cite "cloudflare".
-const RE_BLOQUEIO =
-  /(additional verification required|verify you are human|are you a robot|just a moment|enable javascript and cookies|checking your browser|attention required|ray id|captcha|acesso negado|access denied)/i;
-const ehBloqueio = (t: string) => t.length < 1500 && RE_BLOQUEIO.test(t);
 
 const PROMPT_REGRAS = `Você é o assistente de curadoria do BIO, portal do IFCE Campus Fortaleza. O BIO atende estudantes e egressos de VÁRIOS cursos do IFCE, de nível técnico E superior:
 - SUPERIOR: Gestão Ambiental, Engenharia Sanitária e Ambiental (mesma coisa que Engenharia Ambiental e Sanitária), Saneamento Ambiental.
@@ -104,131 +100,6 @@ type Classif = {
   area_tematica?: string | null;
 };
 
-// Busca o texto da página da vaga (o corpo tem a verdade: local, formação, salário).
-// Estratégia: (1) fetch DIRETO, rápido, cobre a maioria dos sites; (2) se vier
-// bloqueado/vazio (Indeed/LinkedIn/Catho respondem 403 Cloudflare), fallback pelo
-// proxy de leitura r.jina.ai, que renderiza a página e devolve texto já limpo.
-// Best-effort: se ainda assim falhar, a IA usa só o título + descrição do e-mail.
-async function fetchDireto(url: string): Promise<string | null> {
-  try {
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 7000);
-    const resp = await fetch(url, {
-      redirect: "follow",
-      signal: ctrl.signal,
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml",
-        "Accept-Language": "pt-BR,pt;q=0.9",
-      },
-    });
-    clearTimeout(t);
-    if (!resp.ok) return null;
-    const ct = (resp.headers.get("content-type") ?? "").toLowerCase();
-    if (!ct.includes("text/html") && !ct.includes("text/plain")) return null;
-    const html = await resp.text();
-    const texto = html
-      .replace(/<script[\s\S]*?<\/script>/gi, " ")
-      .replace(/<style[\s\S]*?<\/style>/gi, " ")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&")
-      .replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-      .replace(/\s+/g, " ")
-      .trim();
-    if (ehBloqueio(texto)) return null;
-    return texto.length > 80 ? texto.slice(0, 3500) : null;
-  } catch {
-    return null;
-  }
-}
-
-// Leitura via r.jina.ai — proxy gratuito que acessa a URL, renderiza e devolve o
-// texto principal (contorna anti-bot simples do Indeed/LinkedIn/Catho). Se houver
-// app_config.jina_api_key, envia como Bearer (limites de taxa maiores).
-async function fetchJina(url: string, key: string | null): Promise<string | null> {
-  try {
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 12000);
-    const headers: Record<string, string> = {
-      "Accept": "text/plain",
-      "X-Return-Format": "text",
-    };
-    if (key) headers["Authorization"] = `Bearer ${key}`;
-    const resp = await fetch(`https://r.jina.ai/${url}`, { signal: ctrl.signal, headers });
-    clearTimeout(t);
-    if (!resp.ok) return null;
-    const texto = (await resp.text()).replace(/\s+/g, " ").trim();
-    if (ehBloqueio(texto)) return null;
-    return texto.length > 120 ? texto.slice(0, 3500) : null;
-  } catch {
-    return null;
-  }
-}
-
-// Firecrawl — renderiza com browser real + proxy stealth, vence anti-bot que o
-// fetch direto e o Jina não vencem (Indeed/LinkedIn/Cloudflare). Custa CRÉDITO
-// (pago), então é o ÚLTIMO recurso e limitado por um orçamento por execução.
-// proxy:"auto" tenta básico e só usa stealth (mais caro) se precisar.
-async function fetchFirecrawl(url: string, key: string): Promise<string | null> {
-  try {
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 25000); // render com browser pode demorar
-    const resp = await fetch("https://api.firecrawl.dev/v2/scrape", {
-      method: "POST",
-      signal: ctrl.signal,
-      headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        url,
-        formats: ["markdown"],
-        onlyMainContent: true,
-        proxy: "auto",
-        timeout: 20000,
-      }),
-    });
-    clearTimeout(t);
-    if (!resp.ok) return null;
-    const d = await resp.json();
-    const texto = String(d?.data?.markdown ?? "").replace(/\s+/g, " ").trim();
-    if (ehBloqueio(texto)) return null;
-    return texto.length > 120 ? texto.slice(0, 3500) : null;
-  } catch {
-    return null;
-  }
-}
-
-type FcBudget = { key: string | null; usados: number; max: number };
-
-// LinkedIn: fetch direto (datacenter) e Firecrawl NÃO funcionam (bloqueio/recusa).
-// Mas o endpoint PÚBLICO "guest" (/jobs-guest/jobs/api/jobPosting/<id>, SEM login)
-// traz título/empresa/local/status; o Jina (infra própria) consegue lê-lo.
-function linkedinGuest(url: string): string | null {
-  const m = url.match(/linkedin\.com\/(?:comm\/)?jobs\/view\/(\d+)/i);
-  return m ? `https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/${m[1]}` : null;
-}
-
-// Cascata: (1) fetch direto → (2) Jina (grátis) → (3) Firecrawl (pago, só quando os
-// dois falham E ainda há orçamento). O orçamento limita gasto de crédito e tempo.
-async function buscarPagina(
-  url: string,
-  jinaKey: string | null,
-  fc: FcBudget,
-): Promise<string | null> {
-  // LinkedIn é ilegível por fetch/Firecrawl → usa o endpoint guest público via Jina.
-  const guest = linkedinGuest(url);
-  if (guest) return await fetchJina(guest, jinaKey);
-
-  const direto = await fetchDireto(url);
-  if (direto) return direto;
-  const jina = await fetchJina(url, jinaKey);
-  if (jina) return jina;
-  if (fc.key && fc.usados < fc.max) {
-    fc.usados++; // reserva o crédito ANTES do await (evita estourar o orçamento)
-    return await fetchFirecrawl(url, fc.key);
-  }
-  return null;
-}
-
 async function chamarGemini(cfg: (k: string) => Promise<string | null>, prompt: string): Promise<Classif[]> {
   const key = await cfg("gemini_api_key");
   const model = (await cfg("gemini_model")) ?? "gemini-2.5-flash";
@@ -308,7 +179,7 @@ Deno.serve(async (req) => {
 
   // vagas pendentes ainda não classificadas
   const { data: vagas } = await svc.from("vagas")
-    .select("id, titulo, empresa_orgao, descricao, tipo, modalidade, remuneracao_bolsa, carga_horaria, area_tematica_id, link_candidatura")
+    .select("id, titulo, empresa_orgao, descricao, tipo, setor, modalidade, remuneracao_bolsa, carga_horaria, area_tematica_id, link_candidatura")
     .eq("status", "pendente")
     .is("ai_classificado_em", null)
     .limit(30);
@@ -470,6 +341,17 @@ Deno.serve(async (req) => {
       if (v.tipo === "processo_seletivo" &&
           ["estagio", "emprego", "bolsa", "processo_seletivo"].includes(c.tipo ?? "")) {
         patch.tipo = c.tipo;
+      }
+      // SETOR (público/privado): a ingestão nunca preenchia, e o formulário de
+      // edição gravava um default fixo "publico" ao salvar — bastava a curadoria
+      // editar a vaga por QUALQUER motivo para uma empresa privada virar "setor
+      // público" no banco (aconteceu com Pague Menos, Cimento Apodi, Gi Group).
+      // A IA já decide empregador público × privado para escolher o `tipo`;
+      // reaproveitamos essa mesma decisão aqui. Só preenche quando está vazio —
+      // escolha manual da coordenação nunca é sobrescrita.
+      if (!v.setor) {
+        const tipoFinal = (patch.tipo as string | undefined) ?? v.tipo;
+        patch.setor = tipoFinal === "processo_seletivo" ? "publico" : "privado";
       }
       // preenche a EMPRESA real quando a atual está vazia ou é o nome da fonte ("… Alerts").
       // Nunca grava um agregador (Indeed/Catho/…) como se fosse a empresa.

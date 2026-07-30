@@ -61,7 +61,10 @@ export function CadastroVaga() {
     empresa_orgao: "",
     tipo: "estagio",
     subtipo_estagio: "nao_aplicavel",
-    setor: "publico",
+    // Coerente com o `tipo` default acima: estágio é quase sempre empregador
+    // privado. O default anterior ("publico") contradizia o próprio formulário
+    // e virava setor errado sempre que ninguém reparava no campo.
+    setor: "privado",
     nivel: "tecnico",
     municipio: "",
     modalidade: "presencial",

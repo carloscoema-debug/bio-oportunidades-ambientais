@@ -112,7 +112,14 @@ export function EditarVaga({ id, onClose }: { id: string; onClose: () => void })
       empresa_orgao: vaga.empresa_orgao ?? "",
       tipo: vaga.tipo ?? "processo_seletivo",
       subtipo_estagio: vaga.subtipo_estagio ?? "nao_aplicavel",
-      setor: vaga.setor ?? "publico",
+      // NUNCA use um literal aqui. A ingestão do Canal B deixa `setor` NULL, e
+      // este formulário grava TODOS os campos ao salvar — com um default fixo
+      // "publico", qualquer edição feita por outro motivo (corrigir prazo,
+      // remuneração…) carimbava silenciosamente empresa privada como setor
+      // público. Foi assim que Pague Menos, Cimento Apodi e Gi Group viraram
+      // "público" no banco. Na ausência de valor, deduz do tipo, que a IA já
+      // decidiu lendo a página (processo_seletivo = empregador público).
+      setor: vaga.setor ?? (vaga.tipo === "processo_seletivo" ? "publico" : "privado"),
       nivel: vaga.nivel ?? "tecnico",
       municipio: vaga.municipio ?? "",
       modalidade: vaga.modalidade ?? "presencial",
