@@ -8,6 +8,22 @@ não aparecem aqui — só mudanças com intenção registrada.
 Ao abrir um PR ou fazer push direto, adicione uma linha nesta seção
 correspondente à data (crie uma nova se for um dia novo).
 
+## 2026-07-30 — E-mails de notificação: novo destino e menos ruído
+
+- **Destino trocado** de `ctma@fortaleza.ifce.edu.br` para `bioctmaifce@gmail.com`
+  (`app_config.coordenacao_email`) — afeta os dois avisos automáticos que usam essa
+  chave: o resumo diário da fila (`digest-curadoria`) e o lembrete semanal da
+  newsletter (`newsletter-lembrete`, mantido sem mudança de comportamento).
+- **`digest-curadoria` só avisa quando há algo para um humano decidir.** Antes,
+  disparava sempre que havia QUALQUER vaga pendente — inclusive dias em que a fila
+  inteira já tinha sido classificada como "IA: descartar" pela `classificar-vagas`,
+  gerando e-mail todo dia mesmo sem nada de fato acionável. Agora usa os MESMOS
+  baldes do painel (`FilaVagas.tsx`: prontas para aprovar / precisam de atenção /
+  IA sugere descartar) — só conta e lista prontas+atenção; se a fila só tiver
+  "IA: descartar", pula o dia. O e-mail que ainda chega separa as duas categorias em
+  blocos e menciona (sem listar) quantas foram descartadas pela IA, para a
+  coordenação saber que a fila "de verdade" é maior sem inflar a mensagem.
+
 ## 2026-07-30 — Encerrar vaga (1 a 1 e em massa) sem perder o histórico
 
 - **"Marcar como encerrada"** nas abas "Link inativo" e "Publicadas", com versão
