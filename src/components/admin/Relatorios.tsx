@@ -266,7 +266,11 @@ function celulaCsv(v: unknown): string {
 }
 
 export function Relatorios() {
-  const [periodo, setPeriodo] = useState<"30" | "90" | "tudo">("tudo");
+  // Faixas longas existem de propósito: a leitura estratégica do mercado melhora
+  // conforme as vagas se acumulam, e uma vaga encerrada continua valendo como
+  // dado histórico (ver STATUS_VALIDADO). Com só 30/90 dias não dava para comparar
+  // semestre a semestre nem ver sazonalidade.
+  const [periodo, setPeriodo] = useState<"30" | "90" | "180" | "365" | "tudo">("tudo");
   const [exportando, setExportando] = useState(false);
 
   async function exportarCSV() {
@@ -529,6 +533,8 @@ export function Relatorios() {
         {(
           [
             ["tudo", "Todo o período"],
+            ["365", "Últimos 12 meses"],
+            ["180", "Últimos 6 meses"],
             ["90", "Últimos 90 dias"],
             ["30", "Últimos 30 dias"],
           ] as const

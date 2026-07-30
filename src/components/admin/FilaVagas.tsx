@@ -270,6 +270,10 @@ export function FilaVagas() {
     return lista.filter(precisaAtencao);
   }, [vagas, status, balde]);
 
+  // Seleção em massa só aparece nas abas que têm ação de lote: triagem das
+  // pendentes (rejeitar) e limpeza do link inativo (marcar como encerrada).
+  const podeSelecionar = status === "pendente" || status === "link_inativo";
+
   async function aprovar(v: VagaAdmin) {
     setErro(null);
     const patch: Record<string, unknown> = { status: "aprovada" };
@@ -301,10 +305,35 @@ export function FilaVagas() {
       })
       .eq("id", v.id);
     if (error) return setErro(`Erro ao republicar: ${error.message}`);
-    qc.invalidateQueries({ queryKey: ["admin_vagas"] });
-    qc.invalidateQueries({ queryKey: ["admin_link_inativo_count"] });
-    qc.invalidateQueries({ queryKey: ["admin_dashboard"] });
-    qc.invalidateQueries({ queryKey: ["vagas_publicas"] });
+    invalidarFila();
+  }
+
+  // ENCERRADA NÃO É REJEITADA — e a diferença decide o relatório.
+  // A vaga foi real, passou pela curadoria e ficou no ar; ela apenas acabou. Por
+  // isso vai para `expirada`, que os Relatórios contam como vaga VALIDADA (junto
+  // de aprovada/suspensa), e nunca para `rejeitada`, que fica de fora da análise
+  // de mercado. Sai do portal público na hora (a view pública só mostra
+  // status='aprovada'), mas o histórico estratégico continua inteiro — é a
+  // exigência da coordenação de não perder dado de mercado com o tempo.
+  async function marcarEncerrada(id: string) {
+    setErro(null);
+    const { error } = await supabase.from("vagas").update({ status: "expirada" }).eq("id", id);
+    if (error) return setErro(`Erro ao marcar como encerrada: ${error.message}`);
+    invalidarFila();
+  }
+
+  // Mesma ação, para todas as selecionadas de uma vez (uma query só). Sem isto a
+  // coordenação teria que limpar a lista de link inativo card a card.
+  async function marcarEncerradasEmMassa() {
+    const ids = [...selecionadas];
+    if (ids.length === 0) return;
+    setErro(null);
+    setAcaoMassa(true);
+    const { error } = await supabase.from("vagas").update({ status: "expirada" }).in("id", ids);
+    setAcaoMassa(false);
+    if (error) return setErro(`Erro ao encerrar em massa: ${error.message}`);
+    limparSel();
+    invalidarFila();
   }
 
   // Duplica a vaga (útil p/ concurso com vários cargos: 1 card por cargo). A cópia
@@ -339,6 +368,14 @@ export function FilaVagas() {
     qc.invalidateQueries({ queryKey: ["admin_dashboard"] });
     qc.invalidateQueries({ queryKey: ["admin_link_inativo_count"] });
   }
+
+  const invalidarFila = () => {
+    qc.invalidateQueries({ queryKey: ["admin_vagas"] });
+    qc.invalidateQueries({ queryKey: ["admin_duplicatas"] });
+    qc.invalidateQueries({ queryKey: ["admin_dashboard"] });
+    qc.invalidateQueries({ queryKey: ["admin_link_inativo_count"] });
+    qc.invalidateQueries({ queryKey: ["vagas_publicas"] });
+  };
 
   function toggleSel(id: string) {
     setSelecionadas((s) => {
@@ -458,8 +495,10 @@ export function FilaVagas() {
         </div>
       )}
 
-      {/* Barra de ação em massa (só em pendentes): seleção + rejeição com 1 motivo. */}
-      {status === "pendente" && (vagas?.length ?? 0) > 0 && (
+      {/* Ação em massa. Em PENDENTES: rejeitar com um motivo. Em LINK INATIVO:
+          marcar como encerrada — a lista de link inativo é justamente onde as
+          vagas mortas se acumulam, e limpá-la card a card não escala. */}
+      {podeSelecionar && (vagas?.length ?? 0) > 0 && (
         <div className="mt-3 flex flex-wrap items-center gap-3 rounded-[10px] border border-line-strong bg-surface px-4 py-2.5">
           <label className="flex items-center gap-2 text-[13px] font-bold text-ink-soft">
             <input
@@ -470,29 +509,48 @@ export function FilaVagas() {
             Selecionar todas ({visiveis.length})
           </label>
           {selecionadas.size > 0 ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="mono-caps text-[11px] text-ink-faint">{selecionadas.size} selecionada(s) · rejeitar como</span>
-              <select
-                value={motivoMassa}
-                onChange={(e) => setMotivoMassa(e.target.value)}
-                className="rounded-[8px] border border-line-strong bg-surface px-2.5 py-1.5 text-[13px] text-ink"
-              >
-                {MOTIVOS.map(([mv, ml]) => <option key={mv} value={mv}>{ml}</option>)}
-              </select>
-              <button
-                onClick={rejeitarEmMassa}
-                disabled={acaoMassa}
-                className="rounded-[8px] bg-barro px-3.5 py-1.5 text-[13px] font-bold text-white hover:opacity-90 disabled:opacity-60"
-              >
-                {acaoMassa ? "Rejeitando…" : `Rejeitar ${selecionadas.size}`}
-              </button>
-              <button onClick={limparSel} className="text-[13px] font-bold text-ink-soft hover:text-ink">
-                limpar
-              </button>
-            </div>
+            status === "link_inativo" ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="mono-caps text-[11px] text-ink-faint">{selecionadas.size} selecionada(s)</span>
+                <button
+                  onClick={marcarEncerradasEmMassa}
+                  disabled={acaoMassa}
+                  title="Move para a aba Expiradas. Continua contando nos Relatórios como vaga validada — o histórico de mercado não se perde."
+                  className="rounded-[8px] bg-barro px-3.5 py-1.5 text-[13px] font-bold text-white hover:opacity-90 disabled:opacity-60"
+                >
+                  {acaoMassa ? "Encerrando…" : `Marcar ${selecionadas.size} como encerrada(s)`}
+                </button>
+                <button onClick={limparSel} className="text-[13px] font-bold text-ink-soft hover:text-ink">
+                  limpar
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="mono-caps text-[11px] text-ink-faint">{selecionadas.size} selecionada(s) · rejeitar como</span>
+                <select
+                  value={motivoMassa}
+                  onChange={(e) => setMotivoMassa(e.target.value)}
+                  className="rounded-[8px] border border-line-strong bg-surface px-2.5 py-1.5 text-[13px] text-ink"
+                >
+                  {MOTIVOS.map(([mv, ml]) => <option key={mv} value={mv}>{ml}</option>)}
+                </select>
+                <button
+                  onClick={rejeitarEmMassa}
+                  disabled={acaoMassa}
+                  className="rounded-[8px] bg-barro px-3.5 py-1.5 text-[13px] font-bold text-white hover:opacity-90 disabled:opacity-60"
+                >
+                  {acaoMassa ? "Rejeitando…" : `Rejeitar ${selecionadas.size}`}
+                </button>
+                <button onClick={limparSel} className="text-[13px] font-bold text-ink-soft hover:text-ink">
+                  limpar
+                </button>
+              </div>
+            )
           ) : (
             <span className="text-[12.5px] text-ink-faint">
-              marque as vagas fora do perfil e rejeite todas de uma vez
+              {status === "link_inativo"
+                ? "marque as vagas que já encerraram e tire todas da lista de uma vez — elas continuam nos Relatórios"
+                : "marque as vagas fora do perfil e rejeite todas de uma vez"}
             </span>
           )}
         </div>
@@ -534,7 +592,7 @@ export function FilaVagas() {
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
-                    {status === "pendente" && (
+                    {podeSelecionar && (
                       <input
                         type="checkbox"
                         aria-label="Selecionar para ação em massa"
@@ -695,6 +753,17 @@ export function FilaVagas() {
                         className="rounded-[8px] bg-mata px-3.5 py-2 text-[13px] font-bold text-white hover:bg-mata-deep"
                       >
                         Republicar (verifiquei, está ativo)
+                      </button>
+                    )}
+                    {/* Encerrada ≠ rejeitada: a vaga foi válida e só acabou, então
+                        vai para "Expiradas" e SEGUE contando nos Relatórios. */}
+                    {(status === "link_inativo" || status === "aprovada") && (
+                      <button
+                        onClick={() => marcarEncerrada(v.id)}
+                        title="A vaga acabou na fonte. Sai do portal público e vai para a aba Expiradas — continua contando nos Relatórios como vaga validada, para a análise de mercado."
+                        className="rounded-[8px] border border-line-strong px-3.5 py-2 text-[13px] font-bold text-ink-soft hover:border-barro hover:text-barro"
+                      >
+                        Marcar como encerrada
                       </button>
                     )}
                     <button

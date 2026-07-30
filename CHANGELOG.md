@@ -8,6 +8,23 @@ não aparecem aqui — só mudanças com intenção registrada.
 Ao abrir um PR ou fazer push direto, adicione uma linha nesta seção
 correspondente à data (crie uma nova se for um dia novo).
 
+## 2026-07-30 — Encerrar vaga (1 a 1 e em massa) sem perder o histórico
+
+- **"Marcar como encerrada"** nas abas "Link inativo" e "Publicadas", com versão
+  **em massa** na aba "Link inativo" (seleção + um clique) — é ali que as vagas
+  mortas se acumulam, e limpar card a card não escala. A ação 1 a 1 continua.
+- **Encerrada NÃO é rejeitada.** A ação grava `status='expirada'`, não
+  `rejeitada`. A vaga foi real, passou pela curadoria e ficou no ar; só acabou.
+  `expirada` está em `STATUS_VALIDADO`, então continua contando nos Relatórios
+  como vaga validada; `rejeitada` fica fora da análise de mercado. Colocar
+  "expirada" no dropdown de rejeição teria apagado justamente o histórico
+  estratégico que a coordenação quer preservar. Sai do portal público na hora (a
+  view pública exige `status='aprovada'`).
+- **Filtro de período dos Relatórios ganhou faixas longas** (12 meses e 6 meses,
+  além de 90/30 dias e todo o período). Com teto de 90 dias não dava para
+  comparar semestres nem ver sazonalidade — e a leitura de mercado melhora
+  conforme as vagas se acumulam.
+
 ## 2026-07-29 — Vaga encerrada sai do ar; setor público/privado
 
 - **Vaga encerrada na fonte continuava publicada.** O `verificar-links` só
