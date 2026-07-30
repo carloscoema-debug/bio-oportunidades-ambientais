@@ -21,8 +21,8 @@ export function SiteFooter() {
               BIO<span className="text-mata">.</span>
             </span>
             <p className="mt-2 max-w-[34ch] text-[13px] leading-relaxed text-ink-soft">
-              Observatório Institucional de Oportunidades Ambientais — curadoria de
-              vagas para quem estuda meio ambiente no Ceará.
+              Banco Institucional de Oportunidades — curadoria de vagas de meio
+              ambiente para estudantes e egressos do IFCE, no Ceará.
             </p>
             <a
               href="https://portal.ifce.edu.br/cursos/fortaleza-tecnico-subsequente-meio-ambiente/"

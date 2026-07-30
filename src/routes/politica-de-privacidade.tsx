@@ -9,7 +9,7 @@ export const Route = createFileRoute("/politica-de-privacidade")({
       {
         name: "description",
         content:
-          "Como o BIO — Observatório Institucional de Oportunidades Ambientais do IFCE Campus Fortaleza trata dados, em conformidade com a LGPD.",
+          "Como o BIO (Banco Institucional de Oportunidades) do IFCE Campus Fortaleza trata dados, em conformidade com a LGPD.",
       },
     ],
   }),

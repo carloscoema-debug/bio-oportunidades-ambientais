@@ -95,7 +95,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       {
         property: "og:title",
-        content: "BIO — Observatório de Oportunidades Ambientais",
+        content: "BIO — Banco Institucional de Oportunidades · IFCE",
       },
       {
         property: "og:description",

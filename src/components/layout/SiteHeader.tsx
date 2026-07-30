@@ -48,7 +48,7 @@ export function SiteHeader() {
           </span>
         ) : (
           <span className="mono-caps hidden text-[11px] text-ink-soft sm:inline">
-            Observatório de Oportunidades Ambientais
+            Banco Institucional de Oportunidades
           </span>
         )}
 
@@ -67,7 +67,7 @@ export function SiteHeader() {
       {!contexto && (
         <div className="mx-auto max-w-[680px] px-4 pb-2 sm:hidden">
           <span className="mono-caps text-[10.5px] text-ink-soft">
-            Observatório de Oportunidades Ambientais
+            Banco Institucional de Oportunidades
           </span>
         </div>
       )}

@@ -245,7 +245,7 @@ function RelatorioSemestral() {
         </section>
 
         <footer className="mt-8 border-t border-[#E7E1D3] pt-3 text-[10px] text-[#8A968C]">
-          BIO — Observatório Institucional de Oportunidades Ambientais · Documento gerado automaticamente para o PPC e avaliações do curso.
+          BIO (Banco Institucional de Oportunidades) — Observatório Institucional de Oportunidades Ambientais · Documento gerado automaticamente para o PPC e avaliações do curso.
         </footer>
       </div>
     </div>
