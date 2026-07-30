@@ -10,7 +10,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 // Cascata de leitura da página compartilhada com verificar-links — as duas
 // precisam ler o corpo da vaga, e uma cópia em cada uma divergiria com o tempo.
-import { buscarPagina, type FcBudget } from "../_shared/pagina.ts";
+import { buscarPagina, extrairLocalTrabalho, type FcBudget } from "../_shared/pagina.ts";
 
 const norm = (s: string) =>
   s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
@@ -30,6 +30,7 @@ LEIA O CONTEXTO COMPLETO: use o título E a descrição E a página da vaga (cam
 
 REGRA DE REGIÃO (rígida):
 - Extraia a localização REAL do texto (ex.: "Local de atuação: Três Lagoas MS"). Se o corpo/página indicar cidade/estado diferente do título, VALE O CORPO.
+- Se houver o campo "local_trabalho_extraido" no JSON da vaga, ELE é a fonte da verdade sobre o município — vale mais que QUALQUER outra menção de cidade na página, inclusive as que aparecem antes dele. Isso porque o LinkedIn mostra no topo da página "Empresa Cidade, Estado, País" com a REGIÃO METROPOLITANA (ex.: "Fortaleza"), não necessariamente a cidade exata da vaga — a cidade real, quando a cidade é satélite (ex.: Caucaia, Maracanaú), só aparece no campo específico "Local de Trabalho:" mais abaixo. Nunca use o cabeçalho/título quando "local_trabalho_extraido" existir e discordar dele.
 - Vaga presencial ou híbrida só serve se o local for no CEARÁ. Presencial/híbrida em outro estado => "descartar".
 - Vaga 100% remota pode ser de qualquer estado.
 - Se não der para saber o local, uf=null e modalidade="indefinido".
@@ -270,13 +271,24 @@ Deno.serve(async (req) => {
     const paginas = await Promise.all(
       lote.map((v) => (v.link_candidatura ? buscarPagina(v.link_candidatura, jinaKey, fc) : Promise.resolve(null))),
     );
-    const payload = lote.map((v, idx) => ({
-      n: idx,
-      titulo: v.titulo,
-      empresa: v.empresa_orgao,
-      descricao: (v.descricao ?? "").slice(0, 500),
-      pagina: paginas[idx] ?? undefined,
-    }));
+    // Campo "Local de Trabalho: Cidade - UF", quando a página tiver esse rótulo
+    // estruturado (padrão do template do LinkedIn) — roda na página INTEIRA (não
+    // no trecho cortado que vai no payload), porque esse campo costuma vir depois
+    // de requisitos/atividades e um corte curto o deixaria de fora.
+    const locaisExtraidos = paginas.map((p) => (p ? extrairLocalTrabalho(p) : null));
+    const payload = lote.map((v, idx) => {
+      const local = locaisExtraidos[idx];
+      return {
+        n: idx,
+        titulo: v.titulo,
+        empresa: v.empresa_orgao,
+        descricao: (v.descricao ?? "").slice(0, 500),
+        // manda só um recorte da página pro prompt (custo do LLM); o campo
+        // estruturado abaixo já veio da página inteira, então não perde nada.
+        pagina: paginas[idx] ? paginas[idx]!.slice(0, 3500) : undefined,
+        local_trabalho_extraido: local ? `${local.cidade}${local.uf ? ` - ${local.uf}` : ""}` : undefined,
+      };
+    });
     const prompt = `${PROMPT_REGRAS}${fewshot}\n\nVAGAS A CLASSIFICAR:\n${JSON.stringify(payload, null, 0)}`;
 
     let res: Classif[] = [];
@@ -314,9 +326,14 @@ Deno.serve(async (req) => {
         ai_classificado_em: new Date().toISOString(),
       };
 
-      // se a IA achou um município do CE, preenche (trigger recalcula a região)
-      if (c.municipio) {
-        const canon = mapaMuni.get(norm(String(c.municipio)));
+      // Município: prioridade pro campo ESTRUTURADO extraído da página ("Local de
+      // Trabalho: Cidade - UF"), mais confiável que a leitura livre da IA — foi
+      // assim que uma vaga em Caucaia entrou como "Fortaleza" (o LinkedIn mostra a
+      // região metropolitana no topo da página, e a IA pegou esse sinal em vez do
+      // campo específico). Só cai pro que a IA leu quando não há campo estruturado.
+      const municipioBruto = locaisExtraidos[j]?.cidade ?? c.municipio;
+      if (municipioBruto) {
+        const canon = mapaMuni.get(norm(String(municipioBruto)));
         if (canon) patch.municipio = canon;
       }
       // preenche modalidade (enum) só se estava vazia e a IA foi conclusiva

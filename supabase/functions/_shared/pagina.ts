@@ -52,8 +52,43 @@ export function detectarEncerramento(texto: string): string | null {
   return null;
 }
 
+// Armadilha real (vaga Eneva/Caucaia, 2026-07-30): a página de vaga do LinkedIn mostra
+// DOIS sinais de local diferentes — "Empresa Fortaleza, Ceará, Brazil" logo no topo
+// (a REGIÃO METROPOLITANA, rótulo genérico do LinkedIn pra cidade-satélite) e,
+// mais abaixo, um campo específico rotulado "Local de Trabalho: Caucaia - CE" (o
+// dado real). A IA leu o sinal errado — mais chamativo, mas menos confiável.
+// Esse rótulo é padrão do template do LinkedIn (não é texto livre), então extrair
+// por regex é mais confiável que pedir pra IA priorizar corretamente: um campo
+// estruturado nunca devia perder pra um cabeçalho genérico.
+// Exige o sufixo " - UF" pra ancorar o FIM do nome da cidade. Sem essa âncora,
+// não dá pra saber onde o nome termina: a página já chega aqui com toda quebra
+// de linha achatada em espaço (buscarPagina normaliza \s+ → " "), então não há
+// separador entre "Caucaia" e o texto seguinte ("Saiba mais sobre nós..."). Com
+// "- UF" ancorando o fim, funciona até com cidade composta ("São Gonçalo do
+// Amarante - CE"). Sem esse sufixo no texto, prefere não extrair a arriscar
+// pegar frase inteira por engano — cai no comportamento normal (IA decide).
+const RE_LOCAL_TRABALHO = /\bLocal de Trabalho\s*:\s*([A-ZÀ-Ú][^-]{1,40}?)\s*-\s*([A-Z]{2})\b/;
+
+/** Extrai cidade + UF do campo estruturado "Local de Trabalho: Cidade - UF",
+ *  quando a página tiver esse rótulo COM o sufixo de UF. null se não encontrar. */
+export function extrairLocalTrabalho(texto: string): { cidade: string; uf: string | null } | null {
+  const m = RE_LOCAL_TRABALHO.exec(texto);
+  if (!m) return null;
+  const cidade = m[1].trim();
+  if (!cidade) return null;
+  return { cidade, uf: m[2].toUpperCase() };
+}
+
 const UA_NAVEGADOR =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122 Safari/537.36";
+
+// Teto de segurança da leitura da página (memória/custo), NÃO o tamanho enviado
+// à IA — esse é cortado à parte em classificar-vagas. Ficava em 3500, curto
+// demais: na vaga Eneva/Caucaia, "Local de Trabalho: Caucaia - CE" só aparecia
+// no caractere ~5862 de uma página de 6437 (título + empresa + requisitos +
+// atividades vêm antes) — o campo estruturado nunca chegava a ser lido. 12000
+// cobre confortavelmente um anúncio completo sem deixar de ter limite.
+const MAX_TEXTO = 12000;
 
 async function fetchDireto(url: string): Promise<string | null> {
   try {
@@ -82,7 +117,7 @@ async function fetchDireto(url: string): Promise<string | null> {
       .replace(/\s+/g, " ")
       .trim();
     if (ehBloqueio(texto)) return null;
-    return texto.length > 80 ? texto.slice(0, 3500) : null;
+    return texto.length > 80 ? texto.slice(0, MAX_TEXTO) : null;
   } catch {
     return null;
   }
@@ -102,7 +137,7 @@ async function fetchJina(url: string, key: string | null): Promise<string | null
     if (!resp.ok) return null;
     const texto = (await resp.text()).replace(/\s+/g, " ").trim();
     if (ehBloqueio(texto)) return null;
-    return texto.length > 120 ? texto.slice(0, 3500) : null;
+    return texto.length > 120 ? texto.slice(0, MAX_TEXTO) : null;
   } catch {
     return null;
   }
@@ -129,7 +164,7 @@ async function fetchFirecrawl(url: string, key: string): Promise<string | null> 
     const d = await resp.json();
     const texto = String(d?.data?.markdown ?? "").replace(/\s+/g, " ").trim();
     if (ehBloqueio(texto)) return null;
-    return texto.length > 120 ? texto.slice(0, 3500) : null;
+    return texto.length > 120 ? texto.slice(0, MAX_TEXTO) : null;
   } catch {
     return null;
   }

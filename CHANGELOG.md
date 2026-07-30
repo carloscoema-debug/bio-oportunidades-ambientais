@@ -5,6 +5,30 @@ entrada tem a data, o que mudou e por quê (quando não é óbvio). Commits
 automáticos do Lovable sem descrição própria ("Changes", "Work in progress")
 não aparecem aqui — só mudanças com intenção registrada.
 
+## 2026-07-30 — Município errado: LinkedIn mostrava a região, não a cidade
+
+- **Vaga da Eneva marcada como Fortaleza, sendo em Caucaia.** A página do
+  LinkedIn tem dois sinais de local: "Empresa Fortaleza, Ceará, Brazil" logo no
+  topo (a REGIÃO METROPOLITANA — o LinkedIn agrupa cidade-satélite sob o nome
+  da capital) e, mais abaixo, o campo específico "Local de Trabalho: Caucaia -
+  CE" (o dado real). A IA leu o sinal mais chamativo em vez do mais confiável.
+- **Causa agravante:** o texto da página era cortado em 3500 caracteres antes
+  de chegar à IA; nesta vaga, "Local de Trabalho" só aparecia no caractere
+  ~5862 — o campo nunca era lido, em qualquer hipótese. Teto de leitura subiu
+  para 12000 (`_shared/pagina.ts`), mantendo os 3500 só no que é *enviado à
+  IA* (custo do LLM) — a extração de campos estruturados agora roda na página
+  inteira.
+- **Correção:** `_shared/pagina.ts` ganhou `extrairLocalTrabalho()` — extrai
+  "Cidade - UF" por regex quando a página tem esse rótulo (padrão de template,
+  não texto livre). Em `classificar-vagas`, esse campo é injetado no prompt
+  como `local_trabalho_extraido` (a IA é instruída a tratá-lo como fonte da
+  verdade) e, mais importante, **sobrepõe deterministicamente** a leitura livre
+  da IA na hora de gravar `municipio` — não depende da IA obedecer a regra.
+  Vale só quando ancorado por um sufixo de UF (evita capturar frase inteira por
+  engano); sem UF, cai no comportamento normal.
+- Os dois registros da vaga afetada corrigidos no banco (`Caucaia`), incluindo
+  o que já estava **publicado ao vivo** no site.
+
 Ao abrir um PR ou fazer push direto, adicione uma linha nesta seção
 correspondente à data (crie uma nova se for um dia novo).
 
