@@ -8,6 +8,30 @@ não aparecem aqui — só mudanças com intenção registrada.
 Ao abrir um PR ou fazer push direto, adicione uma linha nesta seção
 correspondente à data (crie uma nova se for um dia novo).
 
+## 2026-07-29 — Vaga encerrada sai do ar; setor público/privado
+
+- **Vaga encerrada na fonte continuava publicada.** O `verificar-links` só
+  olhava o status HTTP, mas agregador não devolve erro quando a vaga fecha: o
+  Indeed mantém a URL viva e escreve "Essa vaga expirou no Indeed" no corpo; o
+  LinkedIn escreve "No longer accepting applications". Cabeçalho HTTP não
+  enxerga texto. Pior: o Indeed responde 403 a qualquer IP de datacenter, e 403
+  conta (corretamente) como inconclusivo — 19 das 30 publicadas nunca tinham
+  sido verificadas de fato. A leitura de página já existia, mas só na
+  `classificar-vagas` e só na ENTRADA da vaga; foi extraída para
+  `_shared/pagina.ts` (cascata fetch → Jina → Firecrawl; só o Firecrawl vence o
+  Cloudflare do Indeed) e agora roda também na verificação diária, com detector
+  de frases de encerramento. Detectou → `status_link='inacessivel'`: sai da view
+  pública na hora e cai na aba "LINK INATIVO", que já tem o "Republicar" para
+  falso positivo; a mensagem guarda o trecho que provou. **Primeira execução
+  encontrou 8 vagas mortas entre as 30 publicadas.**
+- **Empresa privada registrada como setor público.** `EditarVaga` usava
+  `setor: vaga.setor ?? "publico"`. Como nenhum canal de entrada preenche
+  `setor` (fica NULL) e o formulário grava todos os campos ao salvar, editar uma
+  vaga por QUALQUER motivo carimbava empresa privada como pública — o ato de
+  corrigir é que introduzia o erro. Defaults agora deduzem do tipo, a IA passa a
+  preencher `setor` reaproveitando a decisão de empregador público × privado que
+  já toma para o `tipo`, e 9 vagas foram corrigidas no banco.
+
 ## 2026-07-17 — Aderência: IA mais precisa e selos honestos
 
 - **IA de curadoria mais precisa na indicação** (`classificar-vagas` v37). A
