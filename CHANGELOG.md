@@ -5,6 +5,30 @@ entrada tem a data, o que mudou e por quê (quando não é óbvio). Commits
 automáticos do Lovable sem descrição própria ("Changes", "Work in progress")
 não aparecem aqui — só mudanças com intenção registrada.
 
+## 2026-07-30 — Química Industrial na fila, e um limite honesto no LinkedIn
+
+Vaga "Químico Industrial" (PLD Soluções/Interlândia LTDA) entrou na fila como
+"IA: revisar · 85" com dois problemas — formação errada e vaga já encerrada.
+
+- **Formação errada — corrigido.** A IA aprovou citando "compatível com Eng.
+  Química/Ambiental", mas Engenharia Química NÃO é um dos 5 cursos do BIO. A
+  vaga menciona "legislação ambiental" como uma responsabilidade entre várias
+  de controle de qualidade industrial (CRQ, BPF, ISO) — a IA confundiu "cita
+  meio ambiente" com "é aderente". Nova entrada em ARMADILHAS DE ÁREA
+  ADJACENTE (`classificar-vagas`), no mesmo padrão de SST/energia solar/
+  qualidade pura já existentes.
+- **Vaga encerrada — limitação documentada, não um bug corrigível por regex.**
+  Investigado a fundo: o endpoint público do LinkedIn que usamos (guest job
+  posting, sem login) ÀS VEZES expõe "No longer accepting applications" e
+  outras vezes não — inclusive para a MESMA vaga que a coordenação viu fechada
+  numa tela autenticada do LinkedIn ("Não aceita mais candidaturas"), que o
+  endpoint público não carrega. Testado fetch direto e `Accept:
+  application/json` — nenhum expõe esse dado de forma confiável. Não é um
+  problema de truncamento nem de prompt; é um limite de acesso a dado que só
+  existe pra quem está logado. Documentado em `_shared/pagina.ts` pra não ser
+  redescoberto como "bug" numa sessão futura. A rede de segurança real pra
+  vaga de LinkedIn continua sendo o "Marcar como encerrada" manual.
+
 ## 2026-07-30 — Município errado: LinkedIn mostrava a região, não a cidade
 
 - **Vaga da Eneva marcada como Fortaleza, sendo em Caucaia.** A página do

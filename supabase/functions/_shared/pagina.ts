@@ -174,7 +174,23 @@ export type FcBudget = { key: string | null; usados: number; max: number };
 
 // LinkedIn: fetch direto (datacenter) e Firecrawl NÃO funcionam (bloqueio/recusa).
 // Mas o endpoint PÚBLICO "guest" (/jobs-guest/jobs/api/jobPosting/<id>, SEM login)
-// traz título/empresa/local/status; o Jina (infra própria) consegue lê-lo.
+// traz título/empresa/local; o Jina (infra própria) consegue lê-lo.
+//
+// LIMITAÇÃO CONHECIDA (vaga Químico Industrial/PLD Soluções, 2026-07-30): o
+// "status de encerramento" NÃO é confiável aqui. Confirmado por teste direto:
+// pra vagas que o LinkedIn marca como fechadas, o guest ÀS VEZES devolve "No
+// longer accepting applications" logo após "See who [Empresa] has hired for
+// this role" (e detectarEncerramento pega isso normalmente) — mas outras vezes
+// devolve só o "has hired for this role", SEM o aviso de encerramento, mesmo
+// pra vaga que a coordenação confirmou fechada olhando o LinkedIn logada (que
+// mostra "Não aceita mais candidaturas" — dado de uma tela pessoal/autenticada
+// que o endpoint público simplesmente não expõe). Fetch direto (sem login) e
+// Accept:application/json no guest também não trazem esse sinal — não é bug de
+// truncamento nem de regex, é limitação de ACESSO A DADO: o guest endpoint às
+// vezes tem o sinal, às vezes não, e não há como saber qual caso é qual sem
+// login. Pra vagas de LinkedIn, o "Marcar como encerrada" manual (FilaVagas)
+// continua sendo a rede de segurança real — não dá pra prometer detecção
+// automática 100% confiável nesse canal.
 function linkedinGuest(url: string): string | null {
   const m = url.match(/linkedin\.com\/(?:comm\/)?jobs\/view\/(\d+)/i);
   return m ? `https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/${m[1]}` : null;
