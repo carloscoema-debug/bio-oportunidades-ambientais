@@ -175,7 +175,7 @@ function RelatorioSemestral() {
           <p className="text-[26px] font-extrabold leading-none text-[#0D6B44]">BIO<span className="text-[#B97A1B]">.</span></p>
           <h1 className="mt-2 text-[20px] font-bold text-[#1B2A21]">Relatório Semestral de Oportunidades</h1>
           <p className="mt-1 text-[13px] text-[#5B6B60]">
-            {semestre === "tudo" ? "Todo o período" : per.label} · Curso Técnico em Meio Ambiente (EaD) — IFCE Campus Fortaleza
+            {semestre === "tudo" ? "Todo o período" : per.label} · Observatório de oportunidades ambientais
           </p>
           <p className="mt-0.5 text-[11px] text-[#8A968C]">
             Gerado em {format(new Date(), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}

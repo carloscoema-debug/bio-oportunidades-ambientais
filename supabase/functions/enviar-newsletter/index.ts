@@ -53,7 +53,7 @@ function montarHtml(vagas: Vaga[], portalBase: string, optoutUrl: string): strin
     </td></tr>
     <tr><td style="padding:22px 4px 0;border-top:1px solid #E7E1D3;margin-top:16px">
       <div style="font-size:11px;color:#8A968C;line-height:1.6;margin-top:14px">
-        O BIO é um observatório do Curso Técnico em Meio Ambiente (EaD) do IFCE Campus Fortaleza.
+        O BIO é um observatório de oportunidades ambientais do Ceará.
         As vagas são divulgadas com curadoria, mas as candidaturas ocorrem em sites externos —
         confira sempre a fonte oficial antes de enviar dados.<br><br>
         Você recebe este e-mail porque se cadastrou no portal BIO.

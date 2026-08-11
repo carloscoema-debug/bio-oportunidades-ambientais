@@ -22,7 +22,7 @@ export const nivelLabel: Record<string, string> = {
   ambos: "Técnico ou superior",
 };
 
-// Cursos do IFCE atendidos pelo BIO (curso_alvo, text[]). Código canônico → rótulos.
+// Cursos atendidos pelo BIO (curso_alvo, text[]). Código canônico → rótulos.
 // `cursoLabel` = nome completo (edição); `cursoLabelCurto` = chip no card.
 export const cursoLabel: Record<string, string> = {
   gestao_ambiental: "Gestão Ambiental",

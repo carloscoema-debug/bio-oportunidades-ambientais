@@ -22,19 +22,10 @@ export function SiteFooter() {
             </span>
             <p className="mt-2 max-w-[34ch] text-[13px] leading-relaxed text-ink-soft">
               Banco Institucional de Oportunidades — curadoria de vagas de meio
-              ambiente para estudantes e egressos do IFCE, no Ceará.
+              ambiente para quem estuda ou já se formou na área, no Ceará.
             </p>
-            <a
-              href="https://portal.ifce.edu.br/cursos/fortaleza-tecnico-subsequente-meio-ambiente/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mono-caps mt-4 inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-mata-line bg-mata-tint px-4 py-2 text-[11px] text-mata-deep transition-colors hover:border-mata hover:bg-mata hover:text-white"
-            >
-              Conheça o curso técnico
-              <span aria-hidden>↗</span>
-            </a>
           </div>
-          <nav aria-label="Links institucionais" className="flex flex-col gap-2.5">
+          <nav aria-label="Links do portal" className="flex flex-col gap-2.5">
             <Link to="/como-se-candidatar" className={linkCls} activeProps={activeProps}>Como se candidatar</Link>
             <Link to="/divulgar" className={linkCls} activeProps={activeProps}>Divulgue uma oportunidade</Link>
             <Link to="/instalar-app" className={linkCls} activeProps={activeProps}>Instalar o app no celular</Link>
@@ -42,27 +33,23 @@ export function SiteFooter() {
           </nav>
         </div>
 
-        <p className="mono-caps mt-10 text-[10.5px] text-ink-faint">Contato da coordenação</p>
+        <p className="mono-caps mt-10 text-[10.5px] text-ink-faint">Fale com a curadoria</p>
         <p className="mt-2 max-w-[64ch] text-[13px] leading-relaxed text-ink-soft">
-          Empresas ou pessoas com dúvidas sobre o curso podem falar com a coordenação do
-          Curso Técnico em Meio Ambiente pelo e-mail{" "}
+          Empresas, pessoas com dúvidas ou uma vaga para divulgar? Fale com a curadoria
+          do BIO pelo e-mail{" "}
           <a
-            href="mailto:ctma@fortaleza.ifce.edu.br"
+            href="mailto:bioctmaifce@gmail.com"
             className="font-bold text-mata-deep underline underline-offset-2 hover:text-mata"
           >
-            ctma@fortaleza.ifce.edu.br
+            bioctmaifce@gmail.com
           </a>.
         </p>
 
-        <p className="mono-caps mt-8 text-[10.5px] text-ink-faint">Aviso institucional</p>
+        <p className="mono-caps mt-8 text-[10.5px] text-ink-faint">Aviso</p>
         <p className="mt-2 max-w-[64ch] text-[13px] leading-relaxed text-ink-soft">
-          As oportunidades são divulgadas como serviço de informação. O IFCE não conduz,
+          As oportunidades são divulgadas como serviço de informação. O BIO não conduz,
           não endossa e não se responsabiliza pelos processos seletivos, pelas condições
           dos vínculos nem pela idoneidade dos anunciantes — confira sempre a fonte oficial.
-        </p>
-
-        <p className="mono-caps mt-8 border-t border-line pt-6 text-[10.5px] text-ink-faint">
-          IFCE · Campus Fortaleza · Curso Técnico em Meio Ambiente (EaD)
         </p>
       </div>
     </footer>

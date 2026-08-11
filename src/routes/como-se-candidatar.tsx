@@ -9,7 +9,7 @@ export const Route = createFileRoute("/como-se-candidatar")({
       {
         name: "description",
         content:
-          "Guia completo para estudantes e egressos do Curso Técnico em Meio Ambiente do IFCE: currículo que passa pela triagem por IA, LinkedIn, portfólio, entrevistas e como usar IA a seu favor sem exagerar.",
+          "Guia completo para quem busca vaga na área ambiental: currículo que passa pela triagem por IA, LinkedIn, portfólio, entrevistas e como usar IA a seu favor sem exagerar.",
       },
     ],
   }),
@@ -59,7 +59,7 @@ function ComoSeCandidatar() {
           Como se candidatar
         </h1>
         <p className="mt-4 max-w-[60ch] text-[16px] leading-relaxed text-ink-soft">
-          O BIO reúne oportunidades já revisadas pela coordenação. A candidatura,
+          O BIO reúne oportunidades já revisadas pela curadoria. A candidatura,
           porém, acontece sempre no site do anunciante — este guia existe para você
           chegar lá preparado, principalmente se for a sua primeira candidatura.
         </p>
@@ -154,7 +154,7 @@ function ComoSeCandidatar() {
         <ul className="mt-4 max-w-[62ch] space-y-3 text-[15px] leading-relaxed text-ink-soft">
           <li>
             <strong className="text-ink">Foto e título claros.</strong> Uma foto de
-            rosto com boa luz, e um título como "Técnico em Meio Ambiente — IFCE" em
+            rosto com boa luz, e um título como "Técnico em Meio Ambiente" em
             vez de deixar em branco ou repetir "Estudante".
           </li>
           <li>

@@ -68,7 +68,7 @@ export function NewsletterSignup() {
           </h2>
           <p className="mt-2 max-w-[52ch] text-[14.5px] leading-relaxed text-ink-soft">
             No máximo <strong className="text-ink">um e-mail por semana</strong>, com a
-            seleção da coordenação. Nada de spam — e você sai quando quiser, em um clique.
+            seleção da curadoria. Nada de spam — e você sai quando quiser, em um clique.
           </p>
 
           <form onSubmit={onSubmit} className="mt-5 space-y-4">
@@ -110,7 +110,7 @@ export function NewsletterSignup() {
                 className="mt-0.5 h-4 w-4 shrink-0 accent-[#0D6B44]"
               />
               <span>
-                Autorizo o Curso Técnico em Meio Ambiente do IFCE a me enviar a newsletter de
+                Autorizo o BIO a me enviar a newsletter de
                 oportunidades. Meus dados são tratados conforme a LGPD (Lei nº 13.709/2018), com
                 base no meu consentimento, e posso me descadastrar a qualquer momento. Ver a{" "}
                 <a href="/politica-de-privacidade" className="text-mata-deep underline">

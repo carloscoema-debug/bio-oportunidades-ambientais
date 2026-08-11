@@ -7,11 +7,11 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/divulgar")({
   head: () => ({
     meta: [
-      { title: "Divulgue uma vaga ambiental — BIO · IFCE" },
+      { title: "Divulgue uma vaga ambiental — BIO" },
       {
         name: "description",
         content:
-          "Divulgue gratuitamente sua vaga de estágio ou emprego para estudantes e egressos dos cursos ambientais do IFCE (Meio Ambiente, Gestão Ambiental, Saneamento, Engenharia Ambiental e Sanitária). Curadoria da coordenação, sem custo.",
+          "Divulgue gratuitamente sua vaga de estágio ou emprego para estudantes e egressos de cursos ambientais (Meio Ambiente, Gestão Ambiental, Saneamento, Engenharia Ambiental e Sanitária). Curadoria humana, sem custo.",
       },
     ],
   }),
@@ -63,17 +63,17 @@ const MOTIVOS_DIVULGAR = [
   {
     titulo: "O público certo, não o público grande",
     texto:
-      "A sua vaga aparece para quem estuda ou já se formou em cursos ambientais do IFCE — pessoas que chegam sabendo o que é licenciamento, resíduos, saneamento e monitoramento.",
+      "A sua vaga aparece para quem estuda ou já se formou em cursos ambientais — pessoas que chegam sabendo o que é licenciamento, resíduos, saneamento e monitoramento.",
   },
   {
     titulo: "A curadoria funciona como recomendação",
     texto:
-      "Cada vaga passa pela coordenação do curso antes de ir ao ar. Para quem procura, estar no BIO é sinal de que a oportunidade foi conferida por uma instituição de ensino pública.",
+      "Cada vaga passa por revisão humana antes de ir ao ar. Para quem procura, estar no BIO é sinal de que a oportunidade foi conferida, não só coletada.",
   },
   {
     titulo: "De graça e sem burocracia",
     texto:
-      "Sem custo, sem cadastro e sem contrato. Você preenche o formulário abaixo em poucos minutos e a coordenação cuida da publicação.",
+      "Sem custo, sem cadastro e sem contrato. Você preenche o formulário abaixo em poucos minutos e a curadoria cuida da publicação.",
   },
 ];
 
@@ -157,7 +157,7 @@ function Divulgar() {
             </span>
             <p className="mono-caps mt-4 text-[11px] text-mata-deep">Oportunidade recebida</p>
             <h1 className="mt-1.5 font-display text-[25px] font-bold leading-tight text-ink" style={{ letterSpacing: "-0.02em" }}>
-              Obrigado! Já está com a coordenação.
+              Obrigado! Já está com a curadoria.
             </h1>
             <p className="mx-auto mt-3 max-w-[42ch] text-[15px] leading-relaxed text-ink-soft">
               Toda vaga passa pela <strong className="text-ink">curadoria</strong> antes de ir ao ar.
@@ -167,18 +167,10 @@ function Divulgar() {
               <a href="/" className="mono-caps inline-flex items-center gap-1.5 rounded-full bg-mata px-5 py-2.5 text-[12px] text-white transition-colors hover:bg-mata-deep">
                 Ver as vagas do portal ↗
               </a>
-              <a
-                href="https://portal.ifce.edu.br/cursos/fortaleza-tecnico-subsequente-meio-ambiente/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mono-caps inline-flex items-center gap-1.5 rounded-full border-[1.5px] border-mata-line bg-surface px-5 py-2.5 text-[12px] text-mata-deep transition-colors hover:border-mata hover:bg-mata-tint"
-              >
-                Conheça o curso técnico ↗
-              </a>
             </div>
             <p className="mt-4 text-[12.5px] leading-relaxed text-ink-faint">
-              O BIO é mantido pela coordenação do Curso Técnico em Meio Ambiente do IFCE,
-              que forma profissionais para a área que você contrata.
+              O BIO é mantido por uma curadoria dedicada exclusivamente à área
+              ambiental — obrigado por contar com a gente.
             </p>
           </div>
         </section>
@@ -198,10 +190,10 @@ function Divulgar() {
           <span className="text-mata">estudou para ela.</span>
         </h1>
         <p className="mt-3 max-w-[58ch] text-[15.5px] leading-relaxed text-ink-soft">
-          O BIO é o observatório de oportunidades ambientais do IFCE Campus Fortaleza. Divulgar
+          O BIO é o observatório de oportunidades ambientais do Ceará. Divulgar
           aqui leva a sua vaga direto a estudantes e egressos formados para a área ambiental. E
-          não custa nada: toda oportunidade passa pela{" "}
-          <strong className="text-ink">curadoria da coordenação</strong> antes de ir ao ar.
+          não custa nada: toda oportunidade passa por{" "}
+          <strong className="text-ink">curadoria humana</strong> antes de ir ao ar.
         </p>
 
         <PorQueDivulgar />
@@ -250,7 +242,7 @@ function Divulgar() {
               <input value={form.contato_nome} onChange={(e) => set("contato_nome", e.target.value)}
                 className={inputCls} />
             </Campo>
-            <Campo label="Seu e-mail *" hint="Para contato da coordenação">
+            <Campo label="Seu e-mail *" hint="Para contato da curadoria">
               <input type="email" required value={form.contato_email}
                 onChange={(e) => set("contato_email", e.target.value)}
                 placeholder="voce@empresa.org" className={inputCls} />
@@ -266,7 +258,7 @@ function Divulgar() {
             <input type="checkbox" checked={aceite} onChange={(e) => setAceite(e.target.checked)}
               className="mt-0.5 h-4 w-4 shrink-0 accent-[#0D6B44]" />
             <span>
-              Declaro que as informações são verídicas e autorizo a coordenação a usar meus dados de
+              Declaro que as informações são verídicas e autorizo a curadoria do BIO a usar meus dados de
               contato para validar esta oportunidade, conforme a{" "}
               <a href="/politica-de-privacidade" className="text-mata-deep underline">
                 política de privacidade
@@ -283,15 +275,15 @@ function Divulgar() {
         </form>
 
         <div className="mt-6 rounded-[16px] border border-mata-line bg-mata-tint p-5">
-          <p className="mono-caps text-[11px] text-mata-deep">Fale com a coordenação</p>
+          <p className="mono-caps text-[11px] text-mata-deep">Fale com a curadoria</p>
           <p className="mt-2 text-[14.5px] leading-relaxed text-ink-soft">
-            Dúvidas sobre a vaga, sobre o curso ou quer conversar sobre parcerias e estágios?
-            A coordenação do Curso Técnico em Meio Ambiente atende pelo e-mail{" "}
+            Dúvidas sobre a vaga ou quer conversar sobre parcerias?
+            A curadoria do BIO atende pelo e-mail{" "}
             <a
-              href="mailto:ctma@fortaleza.ifce.edu.br"
+              href="mailto:bioctmaifce@gmail.com"
               className="font-bold text-mata-deep underline underline-offset-2 hover:text-mata"
             >
-              ctma@fortaleza.ifce.edu.br
+              bioctmaifce@gmail.com
             </a>.
           </p>
         </div>

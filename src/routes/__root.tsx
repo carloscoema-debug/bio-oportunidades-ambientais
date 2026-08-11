@@ -87,29 +87,29 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "Curadoria de vagas de estágio e emprego em meio ambiente no Ceará, para estudantes e egressos do Curso Técnico em Meio Ambiente do IFCE Campus Fortaleza.",
+          "Curadoria de vagas de estágio e emprego em meio ambiente no Ceará, para quem estuda ou já se formou na área ambiental.",
       },
       {
         name: "author",
-        content: "IFCE Campus Fortaleza — Curso Técnico em Meio Ambiente",
+        content: "BIO — Banco Institucional de Oportunidades",
       },
       {
         property: "og:title",
-        content: "BIO — Banco Institucional de Oportunidades · IFCE",
+        content: "BIO — Banco Institucional de Oportunidades",
       },
       {
         property: "og:description",
         content:
-          "Vagas de estágio e emprego em meio ambiente no Ceará, selecionadas para estudantes e egressos do IFCE.",
+          "Vagas de estágio e emprego em meio ambiente no Ceará, selecionadas para quem estuda ou já se formou na área.",
       },
       { property: "og:type", content: "website" },
       { property: "og:locale", content: "pt_BR" },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:title", content: "BIO — Oportunidades ambientais no Ceará" },
       { name: "twitter:title", content: "BIO — Oportunidades ambientais no Ceará" },
-      { name: "description", content: "Curadoria de vagas de estágio e emprego em meio ambiente no Ceará, para estudantes e egressos do Curso Técnico em Meio Ambiente do IFCE Campus Fortaleza." },
-      { property: "og:description", content: "Curadoria de vagas de estágio e emprego em meio ambiente no Ceará, para estudantes e egressos do Curso Técnico em Meio Ambiente do IFCE Campus Fortaleza." },
-      { name: "twitter:description", content: "Curadoria de vagas de estágio e emprego em meio ambiente no Ceará, para estudantes e egressos do Curso Técnico em Meio Ambiente do IFCE Campus Fortaleza." },
+      { name: "description", content: "Curadoria de vagas de estágio e emprego em meio ambiente no Ceará, para quem estuda ou já se formou na área ambiental." },
+      { property: "og:description", content: "Curadoria de vagas de estágio e emprego em meio ambiente no Ceará, para quem estuda ou já se formou na área ambiental." },
+      { name: "twitter:description", content: "Curadoria de vagas de estágio e emprego em meio ambiente no Ceará, para quem estuda ou já se formou na área ambiental." },
       { property: "og:site_name", content: "BIO — Oportunidades ambientais" },
     ],
     links: [

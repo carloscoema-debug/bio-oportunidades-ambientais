@@ -31,7 +31,7 @@ const MAX_BYTES = 8 * 1024 * 1024; // 8MB — mesmo limite do bucket
 // Mesma régua de domínio do classificar-vagas (cursos, região, aderência, tipo
 // público×privado, disponibilidade), adaptada para EXTRAIR de uma imagem/PDF em vez
 // de ler uma página — aqui o "contexto completo" já é a própria imagem.
-const PROMPT_IMAGEM = `Você é o assistente de curadoria do BIO, portal do IFCE Campus Fortaleza. Vai receber a IMAGEM (ou PDF) de uma vaga — um flyer de empresa, captura de tela de site de emprego, ou imagem recebida em grupo. LEIA TODO O TEXTO VISÍVEL na imagem com atenção (título, empresa, requisitos, atividades, benefícios, prazo, forma de inscrição) antes de responder.
+const PROMPT_IMAGEM = `Você é o assistente de curadoria do BIO, portal de oportunidades ambientais do Ceará. Vai receber a IMAGEM (ou PDF) de uma vaga — um flyer de empresa, captura de tela de site de emprego, ou imagem recebida em grupo. LEIA TODO O TEXTO VISÍVEL na imagem com atenção (título, empresa, requisitos, atividades, benefícios, prazo, forma de inscrição) antes de responder.
 
 PRIMEIRO, confira se a imagem É REALMENTE UMA VAGA (oferta de estágio/emprego/seleção/bolsa) — se for outra coisa (print de conversa não relacionada, propaganda de produto, foto aleatória, imagem ilegível), devolva "eh_vaga_valida": false com "motivo_invalido" explicando, e pode deixar os demais campos null/vazios.
 

@@ -13,7 +13,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Curadoria de vagas de estágio e emprego em meio ambiente no Ceará, para estudantes e egressos do Curso Técnico em Meio Ambiente do IFCE Campus Fortaleza.",
+          "Curadoria de vagas de estágio e emprego em meio ambiente no Ceará, para quem estuda ou já se formou na área ambiental.",
       },
       { property: "og:url", content: "https://biooportunidades.org/" },
       {
@@ -50,7 +50,7 @@ const PASSOS = [
   {
     titulo: "Verificamos",
     texto:
-      "Conferimos prazo, link e aderência ao perfil técnico. Nenhuma vaga vai ao ar sem a revisão da coordenação.",
+      "Conferimos prazo, link e aderência ao perfil técnico. Nenhuma vaga vai ao ar sem revisão humana.",
   },
   {
     titulo: "Você se candidata na fonte",
@@ -99,7 +99,7 @@ function Home() {
       <section aria-labelledby="hero-title" className="pt-3 sm:pt-6">
         <p className="mono-caps inline-flex items-center gap-2 text-[11px] text-mata-deep">
           <span aria-hidden className="inline-block h-[6px] w-[6px] rounded-full bg-mata" />
-          IFCE · Curso Técnico em Meio Ambiente
+          Curadoria independente · Meio ambiente
         </p>
         <h1
           id="hero-title"
@@ -117,17 +117,9 @@ function Home() {
         <p className="mt-5 max-w-[56ch] text-[16.5px] leading-relaxed text-ink-soft">
           <strong className="font-bold text-ink">BIO</strong> é o Banco Institucional de
           Oportunidades: reúne e verifica vagas de estágio, emprego e seleções públicas na
-          área ambiental que já estão abertas no mercado. A curadoria é feita pela coordenação do{" "}
-          <a
-            href="https://portal.ifce.edu.br/cursos/fortaleza-tecnico-subsequente-meio-ambiente/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-bold text-ink underline decoration-mata/40 decoration-2 underline-offset-2 transition-colors hover:text-mata-deep hover:decoration-mata"
-          >
-            Curso Técnico em Meio Ambiente do IFCE Campus Fortaleza
-          </a>
-          : nós selecionamos e organizamos as oportunidades — a candidatura acontece
-          sempre no site oficial de cada uma.
+          área ambiental que já estão abertas no mercado. A curadoria é feita por uma equipe
+          dedicada exclusivamente ao setor ambiental: nós selecionamos e organizamos as
+          oportunidades — a candidatura acontece sempre no site oficial de cada uma.
         </p>
       </section>
 

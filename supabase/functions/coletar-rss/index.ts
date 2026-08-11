@@ -184,7 +184,7 @@ Deno.serve(async (req) => {
       const resp = await fetch(fonte.url, {
         headers: {
           "User-Agent":
-            "Mozilla/5.0 (compatible; BIO-bot/1.0; +https://ifce.edu.br)",
+            "Mozilla/5.0 (compatible; BIO-bot/1.0; +https://biooportunidades.org)",
         },
         redirect: "follow",
       });

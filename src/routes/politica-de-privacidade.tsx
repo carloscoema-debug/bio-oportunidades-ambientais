@@ -9,7 +9,7 @@ export const Route = createFileRoute("/politica-de-privacidade")({
       {
         name: "description",
         content:
-          "Como o BIO (Banco Institucional de Oportunidades) do IFCE Campus Fortaleza trata dados, em conformidade com a LGPD.",
+          "Como o BIO (Banco Institucional de Oportunidades) trata dados, em conformidade com a LGPD.",
       },
     ],
   }),
@@ -45,9 +45,16 @@ function Privacidade() {
           Política de privacidade
         </h1>
         <p className="mt-4 max-w-[62ch] text-[16px] leading-relaxed text-ink-soft">
-          O BIO é operado pela Coordenação do Curso Técnico em Meio Ambiente do IFCE
-          Campus Fortaleza. Levamos a sério a proteção de dados e seguimos a Lei Geral
-          de Proteção de Dados (Lei nº 13.709/2018 — LGPD).
+          O BIO é operado pela equipe de curadoria do portal, que pode ser
+          contatada em{" "}
+          <a
+            href="mailto:bioctmaifce@gmail.com"
+            className="font-bold text-mata-deep underline underline-offset-2 hover:text-mata"
+          >
+            bioctmaifce@gmail.com
+          </a>
+          . Levamos a sério a proteção de dados e seguimos a Lei Geral de
+          Proteção de Dados (Lei nº 13.709/2018 — LGPD).
         </p>
 
         <H2>Navegar no portal não exige cadastro</H2>
@@ -107,22 +114,28 @@ function Privacidade() {
 
         <H2>Seus direitos</H2>
         <p className="mt-3 max-w-[62ch] text-[15px] leading-relaxed text-ink-soft">
-          Você pode solicitar informações sobre o tratamento de dados, correção ou
-          eliminação, conforme a LGPD, pelos canais oficiais da coordenação do curso.
+          Você pode solicitar informações sobre o tratamento de dados,
+          correção ou eliminação, conforme a LGPD, pelo e-mail{" "}
+          <a
+            href="mailto:bioctmaifce@gmail.com"
+            className="font-bold text-mata-deep underline underline-offset-2 hover:text-mata"
+          >
+            bioctmaifce@gmail.com
+          </a>
+          .
         </p>
 
-        <H2>Aviso institucional</H2>
+        <H2>Aviso</H2>
         <p className="mt-3 max-w-[68ch] text-[15px] leading-relaxed text-ink-soft">
-          O IFCE Campus Fortaleza divulga as oportunidades como serviço de informação
-          aos estudantes e egressos do Curso Técnico em Meio Ambiente. O IFCE não
-          conduz, não endossa e não se responsabiliza pelos processos seletivos, pelas
-          condições dos vínculos nem pela idoneidade das empresas ou órgãos
-          anunciantes.
+          O BIO divulga as oportunidades como serviço de informação a quem busca
+          vaga na área ambiental. O BIO não conduz, não endossa e não se
+          responsabiliza pelos processos seletivos, pelas condições dos vínculos
+          nem pela idoneidade das empresas ou órgãos anunciantes.
         </p>
 
         <p className="mt-8 max-w-[62ch] text-[13px] leading-relaxed text-ink-faint">
-          Documento em caráter informativo, sujeito a revisão pela instância
-          institucional competente. Última atualização: julho de 2026.
+          Documento em caráter informativo, sujeito a atualização. Última
+          atualização: julho de 2026.
         </p>
 
         <VoltarPortal />

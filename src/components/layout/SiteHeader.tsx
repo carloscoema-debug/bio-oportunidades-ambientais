@@ -30,7 +30,7 @@ export function SiteHeader() {
             BIO<span className="text-mata">.</span>
           </span>
           <span
-            title="O BIO está em período de validação — encontrou algo estranho? Avise a coordenação."
+            title="O BIO está em período de validação — encontrou algo estranho? Avise a curadoria."
             className="mono-caps inline-flex items-center rounded-full border border-[#C4D4E2] bg-ceu-tint px-2 py-0.5 text-[10px] leading-none text-ceu"
           >
             Beta

@@ -38,7 +38,7 @@ export interface VagaPublica {
 }
 
 const DISCLAIMER =
-  "Divulgação informativa — o IFCE não conduz este processo seletivo.";
+  "Divulgação informativa — o BIO não conduz este processo seletivo.";
 
 function Pill({
   children,
@@ -76,7 +76,7 @@ export function VagaCard({ vaga }: { vaga: VagaPublica }) {
       ? vaga.empresa_orgao
       : null;
 
-  // cursos do IFCE atendidos pela vaga (chips no card)
+  // cursos atendidos pela vaga (chips no card)
   const cursos = (vaga.curso_alvo ?? [])
     .map((c) => cursoLabelCurto[c])
     .filter(Boolean) as string[];

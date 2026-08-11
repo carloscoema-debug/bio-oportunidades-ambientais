@@ -19,8 +19,8 @@ export const Route = createFileRoute("/admin")({
   }),
   head: () => ({
     meta: [
-      { title: "Painel da coordenação — BIO" },
-      { name: "description", content: "Acesso restrito à coordenação do BIO." },
+      { title: "Painel da curadoria — BIO" },
+      { name: "description", content: "Acesso restrito à curadoria do BIO." },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -103,7 +103,7 @@ function Login({
             className="mt-2 font-display text-ink"
             style={{ fontSize: "26px", fontWeight: 700, letterSpacing: "-0.01em" }}
           >
-            Painel da coordenação
+            Painel da curadoria
           </h1>
           <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
             Área destinada à equipe curadora do BIO.
@@ -122,7 +122,7 @@ function Login({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="mt-1.5 block w-full rounded-[9px] border border-line-strong bg-surface px-3 py-3 text-[15px] text-ink placeholder:text-ink-faint focus:border-mata focus:outline-none"
-                placeholder="nome@ifce.edu.br"
+                placeholder="voce@email.com"
               />
             </div>
             <div>
@@ -171,7 +171,7 @@ function Painel({ email, signOut }: { email: string; signOut: () => void }) {
           <div className="flex items-center gap-3">
             <Marca />
             <span className="mono-caps text-[11px] text-ink-faint">
-              Painel da coordenação
+              Painel da curadoria
             </span>
           </div>
           <div className="flex items-center gap-3">
