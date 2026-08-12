@@ -126,15 +126,15 @@ export function Parceiros() {
               <input value={form.cnpj} onChange={(e) => set("cnpj", e.target.value)} className={`mt-1.5 ${inputCls}`} />
             </label>
             <label className="block">
-              <span className="mono-caps block text-[11px] text-ink">Contato — nome</span>
+              <span className="mono-caps block text-[11px] text-ink">Nome do contato</span>
               <input value={form.contato_nome} onChange={(e) => set("contato_nome", e.target.value)} className={`mt-1.5 ${inputCls}`} />
             </label>
             <label className="block">
-              <span className="mono-caps block text-[11px] text-ink">Contato — e-mail</span>
+              <span className="mono-caps block text-[11px] text-ink">E-mail do contato</span>
               <input type="email" value={form.contato_email} onChange={(e) => set("contato_email", e.target.value)} className={`mt-1.5 ${inputCls}`} />
             </label>
             <label className="block">
-              <span className="mono-caps block text-[11px] text-ink">Contato — telefone</span>
+              <span className="mono-caps block text-[11px] text-ink">Telefone do contato</span>
               <input value={form.contato_telefone} onChange={(e) => set("contato_telefone", e.target.value)} className={`mt-1.5 ${inputCls}`} />
             </label>
           </div>

@@ -121,7 +121,7 @@ function mensagemBloqueio(msg: string): string {
   if (msg.includes("BLOQUEIO_B4"))
     return "Não publicável: origem externa ainda não verificada.";
   if (msg.includes("BLOQUEIO_B5"))
-    return "Não publicável: vaga sob suspeita (2+ denúncias) — investigue antes.";
+    return "Não publicável: vaga sob suspeita (2+ denúncias). Investigue antes.";
   if (msg.includes("BLOQUEIO_B6"))
     return "Não publicável: presencial/híbrida fora do Ceará. Só vaga 100% remota pode ser de outro estado (ou corrija a UF/modalidade).";
   return `Erro: ${msg}`;
@@ -153,7 +153,7 @@ const precisaAtencao = (v: VagaAdmin) => !ehDescartar(v) && !estaPronta(v);
 // neutro, para nunca mais competir com o veredito de aderência da IA.
 const TITULO_PRE_TRIAGEM =
   "Pré-triagem mecânica: nível, região, confiabilidade da fonte e completude do cadastro. " +
-  "NÃO avalia se a vaga é da área ambiental — quem faz isso é a IA (selo ao lado).";
+  "NÃO avalia se a vaga é da área ambiental. Quem faz isso é a IA (selo ao lado).";
 function seloPreTriagem(score: number) {
   if (score >= 70)
     return { label: "Cadastro completo", cls: "bg-surface-dim text-ink-soft border-line-strong" };
@@ -483,7 +483,7 @@ export function FilaVagas() {
       {status === "pendente" && (vagas?.filter((v) => v.ai_recomendacao == null).length ?? 0) > 0 && (
         <div className="mt-3 flex flex-wrap items-center gap-3 rounded-[10px] border border-[#EBD5A8] bg-sol-tint px-4 py-2.5">
           <span className="text-[13.5px] text-ink">
-            <strong>{vagas!.filter((v) => v.ai_recomendacao == null).length}</strong> vaga(s) ainda não classificadas pela IA — os baldes só ficam certos depois disso.
+            <strong>{vagas!.filter((v) => v.ai_recomendacao == null).length}</strong> vaga(s) ainda não classificadas pela IA. Os baldes só ficam certos depois disso.
           </span>
           <button
             onClick={classificarPendentes}
@@ -515,7 +515,7 @@ export function FilaVagas() {
                 <button
                   onClick={marcarEncerradasEmMassa}
                   disabled={acaoMassa}
-                  title="Move para a aba Expiradas. Continua contando nos Relatórios como vaga validada — o histórico de mercado não se perde."
+                  title="Move para a aba Expiradas. Continua contando nos Relatórios como vaga validada, sem perder o histórico de mercado."
                   className="rounded-[8px] bg-barro px-3.5 py-1.5 text-[13px] font-bold text-white hover:opacity-90 disabled:opacity-60"
                 >
                   {acaoMassa ? "Encerrando…" : `Marcar ${selecionadas.size} como encerrada(s)`}
@@ -549,7 +549,7 @@ export function FilaVagas() {
           ) : (
             <span className="text-[12.5px] text-ink-faint">
               {status === "link_inativo"
-                ? "marque as vagas que já encerraram e tire todas da lista de uma vez — elas continuam nos Relatórios"
+                ? "marque as vagas que já encerraram e tire todas da lista de uma vez, elas continuam nos Relatórios"
                 : "marque as vagas fora do perfil e rejeite todas de uma vez"}
             </span>
           )}
@@ -647,7 +647,7 @@ export function FilaVagas() {
                   {v.status_link === "inacessivel" && (
                     <p className="mt-1.5 rounded-[8px] border border-[#EBC7BE] bg-barro-tint px-2.5 py-1.5 text-[12px] leading-relaxed text-barro">
                       <span className="mono-caps text-[10px]">Fora do ar · </span>
-                      Removida do portal público — o link não respondeu em 3 verificações
+                      Removida do portal público. O link não respondeu em 3 verificações
                       {v.mensagem_verificacao_link ? ` (${v.mensagem_verificacao_link})` : ""}
                       {v.data_ultima_verificacao_link ? ` · última checagem ${v.data_ultima_verificacao_link.slice(0, 10)}` : ""}.
                       Corrija o link em "Editar" ou rejeite a vaga.
@@ -672,7 +672,7 @@ export function FilaVagas() {
                       <span className="text-ink-faint"> · {dominioDe(v.link_candidatura)}</span>
                       {linkGenerico(v.link_candidatura) && (
                         <span className="mt-1 block text-[12px] text-sol">
-                          Este link abre só a página inicial do site — encontre o endereço
+                          Este link abre só a página inicial do site. Encontre o endereço
                           específico da vaga e edite antes de aprovar, para o candidato ver os detalhes.
                         </span>
                       )}
@@ -732,7 +732,7 @@ export function FilaVagas() {
                   {v.origem_externa_nao_verificada && v.contato_submissao && (
                     <p className="mt-1.5 text-[12px] text-ink-soft">
                       <span className="mono-caps text-ink-faint">Enviada por</span>{" "}
-                      {v.contato_submissao} — confira a origem antes de aprovar.
+                      {v.contato_submissao}. Confira a origem antes de aprovar.
                     </p>
                   )}
                 </div>
@@ -760,7 +760,7 @@ export function FilaVagas() {
                     {(status === "link_inativo" || status === "aprovada") && (
                       <button
                         onClick={() => marcarEncerrada(v.id)}
-                        title="A vaga acabou na fonte. Sai do portal público e vai para a aba Expiradas — continua contando nos Relatórios como vaga validada, para a análise de mercado."
+                        title="A vaga acabou na fonte. Sai do portal público e vai para a aba Expiradas, e continua contando nos Relatórios como vaga validada, para a análise de mercado."
                         className="rounded-[8px] border border-line-strong px-3.5 py-2 text-[13px] font-bold text-ink-soft hover:border-barro hover:text-barro"
                       >
                         Marcar como encerrada

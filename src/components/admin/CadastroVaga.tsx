@@ -330,7 +330,7 @@ export function CadastroVaga() {
             ))}
           </div>
         </div>
-        <Campo label="Parceiro (opcional — exibe o selo)">
+        <Campo label="Parceiro (opcional, exibe o selo)">
           <select
             className={inputCls}
             value={f.parceiro_id}

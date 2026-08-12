@@ -232,7 +232,7 @@ export function EditarVaga({ id, onClose }: { id: string; onClose: () => void })
   return (
     <form onSubmit={salvar}>
       <p className="mono-caps mb-3 text-[11px] text-ink-faint">
-        Editar vaga — preencha os detalhes que constam na fonte original
+        Editar vaga: preencha os detalhes que constam na fonte original
       </p>
       <div className="grid gap-4 sm:grid-cols-2">
         <Campo label="Título da vaga *" span2>
@@ -307,7 +307,7 @@ export function EditarVaga({ id, onClose }: { id: string; onClose: () => void })
             ))}
           </div>
         </div>
-        <Campo label="Parceiro (opcional — exibe o selo)">
+        <Campo label="Parceiro (opcional, exibe o selo)">
           <select className={inputCls} value={f.parceiro_id} onChange={(e) => set("parceiro_id", e.target.value)}>
             <option value="">— nenhum —</option>
             {parceiros?.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}

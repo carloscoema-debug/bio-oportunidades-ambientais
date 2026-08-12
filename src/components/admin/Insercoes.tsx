@@ -90,7 +90,7 @@ export function Insercoes() {
       <div>
         <h2 className="font-display text-[20px] font-bold text-ink">Inserções profissionais</h2>
         <p className="mt-1 max-w-[64ch] text-[14px] text-ink-soft">
-          Registro de estudantes/egressos que conseguiram estágio ou emprego — indicador de
+          Registro de estudantes/egressos que conseguiram estágio ou emprego. Indicador de
           empregabilidade do curso. Uso interno; dados tratados como política pública (LGPD).
         </p>
       </div>

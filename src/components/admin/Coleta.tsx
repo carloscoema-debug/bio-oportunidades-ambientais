@@ -49,11 +49,11 @@ export function Coleta() {
   function validarArquivo(f: File | null | undefined): f is File {
     if (!f) return false;
     if (!TIPOS_ACEITOS.includes(f.type)) {
-      setMsgUpload({ tipo: "erro", texto: "Formato não aceito — use PNG, JPG, WEBP, HEIC ou PDF." });
+      setMsgUpload({ tipo: "erro", texto: "Formato não aceito. Use PNG, JPG, WEBP, HEIC ou PDF." });
       return false;
     }
     if (f.size > 8 * 1024 * 1024) {
-      setMsgUpload({ tipo: "erro", texto: "Arquivo maior que 8MB — reduza o tamanho e tente de novo." });
+      setMsgUpload({ tipo: "erro", texto: "Arquivo maior que 8MB. Reduza o tamanho e tente de novo." });
       return false;
     }
     return true;
@@ -117,7 +117,7 @@ export function Coleta() {
       }
       setMsgUpload({
         tipo: "ok",
-        texto: `Vaga extraída: "${r.titulo}" — já está na fila de curadoria (IA: ${r.recomendacao}). Confira na aba "Fila de curadoria".`,
+        texto: `Vaga extraída: "${r.titulo}". Já está na fila de curadoria (IA: ${r.recomendacao}). Confira na aba "Fila de curadoria".`,
       });
       setArquivo(null);
       setPreview(null);
@@ -269,7 +269,7 @@ export function Coleta() {
         <p className="mt-1 max-w-[64ch] text-[13.5px] leading-relaxed text-ink-soft">
           Cole (Ctrl/Cmd+V), arraste ou selecione um flyer de empresa, captura de tela
           de site, ou PDF recebido por grupo/e-mail. A IA lê a imagem inteira e já
-          cria a vaga pendente na fila — a curadoria segue no controle, como nos
+          cria a vaga pendente na fila. A curadoria segue no controle, como nos
           outros canais.
         </p>
 
@@ -356,7 +356,7 @@ export function Coleta() {
             ))}
             {resultado.every((r) => r.novos === 0) && (
               <li className="text-mata-deep/80">
-                Nenhuma vaga nova desta vez — os alertas populam com o tempo.
+                Nenhuma vaga nova desta vez. Os alertas populam com o tempo.
               </li>
             )}
           </ul>

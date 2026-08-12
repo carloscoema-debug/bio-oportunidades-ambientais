@@ -573,11 +573,11 @@ export function Relatorios() {
 
       <p className="rounded-[10px] border border-line bg-surface-dim/40 px-4 py-2.5 text-[12.5px] leading-relaxed text-ink-soft">
         Salvo indicação em contrário, os números abaixo contam vagas{" "}
-        <strong className="text-ink">validadas pela curadoria</strong> — status
+        <strong className="text-ink">validadas pela curadoria</strong>, com status
         "Aprovada", "Suspensa" ou "Expirada". Vagas pendentes e rejeitadas não
         entram: as primeiras ainda não foram decididas, e as rejeitadas nunca
         representaram demanda real do mercado. Suspensas/expiradas continuam
-        contando de propósito — são histórico de mercado válido, mesmo fora do ar.
+        contando de propósito. São histórico de mercado válido, mesmo fora do ar.
         Duas exceções usam só o que está publicado agora mesmo: o card "Vagas ao
         vivo" e "Saúde dos links". "Aproveitamento por fonte" soma todos os status
         de propósito, pra comparar captação com aprovação.
@@ -668,7 +668,7 @@ export function Relatorios() {
               </div>
             </div>
             <p className="mt-2 text-[11.5px] text-ink-faint">
-              Mediana resiste melhor a valores fora da curva do que a média — com
+              Mediana resiste melhor a valores fora da curva do que a média. Com
               poucas vagas informando remuneração, prefira a mediana pra "valor típico".
             </p>
 
@@ -769,7 +769,7 @@ export function Relatorios() {
       {/* Funil de engajamento */}
       <div className="rounded-[16px] border border-line bg-surface p-5">
         <p className="mono-caps text-[11px] text-ink-faint">
-          Funil de engajamento (vagas validadas no período — soma histórica)
+          Funil de engajamento (vagas validadas no período, soma histórica)
         </p>
         <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
@@ -799,7 +799,7 @@ export function Relatorios() {
         <p className="mono-caps text-[11px] text-ink-faint">Aproveitamento por fonte</p>
         <p className="mt-1 text-[12px] text-ink-faint">
           "Captadas" conta todos os status (inclui rejeitadas); "Aprovadas" conta as
-          validadas (aprovada, suspensa ou expirada) — "Aproveit." é a razão entre as duas.
+          validadas (aprovada, suspensa ou expirada). "Aproveit." é a razão entre as duas.
         </p>
         <div className="mt-3 overflow-hidden rounded-[10px] border border-line">
           <table className="w-full border-collapse text-[13.5px]">
@@ -883,7 +883,7 @@ export function Relatorios() {
         <p className="mt-2 text-[12px] text-ink-faint">
           "Vagas" conta toda vaga que atende o curso (uma vaga pode atender mais de um);
           "Só este curso" são as destinadas exclusivamente a ele. "Remun. média" só conta
-          vagas do curso que informaram valor em R$ — amostra pequena (n), leia com cautela.
+          vagas do curso que informaram valor em R$. Amostra pequena (n), leia com cautela.
         </p>
 
         {/* Curso × tipo: que tipo de oportunidade (estágio/emprego/…) o mercado
@@ -937,7 +937,7 @@ export function Relatorios() {
         />
         {r.semArea > 0 && (
           <p className="mt-2 text-[12px] text-ink-faint">
-            {r.semArea} vaga(s) ainda sem área definida — a IA classifica ao processar; as
+            {r.semArea} vaga(s) ainda sem área definida. A IA classifica ao processar; as
             antigas podem ser ajustadas na edição.
           </p>
         )}

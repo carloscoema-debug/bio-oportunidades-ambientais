@@ -140,7 +140,7 @@ export function Dashboard({ onIrParaFila }: { onIrParaFila: () => void }) {
         <Card rotulo="Coleta automática">
           <p className="text-[14px] leading-relaxed text-ink-soft">
             A coleta automática está <strong className="text-ink">ativa</strong> (RSS/Google
-            Alerts e e-mail). As vagas chegam sozinhas à fila como pendentes — acompanhe e
+            Alerts e e-mail). As vagas chegam sozinhas à fila como pendentes. Acompanhe e
             dispare na aba <strong className="text-ink">Coleta</strong>.
           </p>
         </Card>
