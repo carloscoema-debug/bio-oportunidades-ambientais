@@ -40,12 +40,6 @@ function Marca() {
       >
         BIO<span className="text-mata">.</span>
       </span>
-      <span
-        title="Painel em período de validação do sistema"
-        className="mono-caps inline-flex items-center rounded-full border border-[#C4D4E2] bg-ceu-tint px-2 py-0.5 text-[10px] leading-none text-ceu"
-      >
-        Beta
-      </span>
     </Link>
   );
 }
