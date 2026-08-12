@@ -60,7 +60,7 @@ function ComoSeCandidatar() {
         </h1>
         <p className="mt-4 max-w-[60ch] text-[16px] leading-relaxed text-ink-soft">
           O BIO reúne oportunidades já revisadas pela curadoria. A candidatura,
-          porém, acontece sempre no site do anunciante — este guia existe para você
+          porém, acontece sempre no site do anunciante. Este guia existe para você
           chegar lá preparado, principalmente se for a sua primeira candidatura.
         </p>
 
@@ -69,7 +69,7 @@ function ComoSeCandidatar() {
           Antes de qualquer pessoa ler seu currículo, a maioria das empresas usa um
           sistema automático de triagem (chamado de ATS) para filtrar candidatos.
           No Brasil, a maior parte dos currículos enviados passa primeiro por esse
-          filtro — só os que "passam" chegam a um recrutador humano. Isso muda como
+          filtro. Só os que "passam" chegam a um recrutador humano. Isso muda como
           você deve escrever.
         </p>
 
@@ -78,7 +78,7 @@ function ComoSeCandidatar() {
           <li>
             <strong className="text-ink">Use os termos exatos da vaga.</strong> Se o
             anúncio pede "técnico em meio ambiente", "licenciamento ambiental" ou
-            "PGRS", use essas mesmas palavras — não troque por sinônimos. O sistema
+            "PGRS", use essas mesmas palavras. Não troque por sinônimos: o sistema
             busca correspondência literal, não interpretação.
           </li>
           <li>
@@ -96,11 +96,11 @@ function ComoSeCandidatar() {
           <li>
             <strong className="text-ink">Envie em PDF gerado por texto</strong>{" "}
             (do Word, Google Docs ou Canva), nunca uma foto ou scan do currículo
-            impresso — texto escaneado não é lido pelo sistema.
+            impresso. Texto escaneado não é lido pelo sistema.
           </li>
           <li>
-            <strong className="text-ink">Nomeie o arquivo com seu nome</strong>{" "}
-            — "joao-silva-curriculo.pdf", não "curriculo_final_v3.pdf".
+            <strong className="text-ink">Nomeie o arquivo com seu nome:</strong>{" "}
+            "joao-silva-curriculo.pdf", não "curriculo_final_v3.pdf".
           </li>
         </ul>
 
@@ -124,7 +124,7 @@ function ComoSeCandidatar() {
           </li>
           <li>
             <strong className="text-ink">Uma página basta</strong> para quem está
-            começando — o objetivo é ser lido rápido, não ser extenso.
+            começando. O objetivo é ser lido rápido, não ser extenso.
           </li>
         </ul>
 
@@ -133,14 +133,14 @@ function ComoSeCandidatar() {
           valorizam cada vez mais habilidades comprovadas (organização, comunicação,
           trabalho em campo, uso de ferramentas específicas) e não só o tempo de
           experiência formal. Para quem está no primeiro emprego, isso é uma
-          vantagem — mostre o que você sabe fazer, não só há quanto tempo trabalha.
+          vantagem: mostre o que você sabe fazer, não apenas há quanto tempo trabalha.
         </Callout>
 
         <H2>LinkedIn: seu currículo que nunca para de trabalhar</H2>
         <p className="mt-4 max-w-[62ch] text-[15px] leading-relaxed text-ink-soft">
           Muitos recrutadores buscam o nome do candidato no LinkedIn antes mesmo de
           abrir o currículo enviado. Um perfil incompleto ou desatualizado pode pesar
-          contra você — mesmo sem ninguém falar isso diretamente.
+          contra você, mesmo que ninguém fale isso diretamente.
         </p>
         <a
           href="https://www.linkedin.com/"
@@ -160,22 +160,22 @@ function ComoSeCandidatar() {
           <li>
             <strong className="text-ink">Descreva a formação de verdade.</strong> Na
             seção do curso técnico, escreva 2-3 linhas sobre o que você estudou e
-            projetos concretos — não deixe só o nome da instituição.
+            projetos concretos. Não deixe só o nome da instituição.
           </li>
           <li>
             <strong className="text-ink">Siga empresas e órgãos da área</strong>{" "}
-            ambiental no Ceará — muitas publicam vaga primeiro por lá, antes de
+            ambiental no Ceará. Muitas publicam vaga primeiro por lá, antes de
             qualquer outro canal.
           </li>
           <li>
             <strong className="text-ink">Peça uma recomendação</strong> a um
-            professor, orientador de estágio ou coordenador — poucas linhas de
+            professor, orientador de estágio ou coordenador. Poucas linhas de
             alguém que te conhece profissionalmente valem mais do que parecem.
           </li>
           <li>
             <strong className="text-ink">Publique sobre o que você faz.</strong> Um
             post simples sobre um projeto do curso ou uma visita técnica mostra
-            interesse ativo na área — e aparece para quem segue o mesmo assunto.
+            interesse ativo na área e aparece para quem segue o mesmo assunto.
           </li>
         </ul>
 
@@ -184,14 +184,14 @@ function ComoSeCandidatar() {
           Quem estuda meio ambiente produz evidência concreta o tempo todo:
           relatórios de estágio, projetos de gerenciamento de resíduos (PGRS),
           laudos de monitoramento, TCC. Guardar isso organizado em um único lugar
-          — uma pasta do Google Drive compartilhável, por exemplo — dá ao
+          (uma pasta do Google Drive compartilhável, por exemplo) dá ao
           recrutador algo que nenhum currículo sozinho mostra: prova do que você
           sabe fazer.
         </p>
         <ul className="mt-4 max-w-[62ch] space-y-3 text-[15px] leading-relaxed text-ink-soft">
           <li>
-            Selecione 3 a 5 trabalhos que você tem mais orgulho — não precisa (nem
-            deve) colocar tudo.
+            Selecione 3 a 5 trabalhos que você tem mais orgulho. Não precisa, nem
+            deve, colocar tudo.
           </li>
           <li>
             Remova dados sigilosos ou de empresas específicas antes de
@@ -207,8 +207,8 @@ function ComoSeCandidatar() {
           <li>
             <strong className="text-ink">Entrevista por vídeo virou padrão</strong>{" "}
             mesmo para vagas técnicas e de campo. Teste câmera e áudio antes, escolha
-            um fundo neutro e garanta conexão estável — problemas técnicos custam
-            tempo (e primeira impressão).
+            um fundo neutro e garanta conexão estável. Problemas técnicos custam
+            tempo, e também a primeira impressão.
           </li>
           <li>
             <strong className="text-ink">Perguntas comportamentais</strong> ("me
@@ -218,7 +218,7 @@ function ComoSeCandidatar() {
           </li>
           <li>
             <strong className="text-ink">Espere perguntas técnicas específicas</strong>{" "}
-            da área — legislação ambiental básica, tipos de licença, classificação
+            da área: legislação ambiental básica, tipos de licença, classificação
             de resíduos. Revisar o conteúdo do curso antes da entrevista faz
             diferença real.
           </li>
@@ -226,7 +226,7 @@ function ComoSeCandidatar() {
 
         <H2>Usando IA a seu favor, sem exagerar</H2>
         <p className="mt-4 max-w-[62ch] text-[15px] leading-relaxed text-ink-soft">
-          Ferramentas de IA já fazem parte dos dois lados do processo seletivo —
+          Ferramentas de IA já fazem parte dos dois lados do processo seletivo,
           inclusive filtrando currículos antes que um recrutador veja. Usá-las para
           se preparar é legítimo e recomendado, mas existe uma linha clara entre
           ajudar e enganar.
@@ -241,7 +241,7 @@ function ComoSeCandidatar() {
           <li>
             <strong className="text-ink">Não pode:</strong> inventar experiência ou
             competência que você não tem, ou colar uma resposta gerada por IA numa
-            entrevista sem entender o que está dizendo — o recrutador costuma
+            entrevista sem entender o que está dizendo. O recrutador costuma
             perceber, e uma pergunta de acompanhamento simples expõe isso na hora.
           </li>
           <li>
@@ -260,7 +260,7 @@ function ComoSeCandidatar() {
           <li>
             <strong className="text-ink">Candidate-se.</strong> O botão{" "}
             <em>"Candidatar-se"</em> leva você ao site oficial da vaga. Siga as
-            instruções de lá — o BIO não recebe inscrições.
+            instruções de lá. O BIO não recebe inscrições.
           </li>
           <li>
             <strong className="text-ink">Compartilhe.</strong> Achou uma vaga boa
