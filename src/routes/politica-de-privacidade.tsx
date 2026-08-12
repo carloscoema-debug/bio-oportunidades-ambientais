@@ -48,10 +48,10 @@ function Privacidade() {
           O BIO é operado pela equipe de curadoria do portal, que pode ser
           contatada em{" "}
           <a
-            href="mailto:bioctmaifce@gmail.com"
+            href="mailto:carloshenrique@ifce.edu.br"
             className="font-bold text-mata-deep underline underline-offset-2 hover:text-mata"
           >
-            bioctmaifce@gmail.com
+            carloshenrique@ifce.edu.br
           </a>
           . Levamos a sério a proteção de dados e seguimos a Lei Geral de
           Proteção de Dados (Lei nº 13.709/2018 — LGPD).
@@ -117,10 +117,10 @@ function Privacidade() {
           Você pode solicitar informações sobre o tratamento de dados,
           correção ou eliminação, conforme a LGPD, pelo e-mail{" "}
           <a
-            href="mailto:bioctmaifce@gmail.com"
+            href="mailto:carloshenrique@ifce.edu.br"
             className="font-bold text-mata-deep underline underline-offset-2 hover:text-mata"
           >
-            bioctmaifce@gmail.com
+            carloshenrique@ifce.edu.br
           </a>
           .
         </p>

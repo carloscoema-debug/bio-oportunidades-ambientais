@@ -38,10 +38,10 @@ export function SiteFooter() {
           Empresas, pessoas com dúvidas ou uma vaga para divulgar? Fale com a curadoria
           do BIO pelo e-mail{" "}
           <a
-            href="mailto:bioctmaifce@gmail.com"
+            href="mailto:carloshenrique@ifce.edu.br"
             className="font-bold text-mata-deep underline underline-offset-2 hover:text-mata"
           >
-            bioctmaifce@gmail.com
+            carloshenrique@ifce.edu.br
           </a>.
         </p>
 

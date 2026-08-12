@@ -280,10 +280,10 @@ function Divulgar() {
             Dúvidas sobre a vaga ou quer conversar sobre parcerias?
             A curadoria do BIO atende pelo e-mail{" "}
             <a
-              href="mailto:bioctmaifce@gmail.com"
+              href="mailto:carloshenrique@ifce.edu.br"
               className="font-bold text-mata-deep underline underline-offset-2 hover:text-mata"
             >
-              bioctmaifce@gmail.com
+              carloshenrique@ifce.edu.br
             </a>.
           </p>
         </div>
