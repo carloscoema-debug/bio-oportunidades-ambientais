@@ -38,7 +38,7 @@ export interface VagaPublica {
 }
 
 const DISCLAIMER =
-  "Divulgação informativa — o BIO não conduz este processo seletivo.";
+  "Divulgação informativa. O BIO não conduz este processo seletivo.";
 
 function Pill({
   children,

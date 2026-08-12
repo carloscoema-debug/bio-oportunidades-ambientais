@@ -38,7 +38,7 @@ export function NewsletterSignup() {
     setEstado("ok");
     setMsg(
       r.status === "ja_inscrito"
-        ? "Você já está inscrito — tudo certo!"
+        ? "Você já está inscrito, tudo certo!"
         : "Pronto! Você vai receber as próximas oportunidades por e-mail.",
     );
   }
@@ -68,7 +68,7 @@ export function NewsletterSignup() {
           </h2>
           <p className="mt-2 max-w-[52ch] text-[14.5px] leading-relaxed text-ink-soft">
             No máximo <strong className="text-ink">um e-mail por semana</strong>, com a
-            seleção da curadoria. Nada de spam — e você sai quando quiser, em um clique.
+            seleção da curadoria. Nada de spam, e você sai quando quiser, em um clique.
           </p>
 
           <form onSubmit={onSubmit} className="mt-5 space-y-4">

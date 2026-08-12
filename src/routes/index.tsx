@@ -116,10 +116,9 @@ function Home() {
         </h1>
         <p className="mt-5 max-w-[56ch] text-[16.5px] leading-relaxed text-ink-soft">
           <strong className="font-bold text-ink">BIO</strong> é o Banco Institucional de
-          Oportunidades: reúne e verifica vagas de estágio, emprego e seleções públicas na
-          área ambiental que já estão abertas no mercado. A curadoria é feita por uma equipe
-          dedicada exclusivamente ao setor ambiental: nós selecionamos e organizamos as
-          oportunidades — a candidatura acontece sempre no site oficial de cada uma.
+          Oportunidades. Reunimos e conferimos vagas de estágio, emprego e seleções públicas
+          já abertas no mercado, na área ambiental. A curadoria é de uma equipe que trabalha
+          só com meio ambiente. A candidatura sempre acontece no site oficial de cada vaga.
         </p>
       </section>
 

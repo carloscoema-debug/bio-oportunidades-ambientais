@@ -82,7 +82,7 @@ function Privacidade() {
         </ul>
         <p className="mt-3 max-w-[62ch] text-[15px] leading-relaxed text-ink-soft">
           <strong className="text-ink">Base legal:</strong> interesse legítimo (art.
-          7º, IX, da LGPD) — melhorar a curadoria e a qualidade das oportunidades
+          7º, IX, da LGPD), para melhorar a curadoria e a qualidade das oportunidades
           divulgadas.
         </p>
 
@@ -101,7 +101,7 @@ function Privacidade() {
         <p className="mt-3 max-w-[62ch] text-[15px] leading-relaxed text-ink-soft">
           <strong className="text-ink">Base legal:</strong> consentimento (art. 7º, I,
           da LGPD). Você pode <strong className="text-ink">se descadastrar a qualquer
-          momento</strong> pelo link presente em todos os e-mails — sem burocracia.
+          momento</strong> pelo link presente em todos os e-mails, sem burocracia.
         </p>
 
         <H2>Envio de vagas por empresas</H2>
@@ -109,7 +109,7 @@ function Privacidade() {
           Empresas e órgãos que divulgam uma vaga informam dados de contato (nome e
           e-mail). Usamos essas informações apenas para{" "}
           <strong className="text-ink">validar a oportunidade</strong> junto ao
-          anunciante antes da publicação — nunca para outra finalidade.
+          anunciante antes da publicação. Não usamos os dados para nada além disso.
         </p>
 
         <H2>Seus direitos</H2>

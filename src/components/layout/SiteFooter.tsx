@@ -49,7 +49,7 @@ export function SiteFooter() {
         <p className="mt-2 max-w-[64ch] text-[13px] leading-relaxed text-ink-soft">
           As oportunidades são divulgadas como serviço de informação. O BIO não conduz,
           não endossa e não se responsabiliza pelos processos seletivos, pelas condições
-          dos vínculos nem pela idoneidade dos anunciantes — confira sempre a fonte oficial.
+          dos vínculos nem pela idoneidade dos anunciantes. Confira sempre a fonte oficial.
         </p>
       </div>
     </footer>

@@ -63,12 +63,12 @@ const MOTIVOS_DIVULGAR = [
   {
     titulo: "O público certo, não o público grande",
     texto:
-      "A sua vaga aparece para quem estuda ou já se formou em cursos ambientais — pessoas que chegam sabendo o que é licenciamento, resíduos, saneamento e monitoramento.",
+      "A sua vaga aparece para quem estuda ou já se formou em cursos ambientais, gente que já chega sabendo o que é licenciamento, resíduos, saneamento e monitoramento.",
   },
   {
     titulo: "A curadoria funciona como recomendação",
     texto:
-      "Cada vaga passa por revisão humana antes de ir ao ar. Para quem procura, estar no BIO é sinal de que a oportunidade foi conferida, não só coletada.",
+      "Cada vaga passa por revisão humana antes de ir ao ar. Para quem procura, isso é sinal de que alguém conferiu aquela oportunidade antes de publicar.",
   },
   {
     titulo: "De graça e sem burocracia",
@@ -169,8 +169,8 @@ function Divulgar() {
               </a>
             </div>
             <p className="mt-4 text-[12.5px] leading-relaxed text-ink-faint">
-              O BIO é mantido por uma curadoria dedicada exclusivamente à área
-              ambiental — obrigado por contar com a gente.
+              O BIO é mantido por uma curadoria que só trabalha com a área
+              ambiental. Obrigado por contar com a gente.
             </p>
           </div>
         </section>
@@ -191,8 +191,8 @@ function Divulgar() {
         </h1>
         <p className="mt-3 max-w-[58ch] text-[15.5px] leading-relaxed text-ink-soft">
           O BIO é o observatório de oportunidades ambientais do Ceará. Divulgar
-          aqui leva a sua vaga direto a estudantes e egressos formados para a área ambiental. E
-          não custa nada: toda oportunidade passa por{" "}
+          aqui leva a sua vaga direto a estudantes e egressos formados para a área ambiental.
+          E não custa nada. Toda oportunidade passa por{" "}
           <strong className="text-ink">curadoria humana</strong> antes de ir ao ar.
         </p>
 
